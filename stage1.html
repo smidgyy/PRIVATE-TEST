@@ -350,17 +350,12 @@
         </div>
         
         <div class="cipher-numbers">
-          <div>5</div>
-          <!-- t -->
+          <div>20</div>
+          <div>15</div>
+          <div>7</div>
+          <div>7</div>
           <div>12</div>
-          <!-- o -->
-          <div>9</div>
-          <!-- g -->
-          <div>14</div>
-          <!-- g -->
           <div>5</div>
-          <!-- l -->
-          <!-- e -->
         </div>
         
         <div id="filter-container" style="display: none; margin-top: 2rem;">
@@ -389,32 +384,41 @@
     const signalStrength = document.getElementById('signal-strength');
     let currentStep = 1;
 
-    input.addEventListener('keypress', function(e) {
+    async function hashInput(str) {
+      const msgUint8 = new TextEncoder().encode(str);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    input.addEventListener('keypress', async function(e) {
       if (e.key === 'Enter') {
         const val = input.value.trim().toLowerCase();
         input.value = '';
-        checkAnswer(val);
+        await checkAnswer(val);
       }
     });
 
-    function checkAnswer(val) {
-      if (currentStep === 1 && val === '371') {
+    async function checkAnswer(val) {
+      const h = await hashInput(val);
+      
+      if (currentStep === 1 && h === '9b15fed64ef16980f625aeed46ab4cd2c498690551d3a2d1e5254d551d7d6ddf') {
         signalStrength.innerText = 'STR: 33%';
         document.getElementById('step1-1').classList.remove('active');
         document.getElementById('step1-2').classList.add('active');
         currentStep = 2;
       } 
-      else if (currentStep === 2 && val === 'omega') {
+      else if (currentStep === 2 && h === '304b4a90a76a1cbe4c112e074b30e75181f54df43d60f883597457844293b341') {
         signalStrength.innerText = 'STR: 66%';
         document.getElementById('step1-2').classList.remove('active');
         document.getElementById('step1-3').classList.add('active');
         currentStep = 3;
       }
-      else if (currentStep === 3 && val === 'calibrate') {
+      else if (currentStep === 3 && h === '3b42f2115d4044729e0569426561f0bf2abb76b7af424d301a098509fdcd1b9a') {
         document.getElementById('recalibrate-container').style.display = 'block';
         document.getElementById('input-area').style.display = 'none';
       }
-      else if (currentStep === 4 && val === 'toggle') {
+      else if (currentStep === 4 && h === 'b59629af313134d115ebdd13f6b978747c58a66642352a10525b3b8d31b1f5d9') {
         document.getElementById('filter-container').style.display = 'block';
         document.getElementById('input-area').style.display = 'none';
       }
