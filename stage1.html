@@ -57,8 +57,8 @@ body.phase-2 #glow-overlay { opacity: 1; }
   bottom: 40px;
   left: 50%;
   transform: translateX(-50%);
-  width: 96px;
-  height: 96px;
+  width: 128px;
+  height: 128px;
   display: none;
   z-index: 10;
 }
@@ -115,45 +115,81 @@ body.light-mode .hidden-clue { display: block; opacity: 1; }
 <div id="hidden-gap"></div>
 <button id="ignite-btn">[ IGNITE ]</button>
 
-<div id="bonfire-container">
-  <svg viewBox="0 0 24 24" width="96" height="96" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">
-    <style>
-      .pixel-flames {
-        transform-origin: 12px 16px;
-        animation: pixel-flicker 0.4s steps(2) infinite alternate;
-      }
-      @keyframes pixel-flicker {
-        0% { transform: scaleY(1) skewX(1deg); }
-        100% { transform: scaleY(1.05) skewX(-1deg) translateY(-1px); }
-      }
-    </style>
-    <g id="flames" class="pixel-flames">
-      <rect x="11" y="4" width="2" height="2" fill="#cb3515"/>
-      <rect x="10" y="6" width="4" height="2" fill="#cb3515"/>
-      <rect x="9" y="8" width="6" height="2" fill="#cb3515"/>
-      <rect x="8" y="10" width="8" height="2" fill="#cb3515"/>
-      <rect x="7" y="12" width="10" height="2" fill="#cb3515"/>
-      <rect x="6" y="14" width="12" height="4" fill="#cb3515"/>
-      <rect x="11" y="6" width="2" height="2" fill="#e25822"/>
-      <rect x="10" y="8" width="4" height="2" fill="#e25822"/>
-      <rect x="9" y="10" width="6" height="2" fill="#e25822"/>
-      <rect x="8" y="12" width="8" height="4" fill="#e25822"/>
-      <rect x="11" y="8" width="2" height="2" fill="#f2bd1d"/>
-      <rect x="10" y="10" width="4" height="4" fill="#f2bd1d"/>
-      <rect x="11" y="10" width="2" height="2" fill="#ffffff"/>
-    </g>
-    <g id="logs">
-      <rect x="5" y="16" width="14" height="4" fill="#2b1708"/>
-      <rect x="6" y="17" width="12" height="2" fill="#5c3a21"/>
-      <rect x="3" y="18" width="9" height="4" fill="#2b1708"/>
-      <rect x="4" y="19" width="7" height="2" fill="#5c3a21"/>
-      <rect x="3" y="18" width="2" height="4" fill="#8b5a33"/>
-      <rect x="12" y="18" width="9" height="4" fill="#2b1708"/>
-      <rect x="13" y="19" width="7" height="2" fill="#5c3a21"/>
-      <rect x="19" y="18" width="2" height="4" fill="#8b5a33"/>
-    </g>
-  </svg>
-</div>
+<div id="bonfire-container"></div>
+
+<script>
+(function(){
+  const P = {'1':'#181425','2':'#ac3232','3':'#df7126','4':'#fbf236','5':'#ffffff','6':'#3f2832','7':'#59362c','8':'#8a5342','9':'#b47b5e'};
+  const f = [
+    "               11               ",
+    "               121              ",
+    "              1221              ",
+    "              1231              ",
+    "              1231              ",
+    "             12231              ",
+    "             12331              ",
+    "            1223311             ",
+    "            1233341             ",
+    "           12233441             ",
+    "           12334441             ",
+    "          122334441             ",
+    "        111233444111            ",
+    "       12212334441221           ",
+    "       12312344451321           ",
+    "      1233123445513321          ",
+    "      1233223445513321          ",
+    "      1233334455513321          ",
+    "      1223344455543221          ",
+    "       12234444544321           ",
+    "         122344444321           ",
+    "          1223333321            ",
+    "           11222211             ",
+    "             1111               "
+  ];
+  const l = [
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "                                ",
+    "  111                 111       ",
+    " 18811               11881      ",
+    "1898711 111     111 1178981     ",
+    "188776118811   118811677881     ",
+    "1776661898711 1178981666771     ",
+    " 111111887761 167788111111      ",
+    "      1776661 1666771           ",
+    "       11111   11111            ",
+    "                                "
+  ];
+  let s = '<svg viewBox="0 0 32 32" width="100%" height="100%" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">';
+  s += '<style>.pixel-flames { transform-origin: 16px 24px; animation: pixel-flicker 0.4s steps(2) infinite alternate; } @keyframes pixel-flicker { 0% { transform: scaleY(1) skewX(1deg); } 100% { transform: scaleY(1.05) skewX(-1deg) translateY(-1px); } }</style>';
+  s += '<g id="logs">';
+  for(let y=0;y<32;y++)for(let x=0;x<32;x++)if(l[y][x]!==' ')s+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${P[l[y][x]]}"/>`;
+  s += '</g><g id="flames" class="pixel-flames">';
+  for(let y=0;y<24;y++)for(let x=0;x<32;x++)if(f[y][x]!==' ')s+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${P[f[y][x]]}"/>`;
+  s += '</g></svg>';
+  document.getElementById('bonfire-container').innerHTML = s;
+})();
+</script>
 
 <script>
 const input = document.getElementById('puzzle-input');
