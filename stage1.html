@@ -434,6 +434,10 @@ function startPhase3(isTransition = false) {
   let dotY = canvas.height * (15 + Math.random() * 70) / 100;
   let dotActive = false;
 
+  console.log("%c[SYSTEM WARNING]", "color: red; font-size: 20px; font-weight: bold;");
+  console.log("%cThe Void cannot be parsed. The spark exists outside the DOM.", "color: #8b7355; font-size: 14px;");
+  console.log("%cPut away your tools. Rely on your eyes.", "color: #666; font-style: italic;");
+
   setTimeout(() => {
     ctx.fillStyle = '#1a1a1a';
     ctx.beginPath();
