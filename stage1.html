@@ -65,22 +65,19 @@ body.phase-2 #glow-overlay { opacity: 1; }
 body.phase-2 #bonfire-container, body.phase-3 #bonfire-container { display: block; }
 body.phase-3 #flames { display: none; }
 
-#hidden-gap {
-  position: fixed;
-  width: 4px; height: 4px; border-radius: 50%; background: #1a1a1a;
-  z-index: 40; cursor: pointer;
-  display: none;
+.n-core {
+  position: fixed; width: 4px; height: 4px; border-radius: 50%; background: #1a1a1a;
+  z-index: 40; cursor: pointer; opacity: 0; transition: opacity 2s ease;
 }
-#hidden-gap.active { display: block; }
+.n-core.visible { opacity: 1; }
 
-#ignite-btn {
+.n-act {
   position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%);
   background: transparent; border: 1px solid #8b7355; color: #8b7355;
   font-family: Georgia, 'Times New Roman', serif; font-size: 0.9rem; letter-spacing: 0.2em;
-  padding: 0.5rem 1rem; cursor: pointer; z-index: 60; display: none;
-  transition: all 0.3s ease;
+  padding: 0.5rem 1rem; cursor: pointer; z-index: 60; transition: all 0.3s ease;
 }
-#ignite-btn:hover { background: #8b7355; color: #000; }
+.n-act:hover { background: #8b7355; color: #000; }
 
 body.light-mode { background: #e5e0d8; color: #111; }
 body.light-mode input { color: #111; border-color: #999; }
@@ -117,9 +114,6 @@ body.light-mode .hidden-clue { display: block; opacity: 1; }
 </div>
 
 <div id="flashlight-overlay"></div>
-<div id="hidden-gap"></div>
-<button id="ignite-btn">[ IGNITE ]</button>
-
 <div id="bonfire-container"></div>
 
 <script>
@@ -421,10 +415,46 @@ function startPhase3(isTransition = false) {
   }, isTransition ? 0 : 0);
 
   setTimeout(() => {
-    const gap = document.getElementById('hidden-gap');
-    gap.classList.add('active');
+    const gap = document.createElement('div');
+    gap.className = 'n-core visible';
     gap.style.left = (15 + Math.random() * 70) + 'vw';
     gap.style.top = (15 + Math.random() * 70) + 'vh';
+    
+    gap.addEventListener('click', () => {
+      if (document.querySelector('.n-act')) return;
+      const btn = document.createElement('button');
+      btn.className = 'n-act';
+      btn.textContent = '[ IGNITE ]';
+      
+      let igniteClicks = 0;
+      btn.addEventListener('click', () => {
+        playFlintSound();
+        igniteClicks++;
+        
+        if (igniteClicks < 3) {
+          btn.style.transform = 'translateX(-50%) scale(0.95)';
+          setTimeout(() => btn.style.transform = 'translateX(-50%) scale(1)', 100);
+          return;
+        }
+
+        document.body.classList.add('light-mode');
+        btn.remove();
+        gap.remove();
+        title.textContent = "The Light.";
+        subtitle.textContent = "What was hidden is revealed.";
+        input.classList.remove('hidden');
+        input.focus();
+        
+        const clue = document.createElement('div');
+        clue.className = 'hidden-clue';
+        clue.textContent = atob('VGhlIGZpbmFsIHdvcmQgaXM6IGlsbHVtaW5hdGlvbg==');
+        document.body.appendChild(clue);
+        setTimeout(() => clue.style.opacity = 1, 100);
+      });
+      
+      document.body.appendChild(btn);
+    });
+    document.body.appendChild(gap);
   }, isTransition ? 2000 : 500);
   
   document.addEventListener('mousemove', (e) => {
@@ -441,37 +471,6 @@ function startPhase3(isTransition = false) {
     subtitle.style.opacity = '1';
   }, isTransition ? 3000 : 100);
 }
-
-document.getElementById('hidden-gap').addEventListener('click', () => {
-  document.getElementById('ignite-btn').style.display = 'block';
-});
-
-let igniteClicks = 0;
-document.getElementById('ignite-btn').addEventListener('click', () => {
-  playFlintSound();
-  igniteClicks++;
-  
-  if (igniteClicks < 3) {
-    const btn = document.getElementById('ignite-btn');
-    btn.style.transform = 'translateX(-50%) scale(0.95)';
-    setTimeout(() => btn.style.transform = 'translateX(-50%) scale(1)', 100);
-    return;
-  }
-
-  document.body.classList.add('light-mode');
-  document.getElementById('ignite-btn').style.display = 'none';
-  document.getElementById('hidden-gap').classList.remove('active');
-  title.textContent = "The Light.";
-  subtitle.textContent = "What was hidden is revealed.";
-  input.classList.remove('hidden');
-  input.focus();
-  
-  const clue = document.createElement('div');
-  clue.className = 'hidden-clue';
-  clue.textContent = atob('VGhlIGZpbmFsIHdvcmQgaXM6IGlsbHVtaW5hdGlvbg==');
-  document.body.appendChild(clue);
-  setTimeout(() => clue.style.opacity = 1, 100);
-});
 
 // Subtle console initialization
 setTimeout(() => {
