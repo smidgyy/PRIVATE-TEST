@@ -24,6 +24,7 @@ export default defineConfig(({mode}) => {
         input: {
           main: path.resolve(__dirname, 'index.html'),
           stage1: path.resolve(__dirname, 'stage1.html'),
+          article: path.resolve(__dirname, 'article.html'),
         },
       },
     },

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Voynich Marginalia</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: #0a0a0a; color: #c4c0b8; font-family: 'Times New Roman', Times, serif; overflow-x: hidden; line-height: 1.8; }
+body { display: flex; flex-direction: column; align-items: center; padding: 4rem 2rem; }
+
+.container { max-width: 700px; width: 100%; opacity: 0; animation: fadeIn 3s ease forwards; }
+
+.header { text-align: center; margin-bottom: 4rem; border-bottom: 1px solid #333; padding-bottom: 2rem; }
+.title { font-size: 2.2rem; letter-spacing: 0.05em; margin-bottom: 0.5rem; color: #e0dcd0; }
+.subtitle { font-size: 0.9rem; color: #8b7355; letter-spacing: 0.1em; font-style: italic; text-transform: uppercase; }
+
+p { font-size: 1.1rem; margin-bottom: 1.5rem; text-align: justify; }
+
+blockquote {
+  margin: 2.5rem 0;
+  padding: 1.5rem 2rem;
+  border-left: 2px solid #8b7355;
+  background: rgba(139, 115, 85, 0.03);
+  font-style: italic;
+  color: #a8a398;
+  position: relative;
+}
+
+blockquote::before {
+  content: '"';
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  font-size: 3rem;
+  color: #8b7355;
+  opacity: 0.3;
+  font-family: Georgia, serif;
+}
+
+.first-letter {
+  font-size: 1.4rem;
+  color: #d4a847;
+  font-weight: bold;
+  font-style: normal;
+}
+
+.svg-container { margin: 4rem 0; text-align: center; }
+svg { max-width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(139, 115, 85, 0.2)); }
+
+.cipher-section {
+  margin-top: 5rem;
+  padding: 2rem;
+  border: 1px solid #333;
+  background: #050505;
+  text-align: center;
+}
+
+.cipher-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.2em; color: #666; margin-bottom: 1rem; }
+.cipher-text { font-family: monospace; font-size: 1.5rem; letter-spacing: 0.3em; color: #8b7355; }
+
+.base64 { font-family: monospace; font-size: 0.8rem; color: #444; word-break: break-all; margin: 2rem 0; text-align: center; }
+
+.return-link { margin-top: 4rem; font-size: 0.9rem; letter-spacing: 0.1em; color: #666; text-decoration: none; transition: color 0.3s ease; display: block; text-align: center; cursor: pointer; text-transform: uppercase; }
+.return-link:hover { color: #8b7355; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Hidden steganography */
+.void-text { color: #0a0a0a; user-select: all; text-align: center; margin-top: 2rem; font-style: italic; }
+.void-text::selection { background: #8b7355; color: #000; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="title">The Voynich Marginalia</div>
+    <div class="subtitle">Fragment 77, Transcribed 1923</div>
+  </div>
+
+  <p>The discovery of Fragment 77 within a false-bottomed chest belonging to John Dee has fundamentally altered our understanding of the Enochian corpus. Unlike the primary folios, which detail angelic hierarchies and celestial mechanics, this fragment appears to be a warning. It speaks of a threshold that must not be crossed, a door that requires three distinct keys to open.</p>
+
+  <div class="svg-container">
+    <svg viewBox="0 0 400 400" width="400" height="400">
+      <defs>
+        <path id="textPathTop" d="M 60, 200 a 140,140 0 0,1 280,0" />
+        <path id="textPathBottom" d="M 340, 200 a 140,140 0 0,1 -280,0" />
+      </defs>
+      <circle cx="200" cy="200" r="180" fill="none" stroke="#333" stroke-width="1" stroke-dasharray="2 6" />
+      <circle cx="200" cy="200" r="150" fill="none" stroke="#8b7355" stroke-width="1" opacity="0.5" />
+      <circle cx="200" cy="200" r="130" fill="none" stroke="#8b7355" stroke-width="2" />
+      
+      <!-- Heptagram -->
+      <polygon points="200,70 257,280 88,148 312,148 143,280" fill="none" stroke="#8b7355" stroke-width="1" opacity="0.4" />
+      <polygon points="200,70 143,280 312,148 88,148 257,280" fill="none" stroke="#8b7355" stroke-width="1" opacity="0.4" />
+      
+      <circle cx="200" cy="200" r="40" fill="none" stroke="#8b7355" stroke-width="1" opacity="0.8" />
+      <circle cx="200" cy="200" r="10" fill="#8b7355" opacity="0.5" />
+      
+      <text font-family="monospace" font-size="11" fill="#8b7355" letter-spacing="2">
+        <textPath href="#textPathTop" startOffset="50%" text-anchor="middle">
+          SHIFT THE FOUNDATION BY THREE DEGREES.
+        </textPath>
+      </text>
+      <text font-family="monospace" font-size="11" fill="#8b7355" letter-spacing="2">
+        <textPath href="#textPathBottom" startOffset="50%" text-anchor="middle">
+          THE FRENCHMAN HOLDS THE KEY.
+        </textPath>
+      </text>
+    </svg>
+  </div>
+
+  <p>The text is heavily encrypted, utilizing methods that predate modern cryptography. The author, presumed to be Edward Kelley, embedded a secondary narrative within the margins. These marginalia are disjointed, reading more like the ravings of a madman than a coherent treatise. Yet, a pattern emerges when one isolates the specific annotations marked with the symbol of lead.</p>
+
+  <blockquote>
+    <span class="first-letter">X</span>enobiotic theories aside, the manuscript is clearly of terrestrial origin, though its language remains an enigma to all who gaze upon it.
+  </blockquote>
+
+  <p>Scholars have debated the meaning of these passages for decades. Some argue they are mere poetic flourishes, while others believe they contain the coordinates to a physical location. The truth, as always, lies somewhere in between.</p>
+
+  <blockquote>
+    <span class="first-letter">I</span>n the margins, faint annotations hint at a deeper layer of obfuscation, a cipher within a cipher designed to confound the unworthy.
+  </blockquote>
+
+  <div class="base64">
+    VGhpcyBpcyBhIGRpc3RyYWN0aW9uLiBMb29rIHRvIHRoZSBxdW90ZXMu
+  </div>
+
+  <blockquote>
+    <span class="first-letter">Z</span>ealots of the Hermetic Order spent decades attempting to decipher it, only to be driven mad by the recursive, fractal nature of the syntax.
+  </blockquote>
+
+  <p>It is said that the final plate of the manuscript was deliberately destroyed by Dee himself, fearing what might happen if the incantation was spoken aloud. However, a transcription survived, passed down through generations of initiates.</p>
+
+  <blockquote>
+    <span class="first-letter">E</span>ven the most renowned cryptographers of the 19th century abandoned the project, declaring it an elaborate, unsolvable hoax.
+  </blockquote>
+
+  <p>The key to unlocking the transcription is not found in complex mathematics, but in the foundational principles of the art itself. The adept must look to the beginnings, and apply the necessary transformation.</p>
+
+  <blockquote>
+    <span class="first-letter">B</span>eneath the primary text lies a secondary narrative, written in sympathetic ink that only reveals itself under the light of a dying star.
+  </blockquote>
+
+  <p>We present here the final, unredacted transcription of Fragment 77. It is our hope that a mind unburdened by academic dogma might finally pierce the veil.</p>
+
+  <blockquote>
+    <span class="first-letter">J</span>ust as the physical world is bound by immutable laws, so too is this text bound by a rigid, mathematical structure that cannot be broken.
+  </blockquote>
+
+  <p>Do not be deceived by the apparent chaos. Every letter, every space, has been meticulously placed. The architect of this puzzle left nothing to chance.</p>
+
+  <blockquote>
+    <span class="first-letter">V</span>oids within the text suggest a missing key, a single word that unlocks the final sequence and reveals the true nature of the work.
+  </blockquote>
+
+  <div class="cipher-section">
+    <div class="cipher-title">Recovered Ciphertext</div>
+    <div class="cipher-text">TSG IPMAK DWU</div>
+  </div>
+
+  <p class="void-text">You are looking too closely at the darkness. The answer is already yours.</p>
+
+  <a href="stage1.html" class="return-link">[ Return to the threshold ]</a>
+</div>
+
+</body>
+</html>
