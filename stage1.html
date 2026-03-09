@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Diagnostic</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+    :root {
+      --bg-color: #050505;
+      --text-color: #e0e0e0;
+      --accent: #ffffff;
+      --glow: rgba(255, 255, 255, 0.2);
+      --scanline: rgba(0, 0, 0, 0.25);
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      transition: background-color 0.8s ease, color 0.8s ease;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Scanlines */
+    body::before {
+      content: " ";
+      display: block;
+      position: fixed;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, var(--scanline) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      z-index: 100;
+      background-size: 100% 2px, 3px 100%;
+      pointer-events: none;
+    }
+
+    /* Vignette */
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.6) 150%);
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    body.light-mode {
+      --bg-color: #f0f0f0;
+      --text-color: #111111;
+      --accent: #000000;
+      --glow: rgba(0, 0, 0, 0.1);
+      --scanline: rgba(255, 255, 255, 0.3);
+    }
+
+    body.signal-view {
+      background-image: 
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 30px 30px;
+      background-position: center center;
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      width: 100%;
+      max-width: 700px;
+      padding: 3rem;
+      text-shadow: 0 0 4px var(--glow);
+      letter-spacing: 0.05em;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(0, 0, 0, 0.2);
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 0 30px rgba(0,0,0,0.5);
+      backdrop-filter: blur(2px);
+    }
+
+    .light-mode .container {
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.5);
+      box-shadow: inset 0 0 20px rgba(255,255,255,0.5), 0 10px 30px rgba(0,0,0,0.05);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--text-color);
+      padding-bottom: 1rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      opacity: 0.8;
+    }
+
+    .hidden { display: none; }
+    #alpha { opacity: 0.1; }
+    #beta { opacity: 0.2; }
+    #gamma { opacity: 0.3; }
+    #omega { opacity: 1; }
+    
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1rem;
+      position: relative;
+    }
+
+    .input-row::before {
+      content: ">";
+      font-weight: 700;
+      color: var(--accent);
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    input {
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      outline: none;
+      flex-grow: 1;
+      font-size: 1.1rem;
+      padding: 0.5rem 0;
+      text-shadow: 0 0 5px var(--glow);
+      letter-spacing: 0.1em;
+    }
+
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.2);
+    }
+    .light-mode input::placeholder {
+      color: rgba(0, 0, 0, 0.2);
+    }
+
+    button {
+      background: transparent;
+      border: 1px solid var(--text-color);
+      color: var(--text-color);
+      font-family: 'JetBrains Mono', monospace;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      position: relative;
+      overflow: hidden;
+      margin-top: 1rem;
+    }
+
+    button::before {
+      content: "";
+      position: absolute;
+      top: 0; left: -100%; width: 100%; height: 100%;
+      background: var(--text-color);
+      transition: all 0.3s ease;
+      z-index: -1;
+    }
+
+    button:hover {
+      color: var(--bg-color);
+      text-shadow: none;
+      box-shadow: 0 0 15px var(--glow);
+    }
+
+    button:hover::before {
+      left: 0;
+    }
+
+    .invisible-text {
+      opacity: 0;
+      transition: opacity 1s ease;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .light-mode .invisible-text {
+      opacity: 1;
+    }
+
+    .step-content {
+      display: none;
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    .step-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .noise-lines {
+      line-height: 1.8;
+      opacity: 0.7;
+      font-size: 0.9rem;
+    }
+
+    .transmission-block {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 1.5rem;
+      border-left: 2px solid var(--text-color);
+      word-break: break-all;
+      line-height: 1.6;
+      margin: 1rem 0;
+    }
+
+    .light-mode .transmission-block {
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    .cipher-numbers {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      opacity: 0.8;
+      margin-top: 1rem;
+    }
+
+    .glitch {
+      position: relative;
+    }
+
+    .glitch::before, .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-color);
+    }
+
+    .glitch::before {
+      left: 2px;
+      text-shadow: -1px 0 red;
+      clip: rect(24px, 550px, 90px, 0);
+      animation: glitch-anim-2 3s infinite linear alternate-reverse;
+    }
+
+    .glitch::after {
+      left: -2px;
+      text-shadow: -1px 0 blue;
+      clip: rect(85px, 550px, 140px, 0);
+      animation: glitch-anim 2.5s infinite linear alternate-reverse;
+    }
+
+    @keyframes glitch-anim {
+      0% { clip: rect(15px, 9999px, 71px, 0); }
+      20% { clip: rect(45px, 9999px, 92px, 0); }
+      40% { clip: rect(88px, 9999px, 12px, 0); }
+      60% { clip: rect(22px, 9999px, 66px, 0); }
+      80% { clip: rect(61px, 9999px, 33px, 0); }
+      100% { clip: rect(9px, 9999px, 88px, 0); }
+    }
+
+    @keyframes glitch-anim-2 {
+      0% { clip: rect(65px, 9999px, 100px, 0); }
+      20% { clip: rect(12px, 9999px, 55px, 0); }
+      40% { clip: rect(77px, 9999px, 22px, 0); }
+      60% { clip: rect(33px, 9999px, 88px, 0); }
+      80% { clip: rect(99px, 9999px, 44px, 0); }
+      100% { clip: rect(44px, 9999px, 11px, 0); }
+    }
+    
+    .final-message {
+      text-align: center;
+      font-size: 1.2rem;
+      line-height: 2;
+    }
+    .final-message .title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="glitch" data-text="SIGNAL TEST : 01">SIGNAL TEST : 01</div>
+      <div id="signal-strength">STR: 00%</div>
+    </div>
+    
+    <div id="content-area">
+      <!-- Step 1.1 -->
+      <div id="step1-1" class="step-content active">
+        <!-- are you looking closely? -->
+        <div class="hidden">three</div>
+        <div class="hidden">seven</div>
+        <div class="hidden">one</div>
+        <div style="opacity: 0.5; font-size: 0.9rem;">Awaiting initial sequence...</div>
+      </div>
+
+      <!-- Step 1.2 -->
+      <div id="step1-2" class="step-content">
+        <div style="color: var(--accent); font-weight: 700;">> noise detected.</div>
+        <div class="noise-lines">
+          <div>yxv92kdl0a9sdf2</div>
+          <div>4jf02kdlajd9s</div>
+          <div>9d2kf0sdj3</div>
+          <div>signal</div>
+          <div>0sdjf92kdl</div>
+          <div>4lksdf</div>
+        </div>
+        <!-- find the strongest one -->
+        <div id="alpha"></div>
+        <div id="beta"></div>
+        <div id="gamma"></div>
+        <div id="omega"></div>
+      </div>
+
+      <!-- Step 1.3 -->
+      <div id="step1-3" class="step-content">
+        <div style="color: var(--accent); font-weight: 700;">> display calibration required.</div>
+        <div style="opacity: 0.5; font-size: 0.9rem; margin-top: 1rem;">System state unstable.</div>
+        <!-- the display has two states -->
+        <div id="recalibrate-container" style="display: none; margin-top: 2rem;">
+          <button id="btn-recalibrate">[ recalibrate display ]</button>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div id="step2" class="step-content">
+        <div class="invisible-text">
+          > SIGNAL LOCKED<br><br>
+          > transmission detected.
+        </div>
+        
+        <div class="transmission-block">
+          <div style="opacity: 0.5; margin-bottom: 0.5rem; font-size: 0.8rem;">TRANSMISSION 01</div>
+          VGhlIHNpZ25hbCBpcyBhbHJlYWR5IGluc2lkZSB0aGUgbm9pc2Uu<br>QnV0IG9ubHkgdGhvc2Ugd2hvIGxvb2sgYmV0d2VlbiB0aGUgbGluZXMgd2lsbCBzZWUgaXQu
+        </div>
+        
+        <div class="cipher-numbers">
+          <div>5</div>
+          <!-- t -->
+          <div>12</div>
+          <!-- o -->
+          <div>9</div>
+          <!-- g -->
+          <div>14</div>
+          <!-- g -->
+          <div>5</div>
+          <!-- l -->
+          <!-- e -->
+        </div>
+        
+        <div id="filter-container" style="display: none; margin-top: 2rem;">
+          <button id="btn-filter">[ signal filter ]</button>
+        </div>
+      </div>
+
+      <!-- Step 3 (Final) -->
+      <div id="step3" class="step-content">
+        <div class="final-message">
+          <div class="title glitch" data-text="TRANSMISSION STABILIZED">TRANSMISSION STABILIZED</div>
+          <div>stage ii unlocked</div>
+          <div style="opacity: 0.5; margin-top: 1rem;">/signal/02</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="input-area" class="input-row">
+      <input type="text" id="puzzle-input" autocomplete="off" spellcheck="false" placeholder="awaiting input...">
+    </div>
+  </div>
+
+  <!-- looking for answers? keep digging. -->
+  <script>
+    const input = document.getElementById('puzzle-input');
+    const signalStrength = document.getElementById('signal-strength');
+    let currentStep = 1;
+
+    input.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        const val = input.value.trim().toLowerCase();
+        input.value = '';
+        checkAnswer(val);
+      }
+    });
+
+    function checkAnswer(val) {
+      if (currentStep === 1 && val === '371') {
+        signalStrength.innerText = 'STR: 33%';
+        document.getElementById('step1-1').classList.remove('active');
+        document.getElementById('step1-2').classList.add('active');
+        currentStep = 2;
+      } 
+      else if (currentStep === 2 && val === 'omega') {
+        signalStrength.innerText = 'STR: 66%';
+        document.getElementById('step1-2').classList.remove('active');
+        document.getElementById('step1-3').classList.add('active');
+        currentStep = 3;
+      }
+      else if (currentStep === 3 && val === 'calibrate') {
+        document.getElementById('recalibrate-container').style.display = 'block';
+        document.getElementById('input-area').style.display = 'none';
+      }
+      else if (currentStep === 4 && val === 'toggle') {
+        document.getElementById('filter-container').style.display = 'block';
+        document.getElementById('input-area').style.display = 'none';
+      }
+    }
+
+    document.getElementById('btn-recalibrate').addEventListener('click', function() {
+      document.body.classList.add('light-mode');
+      document.getElementById('step1-3').classList.remove('active');
+      document.getElementById('step2').classList.add('active');
+      document.getElementById('input-area').style.display = 'flex';
+      currentStep = 4;
+      setTimeout(() => input.focus(), 100);
+    });
+
+    document.getElementById('btn-filter').addEventListener('click', function() {
+      document.body.classList.add('signal-view');
+      document.getElementById('step2').classList.remove('active');
+      document.getElementById('step3').classList.add('active');
+      
+      let str = 66;
+      const interval = setInterval(() => {
+        str += 2;
+        if (str >= 100) {
+          str = 100;
+          clearInterval(interval);
+        }
+        signalStrength.innerText = `STR: ${str}%`;
+      }, 30);
+      
+      document.getElementById('input-area').style.display = 'none';
+    });
+    
+    window.onload = () => input.focus();
+    document.addEventListener('click', () => {
+      if (document.getElementById('input-area').style.display !== 'none') {
+        input.focus();
+      }
+    });
+  </script>
+</body>
+</html>

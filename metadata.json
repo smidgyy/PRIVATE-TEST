@@ -1,0 +1,5 @@
+{
+  "name": "System Diagnostic Puzzle",
+  "description": "A minimalist, mysterious web puzzle that requires inspecting the HTML and CSS to solve.",
+  "requestFramePermissions": []
+}
