@@ -25,6 +25,7 @@ export default defineConfig(({mode}) => {
           main: path.resolve(__dirname, 'index.html'),
           stage1: path.resolve(__dirname, 'stage1.html'),
           article: path.resolve(__dirname, 'article.html'),
+          resonance: path.resolve(__dirname, 'resonance.html'),
         },
       },
     },

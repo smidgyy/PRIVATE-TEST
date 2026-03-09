@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The First Trial.</title>
 <meta name="x-architect-directive" content="0x48 0x65 0x78 0x20 0x69 0x73 0x20 0x6f 0x6e 0x6c 0x79 0x20 0x74 0x68 0x65 0x20 0x62 0x65 0x67 0x69 0x6e 0x6e 0x69 0x6e 0x67">
-<!-- [SYSTEM] 404 Not Found: /api/resonance?freq=432 -->
+<!-- [SYSTEM] Fragment relocated to /resonance.html -->
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; background: #000; color: #d4d0c8; font-family: Georgia, 'Times New Roman', serif; overflow: hidden; }
@@ -97,18 +97,6 @@ const subtitle = document.getElementById('subtitle');
 let busy = false;
 
 let phase = localStorage.getItem('stage1_phase') || '1';
-
-// Intercept fetch for the puzzle
-const originalFetch = window.fetch;
-window.fetch = async function() {
-  if (arguments[0] === '/api/resonance?freq=432') {
-    return new Response(JSON.stringify({
-      status: 'aligned',
-      data: 'U2hpZnQgdGhlIGNoYXJhY3RlcnMgb2YgJ0tGRE9CQUwnIGJ5IHRoZSBudW1iZXIgb2YgY2lyY2xlcyBpbiB0aGlzIHBhZ2Uu'
-    }));
-  }
-  return originalFetch.apply(this, arguments);
-};
 
 function initPhase() {
   if (phase === '2') {
