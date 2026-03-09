@@ -67,7 +67,7 @@ body.phase-3 #flames { display: none; }
 
 #hidden-gap {
   position: fixed;
-  width: 8px; height: 8px; border-radius: 50%; background: #1a1a1a;
+  width: 4px; height: 4px; border-radius: 50%; background: #1a1a1a;
   z-index: 40; cursor: pointer;
   display: none;
 }
@@ -86,6 +86,11 @@ body.light-mode { background: #e5e0d8; color: #111; }
 body.light-mode input { color: #111; border-color: #999; }
 body.light-mode .subtitle { color: #555; }
 body.light-mode #flashlight-overlay { display: none; }
+body.light-mode #flames { display: block !important; }
+body.light-mode #flames rect[fill="#ac3232"] { fill: #555 !important; }
+body.light-mode #flames rect[fill="#df7126"] { fill: #333 !important; }
+body.light-mode #flames rect[fill="#fbf236"] { fill: #111 !important; }
+body.light-mode #flames rect[fill="#ffffff"] { fill: #000 !important; }
 
 .hidden-clue { display: none; position: absolute; top: 20%; left: 50%; transform: translateX(-50%); font-size: 1.2rem; letter-spacing: 0.1em; color: #111; opacity: 0; transition: opacity 2s ease; }
 body.light-mode .hidden-clue { display: block; opacity: 1; }
@@ -121,30 +126,30 @@ body.light-mode .hidden-clue { display: block; opacity: 1; }
 (function(){
   const P = {'1':'#181425','2':'#ac3232','3':'#df7126','4':'#fbf236','5':'#ffffff','6':'#3f2832','7':'#59362c','8':'#8a5342','9':'#b47b5e'};
   const f = [
-    "               11               ",
-    "               121              ",
-    "              1221              ",
-    "              1231              ",
-    "              1231              ",
-    "             12231              ",
-    "             12331              ",
-    "            1223311             ",
-    "            1233341             ",
-    "           12233441             ",
-    "           12334441             ",
-    "          122334441             ",
-    "        111233444111            ",
-    "       12212334441221           ",
-    "       12312344451321           ",
-    "      1233123445513321          ",
-    "      1233223445513321          ",
-    "      1233334455513321          ",
-    "      1223344455543221          ",
-    "       12234444544321           ",
-    "         122344444321           ",
-    "          1223333321            ",
-    "           11222211             ",
-    "             1111               "
+    "                11              ",
+    "                121             ",
+    "               1221             ",
+    "               1231             ",
+    "               1231             ",
+    "              12231             ",
+    "              12331             ",
+    "             1223311            ",
+    "             1233341            ",
+    "            12233441            ",
+    "            12334441            ",
+    "           122334441            ",
+    "         111233444111           ",
+    "        12212334441221          ",
+    "        12312344451321          ",
+    "       1233123445513321         ",
+    "       1233223445513321         ",
+    "       1233334455513321         ",
+    "       1223344455543221         ",
+    "        12234444544321          ",
+    "          122344444321          ",
+    "           1223333321           ",
+    "            11222211            ",
+    "              1111              "
   ];
   const l = [
     "                                ",
@@ -170,17 +175,17 @@ body.light-mode .hidden-clue { display: block; opacity: 1; }
     "                                ",
     "                                ",
     "                                ",
-    "  111                 111       ",
-    " 18811               11881      ",
-    "1898711 111     111 1178981     ",
-    "188776118811   118811677881     ",
-    "1776661898711 1178981666771     ",
-    " 111111887761 167788111111      ",
-    "      1776661 1666771           ",
-    "       11111   11111            ",
+    "    111                 111     ",
+    "   18811               11881    ",
+    "  1898711 111     111 1178981   ",
+    "  188776118811   118811677881   ",
+    "  1776661898711 1178981666771   ",
+    "   111111887761 167788111111    ",
+    "        1776661 1666771         ",
+    "         11111   11111          ",
     "                                "
   ];
-  let s = '<svg viewBox="0 0 32 32" width="100%" height="100%" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">';
+  let s = '<svg viewBox="-2 -4 36 36" width="100%" height="100%" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">';
   s += '<style>.pixel-flames { transform-origin: 16px 24px; animation: pixel-flicker 0.4s steps(2) infinite alternate; } @keyframes pixel-flicker { 0% { transform: scaleY(1) skewX(1deg); } 100% { transform: scaleY(1.05) skewX(-1deg) translateY(-1px); } }</style>';
   s += '<g id="logs">';
   for(let y=0;y<32;y++)for(let x=0;x<32;x++)if(l[y][x]!==' ')s+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${P[l[y][x]]}"/>`;
@@ -231,6 +236,56 @@ function playBlowSound() {
 
     noise.start();
     noise.stop(ctx.currentTime + 1.0);
+  } catch (e) {
+    console.error("Audio not supported");
+  }
+}
+
+function playFlintSound() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    
+    const osc = ctx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(4000, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(8000, ctx.currentTime + 0.05);
+    
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+    
+    const bufferSize = ctx.sampleRate * 0.1;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'highpass';
+    noiseFilter.frequency.value = 5000;
+    
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.5, ctx.currentTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+    
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    
+    noise.start();
+    noise.stop(ctx.currentTime + 0.1);
   } catch (e) {
     console.error("Audio not supported");
   }
@@ -360,11 +415,17 @@ function startPhase3(isTransition = false) {
   phase = '3';
   document.body.classList.add('phase-3');
   input.classList.add('hidden');
-  document.getElementById('flashlight-overlay').classList.add('active');
-  const gap = document.getElementById('hidden-gap');
-  gap.classList.add('active');
-  gap.style.left = (15 + Math.random() * 70) + 'vw';
-  gap.style.top = (15 + Math.random() * 70) + 'vh';
+  
+  setTimeout(() => {
+    document.getElementById('flashlight-overlay').classList.add('active');
+  }, isTransition ? 0 : 0);
+
+  setTimeout(() => {
+    const gap = document.getElementById('hidden-gap');
+    gap.classList.add('active');
+    gap.style.left = (15 + Math.random() * 70) + 'vw';
+    gap.style.top = (15 + Math.random() * 70) + 'vh';
+  }, isTransition ? 2000 : 500);
   
   document.addEventListener('mousemove', (e) => {
     document.getElementById('flashlight-overlay').style.setProperty('--x', e.clientX + 'px');
@@ -378,14 +439,25 @@ function startPhase3(isTransition = false) {
     subtitle.style.transition = 'opacity 3s ease';
     title.style.opacity = '1';
     subtitle.style.opacity = '1';
-  }, isTransition ? 1500 : 100);
+  }, isTransition ? 3000 : 100);
 }
 
 document.getElementById('hidden-gap').addEventListener('click', () => {
   document.getElementById('ignite-btn').style.display = 'block';
 });
 
+let igniteClicks = 0;
 document.getElementById('ignite-btn').addEventListener('click', () => {
+  playFlintSound();
+  igniteClicks++;
+  
+  if (igniteClicks < 3) {
+    const btn = document.getElementById('ignite-btn');
+    btn.style.transform = 'translateX(-50%) scale(0.95)';
+    setTimeout(() => btn.style.transform = 'translateX(-50%) scale(1)', 100);
+    return;
+  }
+
   document.body.classList.add('light-mode');
   document.getElementById('ignite-btn').style.display = 'none';
   document.getElementById('hidden-gap').classList.remove('active');
