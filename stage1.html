@@ -350,7 +350,7 @@ function startBlackFire() {
 
   const fireSourceY = new Array(fireWidth).fill(fireHeight - 1);
   const fireSpeeds = new Array(fireWidth);
-  const baseSpeed = fireHeight / 400; // 20 seconds
+  const baseSpeed = fireHeight / 1000; // 0.6x speed, adjusted for 30fps
   for(let i=0; i<fireWidth; i++) {
     fireSpeeds[i] = baseSpeed * (0.8 + Math.random() * 0.4);
   }
@@ -364,15 +364,6 @@ function startBlackFire() {
     bonfireX = Math.floor((rect.left + rect.width / 2) / 6);
     bonfireY = Math.floor((rect.top + rect.height / 2) / 6);
     
-    // Turn bonfire flames black, leave logs alone
-    const flames = bonfire.querySelectorAll('#flames rect');
-    flames.forEach(r => {
-      const fill = r.getAttribute('fill');
-      if (fill === '#ffffff') r.setAttribute('fill', '#000000');
-      else if (fill === '#fbf236') r.setAttribute('fill', '#111111');
-      else if (fill === '#df7126') r.setAttribute('fill', '#1a1a1a');
-      else if (fill === '#ac3232') r.setAttribute('fill', '#222222');
-    });
     const flamesGroup = bonfire.querySelector('#flames');
     if (flamesGroup) flamesGroup.style.display = 'block';
     bonfire.style.zIndex = '899';
@@ -398,7 +389,7 @@ function startBlackFire() {
           const spread = Math.round(Math.random() * 5) - 2;
           const dstX = x + spread;
           if (dstX >= 0 && dstX < fireWidth) {
-            const decay = Math.random() < 0.2 ? 1 : 0;
+            const decay = Math.random() < 0.15 ? 1 : 0;
             firePixels[(y - 1) * fireWidth + dstX] = Math.max(0, pixel - decay);
           }
         }
@@ -459,7 +450,7 @@ function startBlackFire() {
         fireSourceY[x] -= baseSpeed;
       }
     }
-  }, 100);
+  }, 33);
 }
 
 async function dissolveAndRespond() {
@@ -532,7 +523,7 @@ async function dissolveAndRespond() {
     success = true;
     setTimeout(() => {
       startBlackFire();
-    }, 2000);
+    }, 5000);
   }
 
   response.textContent = msg;
