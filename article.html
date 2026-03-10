@@ -166,5 +166,16 @@ svg { max-width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(139, 115,
 </div>
 
 <button onclick="localStorage.clear(); window.location.href='stage1.html';" style="position: fixed; bottom: 10px; right: 10px; font-size: 10px; color: #666; background: transparent; border: 1px solid #666; padding: 4px; cursor: pointer; z-index: 9999;">[DEV] Reset Progress</button>
+<script src="sound-manager.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const voidText = document.querySelector('.void-text');
+    if (voidText) {
+      voidText.addEventListener('mouseenter', () => {
+        if (window.soundManager) window.soundManager.playGlitch();
+      });
+    }
+  });
+</script>
 </body>
 </html>

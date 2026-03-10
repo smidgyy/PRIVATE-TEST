@@ -301,6 +301,7 @@ function initPhase() {
     title.textContent = "The Voynich Marginalia.";
     subtitle.textContent = "The Frenchman holds the key.";
     document.body.classList.add('phase-2');
+    if (window.soundManager) window.soundManager.startFireCrackling();
   } else if (phase === '3') {
     document.body.classList.add('phase-3');
     startPhase3();
@@ -411,58 +412,14 @@ function startBlackFire() {
     ctx.putImageData(imgData, 0, 0);
   }
 
-  let fireInterval = setInterval(() => {
-    let allCovered = true;
+  setInterval(() => {
     for (let x = 0; x < fireWidth; x++) {
       let sy = Math.floor(fireSourceY[x]);
-      if (sy > 0) allCovered = false;
       if (sy < 0) sy = 0;
       firePixels[sy * fireWidth + x] = 35;
       for (let y = sy + 1; y < fireHeight; y++) {
         firePixels[y * fireWidth + x] = 35;
       }
-    }
-
-    if (allCovered) {
-      clearInterval(fireInterval);
-      
-      palette[36] = { r: 255, g: 255, b: 255, a: 255 };
-      
-      let totalPixels = fireWidth * fireHeight;
-      let indices = Array.from({length: totalPixels}, (_, i) => i);
-      for (let i = indices.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [indices[i], indices[j]] = [indices[j], indices[i]];
-      }
-      
-      let transitionStart = Date.now();
-      let transitionDuration = 5000;
-      let currentIndex = 0;
-      
-      let transitionInterval = setInterval(() => {
-        let now = Date.now();
-        let progress = (now - transitionStart) / transitionDuration;
-        if (progress > 1) progress = 1;
-        
-        let targetIndex = Math.floor(progress * totalPixels);
-        while (currentIndex < targetIndex && currentIndex < totalPixels) {
-          firePixels[indices[currentIndex]] = 36;
-          currentIndex++;
-        }
-        
-        drawFire();
-        
-        if (progress === 1) {
-          clearInterval(transitionInterval);
-          setTimeout(() => {
-            document.title = "The Second Trial.";
-            window.history.pushState({}, "", "/stage2");
-            startBrightGame();
-          }, 500);
-        }
-      }, 33);
-      
-      return;
     }
 
     doFire();
@@ -502,6 +459,8 @@ async function dissolveAndRespond() {
   if (busy || !text) return;
   busy = true;
 
+  if (window.soundManager) window.soundManager.playDissolve();
+
   input.classList.add('hidden');
 
   let charLayer = document.createElement('div');
@@ -536,12 +495,17 @@ async function dissolveAndRespond() {
   if (phase === '1' && h === '76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22') {
     msg = "The earth opens. Seek the marginalia.";
     success = true;
+    if (window.soundManager) window.soundManager.playSuccess();
     localStorage.setItem('stage1_phase', '2');
     setTimeout(() => { window.location.href = 'article.html'; }, 3000);
   } 
   else if (phase === '2' && h === 'ba6f8ed6d0d150b2a2ab2bebe99540f8c00cafb0ebdbf71a6f0b768c45425ca7') {
     msg = "The flame is extinguished.";
     success = true;
+    if (window.soundManager) {
+      window.soundManager.playSuccess();
+      window.soundManager.stopFireCrackling();
+    }
     phase = '3';
     localStorage.setItem('stage1_phase', '3');
     
@@ -565,10 +529,14 @@ async function dissolveAndRespond() {
   else if (phase === '3' && h === '90b7b8654171c04a5e5de1eae884cfd86952739d50d09d9bb7680763e31faee8') {
     msg = "GREED";
     success = true;
+    if (window.soundManager) window.soundManager.playSuccess();
     setTimeout(() => {
+      if (window.soundManager) window.soundManager.startBlackFire();
       startBlackFire();
     }, 5000);
   }
+
+  if (!success && window.soundManager) window.soundManager.playError();
 
   response.textContent = msg;
   response.style.opacity = '1';
@@ -694,6 +662,17 @@ function startPhase3(isTransition = false) {
     subtitle.style.transition = 'opacity 3s ease';
     title.style.opacity = '1';
     subtitle.style.opacity = '1';
+    
+    // Add random glitch sounds in the void
+    const glitchInterval = setInterval(() => {
+      if (phase === '3' && !document.body.classList.contains('light-mode')) {
+        if (Math.random() < 0.2 && window.soundManager) {
+          window.soundManager.playGlitch();
+        }
+      } else {
+        clearInterval(glitchInterval);
+      }
+    }, 3000);
   }, isTransition ? 3000 : 100);
 }
 
@@ -701,208 +680,6 @@ function startPhase3(isTransition = false) {
 setTimeout(() => {
   console.log('%c[TEST]%c initialized', 'color:#8b7355;font-weight:bold;', 'color:#444;');
 }, 2000);
-
-function startBrightGame() {
-  document.body.innerHTML = '';
-  document.body.className = '';
-  document.body.style.backgroundColor = '#ffffff';
-  document.body.style.color = '#000000';
-  document.body.style.margin = '0';
-  document.body.style.overflow = 'hidden';
-  document.body.style.transition = 'background-color 2s ease';
-  
-  const canvas = document.createElement('canvas');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  canvas.style.opacity = '0';
-  canvas.style.transition = 'opacity 2s ease';
-  document.body.appendChild(canvas);
-  
-  setTimeout(() => {
-    canvas.style.opacity = '1';
-  }, 100);
-  
-  const ctx = canvas.getContext('2d');
-  
-  let player = { x: window.innerWidth / 2, y: window.innerHeight / 2, size: 15, vx: 0, vy: 0 };
-  let keys = {};
-  
-  window.addEventListener('keydown', e => keys[e.key] = true);
-  window.addEventListener('keyup', e => keys[e.key] = false);
-  
-  let nodes = [];
-  for(let i=0; i<7; i++) {
-    nodes.push({
-      x: Math.random() * (canvas.width - 100) + 50,
-      y: Math.random() * (canvas.height - 100) + 50,
-      vx: (Math.random() - 0.5) * 4,
-      vy: (Math.random() - 0.5) * 4,
-      radius: 20 + Math.random() * 20,
-      color: `hsl(${Math.random() * 360}, 80%, 60%)`,
-      active: false,
-      id: i
-    });
-  }
-  
-  let sequence = [...nodes].sort(() => Math.random() - 0.5).map(n => n.id);
-  let currentIndex = 0;
-  let time = 0;
-  let won = false;
-  let flashFrames = 0;
-  
-  function drawGrid() {
-    ctx.strokeStyle = '#eeeeee';
-    ctx.lineWidth = 1;
-    const gridSize = 50 + Math.sin(time * 0.01) * 20;
-    for(let x = 0; x < canvas.width; x += gridSize) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-    }
-    for(let y = 0; y < canvas.height; y += gridSize) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-    }
-  }
-  
-  function loop() {
-    requestAnimationFrame(loop);
-    time++;
-    
-    ctx.fillStyle = won ? '#f0fff0' : '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    if (flashFrames > 0) {
-      ctx.fillStyle = `rgba(255, 0, 0, ${flashFrames / 30})`;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      flashFrames--;
-    }
-    
-    drawGrid();
-    
-    if (won) {
-      ctx.fillStyle = '#000';
-      ctx.font = 'bold 48px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('THE CYCLE IS BROKEN', canvas.width/2, canvas.height/2);
-      ctx.font = '20px sans-serif';
-      ctx.fillText('You have escaped the void.', canvas.width/2, canvas.height/2 + 40);
-      return;
-    }
-    
-    // Player physics
-    let speed = 0.8;
-    if (keys['ArrowLeft'] || keys['a']) player.vx -= speed;
-    if (keys['ArrowRight'] || keys['d']) player.vx += speed;
-    if (keys['ArrowUp'] || keys['w']) player.vy -= speed;
-    if (keys['ArrowDown'] || keys['s']) player.vy += speed;
-    
-    // Unpredictable wind
-    player.vx += Math.sin(time * 0.05) * 0.2;
-    player.vy += Math.cos(time * 0.03) * 0.2;
-    
-    player.x += player.vx;
-    player.y += player.vy;
-    player.vx *= 0.92;
-    player.vy *= 0.92;
-    
-    if (player.x < player.size) { player.x = player.size; player.vx *= -1; }
-    if (player.x > canvas.width - player.size) { player.x = canvas.width - player.size; player.vx *= -1; }
-    if (player.y < player.size) { player.y = player.size; player.vy *= -1; }
-    if (player.y > canvas.height - player.size) { player.y = canvas.height - player.size; player.vy *= -1; }
-    
-    // Draw and update nodes
-    nodes.forEach(node => {
-      node.x += node.vx;
-      node.y += node.vy;
-      
-      if (node.x < node.radius) { node.x = node.radius; node.vx *= -1; }
-      if (node.x > canvas.width - node.radius) { node.x = canvas.width - node.radius; node.vx *= -1; }
-      if (node.y < node.radius) { node.y = node.radius; node.vy *= -1; }
-      if (node.y > canvas.height - node.radius) { node.y = canvas.height - node.radius; node.vy *= -1; }
-      
-      // Unpredictable movement
-      if (Math.random() < 0.02) {
-        node.vx += (Math.random() - 0.5) * 5;
-        node.vy += (Math.random() - 0.5) * 5;
-      }
-      
-      // Limit speed
-      const nSpeed = Math.sqrt(node.vx*node.vx + node.vy*node.vy);
-      if (nSpeed > 8) {
-        node.vx = (node.vx / nSpeed) * 8;
-        node.vy = (node.vy / nSpeed) * 8;
-      }
-      
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-      ctx.fillStyle = node.active ? '#000000' : node.color;
-      ctx.fill();
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = '#000000';
-      ctx.stroke();
-      
-      // Draw number inside node (the puzzle hint)
-      ctx.fillStyle = node.active ? '#ffffff' : '#000000';
-      ctx.font = 'bold 16px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      // The puzzle is to hit them in order of their id (0 to 6)
-      // But the ids are hidden! Wait, if the ids are hidden, how do they know?
-      // Let's draw a symbol or just a number that changes or is hard to read.
-      // Let's make the puzzle: hit the nodes in order of their size, from smallest to largest.
-      // Or just display a scrambled letter on each, spelling a word.
-      // Let's display a number but it rotates wildly.
-      ctx.save();
-      ctx.translate(node.x, node.y);
-      ctx.rotate(time * 0.05 * (node.id % 2 === 0 ? 1 : -1));
-      ctx.fillText(node.id + 1, 0, 0);
-      ctx.restore();
-      
-      // Collision with player
-      const dx = player.x - node.x;
-      const dy = player.y - node.y;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      
-      if (dist < player.size + node.radius) {
-        if (!node.active) {
-          if (sequence[currentIndex] === node.id) {
-            node.active = true;
-            currentIndex++;
-            if (currentIndex >= sequence.length) {
-              won = true;
-            }
-          } else {
-            // Wrong node! Reset all
-            nodes.forEach(n => n.active = false);
-            currentIndex = 0;
-            // Scramble sequence
-            sequence = [...nodes].sort(() => Math.random() - 0.5).map(n => n.id);
-            // Push player away
-            player.vx = (Math.random() - 0.5) * 50;
-            player.vy = (Math.random() - 0.5) * 50;
-            
-            // Flash screen red
-            flashFrames = 30;
-          }
-        }
-      }
-    });
-    
-    // Draw player
-    ctx.fillStyle = '#000000';
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Draw sequence hint (very subtle)
-    ctx.fillStyle = 'rgba(0,0,0,0.1)';
-    ctx.font = '12px monospace';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText('Sequence: ' + sequence.map(s => s + 1).join(' '), 10, canvas.height - 30);
-    ctx.fillText('Current: ' + currentIndex, 10, canvas.height - 10);
-  }
-  
-  loop();
-}
 
 window.onload = () => {
   initPhase();
@@ -913,5 +690,6 @@ document.addEventListener('click', () => {
 });
 </script>
 <button onclick="localStorage.clear(); window.location.reload();" style="position: fixed; bottom: 10px; right: 10px; font-size: 10px; color: #666; background: transparent; border: 1px solid #666; padding: 4px; cursor: pointer; z-index: 9999;">[DEV] Reset Progress</button>
+<script src="sound-manager.js"></script>
 </body>
 </html>
