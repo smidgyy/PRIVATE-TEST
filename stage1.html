@@ -103,33 +103,9 @@ body.light-mode #flames rect[fill="#ffffff"] { fill: #000 !important; }
 body.light-mode .hidden-clue { display: block; opacity: 1; }
 
 .hidden-svg { position: fixed; top: -100px; left: -100px; opacity: 0; pointer-events: none; }
-
-.black-fire-burn {
-  position: fixed;
-  bottom: -150vh;
-  left: 0;
-  width: 100vw;
-  height: 250vh;
-  background: linear-gradient(to top, #000 0%, #000 50%, rgba(0,0,0,0.9) 60%, rgba(0,0,0,0.5) 75%, transparent 100%);
-  z-index: 900;
-  pointer-events: none;
-  animation: riseBlackFire 5s ease-in forwards;
-  filter: url(#fire-filter);
-}
-@keyframes riseBlackFire {
-  0% { bottom: -150vh; }
-  100% { bottom: 0; }
-}
 </style>
 </head>
 <body>
-
-<svg style="width:0;height:0;position:absolute;">
-  <filter id="fire-filter">
-    <feTurbulence type="fractalNoise" baseFrequency="0.01 0.05" numOctaves="3" result="noise" />
-    <feDisplacementMap in="SourceGraphic" in2="noise" scale="50" xChannelSelector="R" yChannelSelector="G" />
-  </filter>
-</svg>
 
 <div id="glow-overlay"></div>
 
@@ -338,6 +314,154 @@ async function hashInput(str) {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+function startBlackFire() {
+  const canvas = document.createElement('canvas');
+  canvas.style.position = 'fixed';
+  canvas.style.bottom = '0';
+  canvas.style.left = '0';
+  canvas.style.width = '100vw';
+  canvas.style.height = '100vh';
+  canvas.style.zIndex = '900';
+  canvas.style.pointerEvents = 'none';
+  canvas.style.imageRendering = 'pixelated';
+  document.body.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  const fireWidth = Math.floor(window.innerWidth / 6);
+  const fireHeight = Math.floor(window.innerHeight / 6);
+  canvas.width = fireWidth;
+  canvas.height = fireHeight;
+
+  const firePixels = new Array(fireWidth * fireHeight).fill(0);
+
+  const palette = [];
+  for (let i = 0; i < 36; i++) {
+    if (i === 0) {
+      palette[i] = { r: 0, g: 0, b: 0, a: 0 };
+    } else if (i < 15) {
+      // Grey flames
+      const color = 40 + i * 5; 
+      palette[i] = { r: color, g: color, b: color, a: 255 };
+    } else {
+      // Pitch black
+      palette[i] = { r: 0, g: 0, b: 0, a: 255 };
+    }
+  }
+
+  const fireSourceY = new Array(fireWidth).fill(fireHeight - 1);
+  const fireSpeeds = new Array(fireWidth);
+  const baseSpeed = fireHeight / 400; // 20 seconds
+  for(let i=0; i<fireWidth; i++) {
+    fireSpeeds[i] = baseSpeed * (0.8 + Math.random() * 0.4);
+  }
+
+  // Involve the bonfire
+  const bonfire = document.getElementById('bonfire-container');
+  let bonfireX = fireWidth / 2;
+  let bonfireY = fireHeight - 10;
+  if (bonfire) {
+    const rect = bonfire.getBoundingClientRect();
+    bonfireX = Math.floor((rect.left + rect.width / 2) / 6);
+    bonfireY = Math.floor((rect.top + rect.height / 2) / 6);
+    
+    // Turn bonfire flames black, leave logs alone
+    const flames = bonfire.querySelectorAll('#flames rect');
+    flames.forEach(r => {
+      const fill = r.getAttribute('fill');
+      if (fill === '#ffffff') r.setAttribute('fill', '#000000');
+      else if (fill === '#fbf236') r.setAttribute('fill', '#111111');
+      else if (fill === '#df7126') r.setAttribute('fill', '#1a1a1a');
+      else if (fill === '#ac3232') r.setAttribute('fill', '#222222');
+    });
+    const flamesGroup = bonfire.querySelector('#flames');
+    if (flamesGroup) flamesGroup.style.display = 'block';
+    bonfire.style.zIndex = '899';
+    
+    // Ignite the floor under the bonfire immediately
+    for (let x = 0; x < fireWidth; x++) {
+      const dist = Math.abs(x - bonfireX);
+      if (dist < 12) {
+        fireSourceY[x] = fireHeight - 1 - (12 - dist) * 0.5;
+        fireSpeeds[x] = baseSpeed * 2; // Spreads slightly faster around the bonfire initially
+      }
+    }
+  }
+
+  function doFire() {
+    for (let x = 0; x < fireWidth; x++) {
+      for (let y = 1; y < fireHeight; y++) {
+        const src = y * fireWidth + x;
+        const pixel = firePixels[src];
+        if (pixel === 0) {
+          firePixels[src - fireWidth] = 0;
+        } else {
+          const spread = Math.round(Math.random() * 5) - 2;
+          const dstX = x + spread;
+          if (dstX >= 0 && dstX < fireWidth) {
+            const decay = Math.random() < 0.2 ? 1 : 0;
+            firePixels[(y - 1) * fireWidth + dstX] = Math.max(0, pixel - decay);
+          }
+        }
+      }
+    }
+  }
+
+  function drawFire() {
+    const imgData = ctx.createImageData(fireWidth, fireHeight);
+    for (let i = 0; i < firePixels.length; i++) {
+      const p = palette[firePixels[i]];
+      if (p) {
+        imgData.data[i * 4] = p.r;
+        imgData.data[i * 4 + 1] = p.g;
+        imgData.data[i * 4 + 2] = p.b;
+        imgData.data[i * 4 + 3] = p.a;
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  setInterval(() => {
+    for (let x = 0; x < fireWidth; x++) {
+      let sy = Math.floor(fireSourceY[x]);
+      if (sy < 0) sy = 0;
+      firePixels[sy * fireWidth + x] = 35;
+      for (let y = sy + 1; y < fireHeight; y++) {
+        firePixels[y * fireWidth + x] = 35;
+      }
+    }
+
+    doFire();
+    drawFire();
+
+    // Bonfire emits grey flames
+    if (bonfireY > 0) {
+      for(let i=0; i<10; i++) {
+        const bx = bonfireX + Math.floor(Math.random() * 20) - 10;
+        const by = bonfireY + Math.floor(Math.random() * 10) - 5;
+        if (bx >= 0 && bx < fireWidth && by >= 0 && by < fireHeight) {
+           firePixels[by * fireWidth + bx] = 14;
+        }
+      }
+    }
+
+    for (let x = 0; x < fireWidth; x++) {
+      if (fireSourceY[x] > 0) {
+        fireSourceY[x] -= fireSpeeds[x];
+        if (Math.random() < 0.05) {
+          fireSpeeds[x] = baseSpeed * (0.8 + Math.random() * 0.4);
+        }
+      }
+      
+      if (x > 0 && fireSourceY[x - 1] < fireSourceY[x] - 2) {
+        fireSourceY[x] -= baseSpeed;
+      }
+      if (x < fireWidth - 1 && fireSourceY[x + 1] < fireSourceY[x] - 2) {
+        fireSourceY[x] -= baseSpeed;
+      }
+    }
+  }, 100);
+}
+
 async function dissolveAndRespond() {
   const text = input.value.trim().toLowerCase();
   if (busy || !text) return;
@@ -407,25 +531,7 @@ async function dissolveAndRespond() {
     msg = "GREED";
     success = true;
     setTimeout(() => {
-      title.style.transition = 'opacity 3s ease';
-      title.style.opacity = '0';
-      subtitle.style.transition = 'opacity 3s ease';
-      subtitle.style.opacity = '0';
-      
-      const blackFire = document.createElement('div');
-      blackFire.className = 'black-fire-burn';
-      document.body.appendChild(blackFire);
-      
-      setTimeout(() => {
-        title.textContent = 'The End.';
-        title.style.opacity = '1';
-        title.style.color = '#fff';
-        title.style.zIndex = '1000';
-        subtitle.textContent = 'Stage 1 Complete.';
-        subtitle.style.opacity = '1';
-        subtitle.style.color = '#888';
-        subtitle.style.zIndex = '1000';
-      }, 4000);
+      startBlackFire();
     }, 2000);
   }
 
