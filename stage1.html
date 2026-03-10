@@ -103,9 +103,33 @@ body.light-mode #flames rect[fill="#ffffff"] { fill: #000 !important; }
 body.light-mode .hidden-clue { display: block; opacity: 1; }
 
 .hidden-svg { position: fixed; top: -100px; left: -100px; opacity: 0; pointer-events: none; }
+
+.black-fire-burn {
+  position: fixed;
+  bottom: -150vh;
+  left: 0;
+  width: 100vw;
+  height: 250vh;
+  background: linear-gradient(to top, #000 0%, #000 50%, rgba(0,0,0,0.9) 60%, rgba(0,0,0,0.5) 75%, transparent 100%);
+  z-index: 900;
+  pointer-events: none;
+  animation: riseBlackFire 5s ease-in forwards;
+  filter: url(#fire-filter);
+}
+@keyframes riseBlackFire {
+  0% { bottom: -150vh; }
+  100% { bottom: 0; }
+}
 </style>
 </head>
 <body>
+
+<svg style="width:0;height:0;position:absolute;">
+  <filter id="fire-filter">
+    <feTurbulence type="fractalNoise" baseFrequency="0.01 0.05" numOctaves="3" result="noise" />
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="50" xChannelSelector="R" yChannelSelector="G" />
+  </filter>
+</svg>
 
 <div id="glow-overlay"></div>
 
@@ -379,21 +403,29 @@ async function dissolveAndRespond() {
 
     setTimeout(() => { startPhase3(true); }, 4500);
   }
-  else if (phase === '3' && h === 'f4938d9a4604c814224528a58f8eae902fb47cb9776b26334f147505f0929199') {
-    msg = "Opus Magnum.";
+  else if (phase === '3' && h === '90b7b8654171c04a5e5de1eae884cfd86952739d50d09d9bb7680763e31faee8') {
+    msg = "GREED";
     success = true;
     setTimeout(() => {
       title.style.transition = 'opacity 3s ease';
       title.style.opacity = '0';
       subtitle.style.transition = 'opacity 3s ease';
       subtitle.style.opacity = '0';
-      document.getElementById('hidden-clue').style.opacity = '0';
+      
+      const blackFire = document.createElement('div');
+      blackFire.className = 'black-fire-burn';
+      document.body.appendChild(blackFire);
+      
       setTimeout(() => {
-        title.textContent = 'The door is open.';
+        title.textContent = 'The End.';
         title.style.opacity = '1';
-        subtitle.textContent = 'You have passed the test.';
+        title.style.color = '#fff';
+        title.style.zIndex = '1000';
+        subtitle.textContent = 'Stage 1 Complete.';
         subtitle.style.opacity = '1';
-      }, 3000);
+        subtitle.style.color = '#888';
+        subtitle.style.zIndex = '1000';
+      }, 4000);
     }, 2000);
   }
 
@@ -486,16 +518,10 @@ function startPhase3(isTransition = false) {
           document.body.classList.add('light-mode');
           btn.remove();
           canvas.remove();
-          title.textContent = "The Light.";
+          title.innerHTML = 'The <a href="https://en.wikipedia.org/wiki/Light" target="_blank" style="color: inherit; text-decoration: none; cursor: pointer;">Light</a>.';
           subtitle.textContent = "What was hidden is revealed.";
           input.classList.remove('hidden');
           input.focus();
-          
-          const clue = document.createElement('div');
-          clue.className = 'hidden-clue';
-          clue.textContent = atob('VGhlIGZpbmFsIHdvcmQgaXM6IGlsbHVtaW5hdGlvbg==');
-          document.body.appendChild(clue);
-          setTimeout(() => clue.style.opacity = 1, 100);
         });
         
         document.body.appendChild(btn);
