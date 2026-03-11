@@ -960,9 +960,9 @@ fragment remains</div>
         </div>
         <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-top: 5px;">
           <span id="audio-time-current">00:00</span>
-          <span id="audio-time-total">00:14</span>
+          <span id="audio-time-total">00:16</span>
         </div>
-        <input type="range" id="audio-progress-slider" min="0" max="14" step="0.1" value="0" style="width: 100%; margin: 5px 0;">
+        <input type="range" id="audio-progress-slider" min="0" max="16.3" step="0.1" value="0" style="width: 100%; margin: 5px 0; pointer-events: none;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <button id="play-audio-btn" onclick="toggleAudioLog()" style="background: #ccc; color: #000; border: 2px outset #fff; padding: 2px 10px; font-weight: bold; cursor: pointer;">PLAY</button>
           <div style="display: flex; align-items: center;">
@@ -1023,7 +1023,7 @@ fragment remains</div>
 
     <!-- Music Player -->
     <div class="window" id="win-music-player" style="width: 300px; height: 250px;">
-      <div id="yt-player-container" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; overflow: hidden;"></div>
+      <audio id="local-audio-player" style="display: none;"></audio>
       <div class="title-bar">
         <div class="title-bar-text">WinAmp Classic</div>
         <div class="title-bar-controls">
@@ -1034,7 +1034,7 @@ fragment remains</div>
       </div>
       <div class="window-content" style="background: #111; color: #0f0; padding: 10px; display: flex; flex-direction: column;">
         <div style="background: #000; border: 2px inset #444; padding: 5px; margin-bottom: 10px; text-align: center; font-family: 'VT323', monospace; font-size: 1.2rem;">
-          <div id="music-track-name" style="color: #0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">1. Mandy - Barry Manilow</div>
+          <div id="music-track-name" style="color: #0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">1. My Way - Frank Sinatra</div>
           <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #0a0; margin-top: 5px;">
             <span id="music-time">00:00</span>
             <span>STEREO 128kbps</span>
@@ -1050,9 +1050,9 @@ fragment remains</div>
           <input type="range" id="music-volume" min="0" max="100" value="30" style="flex: 1;">
         </div>
         <div style="flex: 1; background: #000; border: 2px inset #444; overflow-y: auto; font-size: 12px; padding: 2px;">
-          <div class="playlist-item" style="padding: 2px; cursor: pointer; background: #000080; color: #fff;" onclick="playTrack(0)">1. Mandy - Barry Manilow</div>
-          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(1)">2. Billie Jean - Michael Jackson</div>
-          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(2)">3. My Way - Frank Sinatra</div>
+          <div class="playlist-item" style="padding: 2px; cursor: pointer; background: #000080; color: #fff;" onclick="playTrack(0)">1. My Way - Frank Sinatra</div>
+          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(1)">2. Mandy - Barry Manilow</div>
+          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(2)">3. Billie Jean - Michael Jackson</div>
         </div>
       </div>
     </div>
@@ -1755,7 +1755,7 @@ fragment remains</div>
     let visualizerInterval;
     let progressInterval;
     let audioCurrentTime = 0;
-    const audioTotalTime = 14; // seconds
+    const audioTotalTime = 16.3; // seconds
     let osc, gain, noiseSource;
     let audioStartTime = 0;
     let pausedTime = 0;
@@ -1874,6 +1874,10 @@ fragment remains</div>
           audioCurrentTime = 0;
           audioProgressSlider.value = 0;
           audioTimeCurrent.innerText = "00:00";
+          if (audioContext) {
+            audioContext.close();
+            audioContext = null;
+          }
         };
       } else if (audioContext.state === 'suspended') {
         audioContext.resume();
@@ -1896,14 +1900,14 @@ fragment remains</div>
           if (audioCurrentTime < 0) audioCurrentTime = 0;
           if (audioCurrentTime > audioTotalTime) audioCurrentTime = audioTotalTime;
           
-          audioProgressSlider.value = (audioCurrentTime / audioTotalTime) * 100;
+          audioProgressSlider.value = audioCurrentTime;
           audioTimeCurrent.innerText = formatTime(Math.floor(audioCurrentTime));
         }
       }, 100);
     }
     
     audioProgressSlider.addEventListener('input', (e) => {
-      audioCurrentTime = parseFloat(e.target.value) / 100 * audioTotalTime;
+      audioCurrentTime = parseFloat(e.target.value);
       audioTimeCurrent.innerText = formatTime(audioCurrentTime);
     });
 
@@ -2271,83 +2275,48 @@ fragment remains</div>
 
     // --- Music Player Logic ---
     const playlist = [
-      { title: "1. Mandy - Barry Manilow", videoId: "tA6bE_hXjJ8" },
-      { title: "2. Billie Jean - Michael Jackson", videoId: "Zi_XLOBDo_Y" },
-      { title: "3. My Way - Frank Sinatra", videoId: "w019MzRosmk" }
+      { title: "1. My Way - Frank Sinatra", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+      { title: "2. Mandy - Barry Manilow", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+      { title: "3. Billie Jean - Michael Jackson", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
     ];
     let currentTrackIndex = 0;
     let isMusicPlaying = false;
-    let ytPlayer = null;
-    let ytPlayerReady = false;
-    let ytTimeInterval = null;
+    const audioPlayer = document.getElementById('local-audio-player');
+    let audioTimeInterval = null;
 
-    function initYouTubePlayer() {
-      if (ytPlayer) return;
-      ytPlayer = new YT.Player('yt-player-container', {
-        height: '1',
-        width: '1',
-        videoId: playlist[0].videoId,
-        playerVars: {
-          'playsinline': 1,
-          'controls': 0,
-          'disablekb': 1,
-          'fs': 0,
-          'rel': 0
-        },
-        events: {
-          'onReady': onPlayerReady,
-          'onStateChange': onPlayerStateChange,
-          'onError': onPlayerError
-        }
-      });
-    }
+    // Initialize audio player
+    audioPlayer.src = playlist[0].src;
+    audioPlayer.volume = 0.3;
 
-    window.onYouTubeIframeAPIReady = function() {
-      initYouTubePlayer();
-    };
+    audioPlayer.addEventListener('ended', nextTrack);
     
-    // Fallback if API is already loaded
-    if (window.YT && window.YT.Player) {
-      initYouTubePlayer();
-    } else {
-      // Load YouTube API dynamically
-      var tag = document.createElement('script');
-      tag.src = "https://www.youtube.com/iframe_api";
-      var firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-    }
-
-    function onPlayerError(event) {
-      console.error("YouTube Player Error:", event.data);
-      // Skip to next track if video is unplayable (e.g. embed disabled)
-      setTimeout(nextTrack, 1000);
-    }
-
-    function onPlayerReady(event) {
-      ytPlayerReady = true;
-      updateMusicVolume();
-    }
-
-    function onPlayerStateChange(event) {
-      if (event.data == YT.PlayerState.ENDED) {
-        nextTrack();
-      } else if (event.data == YT.PlayerState.PLAYING) {
-        isMusicPlaying = true;
-        document.getElementById('music-play-btn').innerText = "PAUSE";
-        if (!ytTimeInterval) {
-          ytTimeInterval = setInterval(updateYTTime, 1000);
-        }
-      } else if (event.data == YT.PlayerState.PAUSED) {
-        isMusicPlaying = false;
-        document.getElementById('music-play-btn').innerText = "PLAY";
-        clearInterval(ytTimeInterval);
-        ytTimeInterval = null;
+    audioPlayer.addEventListener('play', () => {
+      isMusicPlaying = true;
+      document.getElementById('music-play-btn').innerText = "PAUSE";
+      if (!audioTimeInterval) {
+        audioTimeInterval = setInterval(updateAudioTime, 1000);
       }
-    }
+    });
 
-    function updateYTTime() {
-      if (ytPlayer && ytPlayer.getCurrentTime) {
-        document.getElementById('music-time').innerText = formatMusicTime(ytPlayer.getCurrentTime());
+    audioPlayer.addEventListener('pause', () => {
+      isMusicPlaying = false;
+      document.getElementById('music-play-btn').innerText = "PLAY";
+      clearInterval(audioTimeInterval);
+      audioTimeInterval = null;
+    });
+
+    audioPlayer.addEventListener('error', (e) => {
+      console.error("Audio Player Error:", e);
+      isMusicPlaying = false;
+      document.getElementById('music-play-btn').innerText = "PLAY";
+      clearInterval(audioTimeInterval);
+      audioTimeInterval = null;
+      document.getElementById('music-track-name').innerText = "Error: File not found";
+    });
+
+    function updateAudioTime() {
+      if (audioPlayer) {
+        document.getElementById('music-time').innerText = formatMusicTime(audioPlayer.currentTime);
       }
     }
 
@@ -2367,27 +2336,24 @@ fragment remains</div>
     }
 
     function pauseMusic() {
-      if (!ytPlayerReady) return;
-      ytPlayer.pauseVideo();
+      audioPlayer.pause();
     }
 
     let currentLoadedTrackIndex = 0;
 
     function playMusic() {
-      if (!ytPlayerReady) {
-        console.warn("YouTube Player is not ready yet.");
-        return;
-      }
-      
       // Pause audio log if playing
       if (typeof pauseAudioLog === 'function') pauseAudioLog();
       
       if (currentLoadedTrackIndex !== currentTrackIndex) {
-        ytPlayer.loadVideoById(playlist[currentTrackIndex].videoId);
+        audioPlayer.src = playlist[currentTrackIndex].src;
         currentLoadedTrackIndex = currentTrackIndex;
-      } else {
-        ytPlayer.playVideo();
       }
+      
+      audioPlayer.play().catch(e => {
+        console.error("Playback failed:", e);
+        // Autoplay might be blocked
+      });
       
       updateTrackDisplay();
       updateMusicVolume();
@@ -2425,9 +2391,8 @@ fragment remains</div>
     }
 
     function updateMusicVolume() {
-      if (!ytPlayerReady) return;
       const vol = document.getElementById('music-volume').value;
-      ytPlayer.setVolume(vol);
+      audioPlayer.volume = vol / 100;
     }
     
     document.getElementById('music-volume').addEventListener('input', updateMusicVolume);
