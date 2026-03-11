@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AURORA OS v1.3</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
 
     :root {
       --bg-color: #008080;
@@ -631,7 +631,7 @@
           Games -> Memory Blocks
         </div>
         <div class="start-divider"></div>
-        <div class="start-item" onclick="window.location.reload()">
+        <div class="start-item" onclick="shutdownSystem()">
           <svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2"><circle cx="16" cy="16" r="12"/><path d="M16 8v8"/></svg>
           Shutdown...
         </div>
@@ -1023,6 +1023,7 @@ fragment remains</div>
 
     <!-- Music Player -->
     <div class="window" id="win-music-player" style="width: 300px; height: 250px;">
+      <div id="yt-player-container" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; overflow: hidden;"></div>
       <div class="title-bar">
         <div class="title-bar-text">WinAmp Classic</div>
         <div class="title-bar-controls">
@@ -1033,7 +1034,7 @@ fragment remains</div>
       </div>
       <div class="window-content" style="background: #111; color: #0f0; padding: 10px; display: flex; flex-direction: column;">
         <div style="background: #000; border: 2px inset #444; padding: 5px; margin-bottom: 10px; text-align: center; font-family: 'VT323', monospace; font-size: 1.2rem;">
-          <div id="music-track-name" style="color: #0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">1. Mandy - 1997 Mix</div>
+          <div id="music-track-name" style="color: #0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">1. Mandy - Barry Manilow</div>
           <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #0a0; margin-top: 5px;">
             <span id="music-time">00:00</span>
             <span>STEREO 128kbps</span>
@@ -1049,10 +1050,9 @@ fragment remains</div>
           <input type="range" id="music-volume" min="0" max="100" value="30" style="flex: 1;">
         </div>
         <div style="flex: 1; background: #000; border: 2px inset #444; overflow-y: auto; font-size: 12px; padding: 2px;">
-          <div class="playlist-item" style="padding: 2px; cursor: pointer; background: #000080; color: #fff;" onclick="playTrack(0)">1. Mandy</div>
-          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(1)">2. Forever Nights</div>
-          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(2)">3. Neon Memory</div>
-          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(3)">4. City Lights 1997</div>
+          <div class="playlist-item" style="padding: 2px; cursor: pointer; background: #000080; color: #fff;" onclick="playTrack(0)">1. Mandy - Barry Manilow</div>
+          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(1)">2. Billie Jean - Michael Jackson</div>
+          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(2)">3. My Way - Frank Sinatra</div>
         </div>
       </div>
     </div>
@@ -1316,6 +1316,7 @@ fragment remains</div>
     }
 
     function toggleWindow(id) {
+      closeStartMenu();
       const win = document.getElementById('win-' + id);
       if (!win) return;
       
@@ -1401,6 +1402,13 @@ fragment remains</div>
       });
     });
 
+    // Add mousedown listener to all windows for focusing
+    document.querySelectorAll('.window').forEach(win => {
+      win.addEventListener('mousedown', () => {
+        focusWindow(win.id.replace('win-', ''));
+      });
+    });
+
     // Attach drag to desktop icons
     document.querySelectorAll('.icon').forEach(icon => {
       if (icon.parentElement.id === 'desktop') {
@@ -1415,11 +1423,19 @@ fragment remains</div>
       icon.addEventListener('mousedown', (e) => {
         document.querySelectorAll('.icon').forEach(i => i.classList.remove('selected'));
         icon.classList.add('selected');
+        closeStartMenu();
+        closeContextMenu();
         e.stopPropagation();
       });
     });
 
     document.getElementById('desktop').addEventListener('mousedown', (e) => {
+      if (startMenu.style.display === 'flex' && (startMenu.contains(e.target) || startBtn.contains(e.target))) {
+        return; // Don't close if clicking inside start menu
+      }
+      if (contextMenu.style.display === 'block' && contextMenu.contains(e.target)) {
+        return; // Don't close if clicking inside context menu
+      }
       document.querySelectorAll('.icon').forEach(i => i.classList.remove('selected'));
       closeContextMenu();
       closeStartMenu();
@@ -1454,10 +1470,173 @@ fragment remains</div>
       refreshDesktop();
     }
 
+    function shutdownSystem() {
+      closeStartMenu();
+      showShutdownDialog();
+    }
+
+    function showShutdownDialog() {
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+      overlay.style.zIndex = '10000';
+      overlay.style.display = 'flex';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      
+      const dialog = document.createElement('div');
+      dialog.className = 'window open';
+      dialog.style.width = '300px';
+      dialog.style.position = 'relative';
+      dialog.style.boxShadow = '5px 5px 15px rgba(0,0,0,0.8)';
+      dialog.style.opacity = '1';
+      dialog.style.transform = 'scale(1)';
+      dialog.style.pointerEvents = 'auto';
+      dialog.style.fontFamily = "'Pixelify Sans', sans-serif";
+      
+      dialog.innerHTML = `
+        <div class="title-bar">
+          <div class="title-bar-text" style="font-family: 'Pixelify Sans', sans-serif;">Shut Down Aurora OS</div>
+          <div class="title-bar-controls">
+            <div class="control-btn" onclick="this.closest('.window').parentElement.remove()">X</div>
+          </div>
+        </div>
+        <div class="window-content" style="background: #c0c0c0; color: #000; padding: 15px;">
+          <div style="display: flex; align-items: center; margin-bottom: 15px;">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#000" stroke-width="2" style="margin-right: 15px;">
+              <circle cx="16" cy="16" r="14" fill="#fff"></circle>
+              <path d="M16 8v8" stroke="#f00" stroke-width="4"></path>
+            </svg>
+            <div style="font-size: 16px; font-weight: 500;">What do you want the computer to do?</div>
+          </div>
+          <div style="margin-left: 47px; font-size: 15px;">
+            <label style="display: block; margin-bottom: 8px; cursor: pointer;"><input type="radio" name="shutdown-action" value="shutdown" checked> Shut down</label>
+            <label style="display: block; margin-bottom: 8px; cursor: pointer;"><input type="radio" name="shutdown-action" value="restart"> Restart</label>
+          </div>
+        </div>
+        <div style="background: #c0c0c0; padding: 10px; text-align: right; border-top: 1px solid #808080;">
+          <button id="shutdown-ok-btn" style="padding: 4px 15px; cursor: pointer; font-family: 'Pixelify Sans', sans-serif; font-size: 14px; margin-right: 10px;">OK</button>
+          <button onclick="this.closest('.window').parentElement.remove()" style="padding: 4px 15px; cursor: pointer; font-family: 'Pixelify Sans', sans-serif; font-size: 14px;">Cancel</button>
+        </div>
+      `;
+      
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+
+      document.getElementById('shutdown-ok-btn').onclick = () => {
+        const action = document.querySelector('input[name="shutdown-action"]:checked').value;
+        overlay.remove();
+        showShutdownConfirmDialog(action);
+      };
+    }
+
+    function showShutdownConfirmDialog(action) {
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+      overlay.style.zIndex = '10000';
+      overlay.style.display = 'flex';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      
+      const dialog = document.createElement('div');
+      dialog.className = 'window open';
+      dialog.style.width = '280px';
+      dialog.style.position = 'relative';
+      dialog.style.boxShadow = '5px 5px 15px rgba(0,0,0,0.8)';
+      dialog.style.opacity = '1';
+      dialog.style.transform = 'scale(1)';
+      dialog.style.pointerEvents = 'auto';
+      dialog.style.fontFamily = "'Pixelify Sans', sans-serif";
+      
+      dialog.innerHTML = `
+        <div class="title-bar">
+          <div class="title-bar-text" style="font-family: 'Pixelify Sans', sans-serif;">Confirm</div>
+          <div class="title-bar-controls">
+            <div class="control-btn" onclick="this.closest('.window').parentElement.remove()">X</div>
+          </div>
+        </div>
+        <div class="window-content" style="background: #c0c0c0; color: #000; display: flex; align-items: center; padding: 15px;">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#000" stroke-width="2" style="margin-right: 15px; flex-shrink: 0;">
+            <circle cx="16" cy="16" r="14" fill="#ff0"></circle>
+            <path d="M16 10v8M16 22v2" stroke="#000" stroke-width="4"></path>
+          </svg>
+          <div style="font-size: 15px; font-weight: 500;">Are you sure you want to ${action === 'shutdown' ? 'shut down' : 'restart'} the computer?</div>
+        </div>
+        <div style="background: #c0c0c0; padding: 10px; text-align: center; border-top: 1px solid #808080;">
+          <button id="shutdown-confirm-yes" style="padding: 4px 15px; cursor: pointer; font-family: 'Pixelify Sans', sans-serif; font-size: 14px; margin-right: 10px;">Yes</button>
+          <button onclick="this.closest('.window').parentElement.remove()" style="padding: 4px 15px; cursor: pointer; font-family: 'Pixelify Sans', sans-serif; font-size: 14px;">No</button>
+        </div>
+      `;
+      
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+
+      document.getElementById('shutdown-confirm-yes').onclick = () => {
+        overlay.remove();
+        if (action === 'shutdown') {
+          performShutdown();
+        } else {
+          performRestart();
+        }
+      };
+    }
+
+    function performShutdown() {
+      document.getElementById('desktop').style.display = 'none';
+      document.getElementById('boot-screen').style.display = 'flex';
+      document.getElementById('boot-start-btn').style.display = 'none';
+      document.getElementById('progress-container').style.display = 'none';
+      document.getElementById('aurora-logo').style.display = 'none';
+      document.getElementById('boot-text').innerText = 'Shutting down...';
+      
+      openWindows.forEach(id => closeWindow(id));
+      
+      setTimeout(() => {
+        document.getElementById('boot-text').innerText = 'It is now safe to turn off your computer.';
+        setTimeout(() => {
+          document.getElementById('boot-text').innerText = '';
+          document.getElementById('boot-screen').style.backgroundColor = '#000';
+        }, 3000);
+      }, 2000);
+    }
+
+    function performRestart() {
+      document.getElementById('desktop').style.display = 'none';
+      document.getElementById('boot-screen').style.display = 'flex';
+      document.getElementById('boot-start-btn').style.display = 'none';
+      document.getElementById('progress-container').style.display = 'none';
+      document.getElementById('aurora-logo').style.display = 'none';
+      document.getElementById('boot-text').innerText = 'Restarting...';
+      
+      openWindows.forEach(id => closeWindow(id));
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    }
+
     // --- Start Menu ---
     const startMenu = document.getElementById('start-menu');
     const startBtn = document.getElementById('start-btn');
     
+    document.addEventListener('mousedown', (e) => {
+      if (startMenu.style.display === 'flex' && !startMenu.contains(e.target) && !startBtn.contains(e.target)) {
+        closeStartMenu();
+      }
+      if (contextMenu.style.display === 'block' && !contextMenu.contains(e.target)) {
+        closeContextMenu();
+      }
+    });
+
     function toggleStartMenu(e) {
       e.stopPropagation();
       if (startMenu.style.display === 'flex') {
@@ -1504,27 +1683,31 @@ fragment remains</div>
       overlay.style.justifyContent = 'center';
       
       const dialog = document.createElement('div');
-      dialog.className = 'window';
+      dialog.className = 'window open';
       dialog.style.width = '300px';
       dialog.style.position = 'relative';
       dialog.style.boxShadow = '5px 5px 15px rgba(0,0,0,0.8)';
+      dialog.style.opacity = '1';
+      dialog.style.transform = 'scale(1)';
+      dialog.style.pointerEvents = 'auto';
+      dialog.style.fontFamily = "'Pixelify Sans', sans-serif";
       
       dialog.innerHTML = `
         <div class="title-bar" style="background: #800000;">
-          <div class="title-bar-text">${title}</div>
+          <div class="title-bar-text" style="font-family: 'Pixelify Sans', sans-serif;">${title}</div>
           <div class="title-bar-controls">
             <div class="control-btn" onclick="this.closest('.window').parentElement.remove()">X</div>
           </div>
         </div>
-        <div class="window-content" style="background: #c0c0c0; color: #000; display: flex; align-items: center; padding: 20px;">
-          <svg width="40" height="40" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2" style="margin-right: 15px; flex-shrink: 0;">
+        <div class="window-content" style="background: #c0c0c0; color: #000; display: flex; align-items: center; padding: 15px;">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2" style="margin-right: 15px; flex-shrink: 0;">
             <circle cx="16" cy="16" r="14" fill="#fff"></circle>
             <path d="M10 10l12 12M22 10L10 22" stroke="#f00" stroke-width="4"></path>
           </svg>
-          <div style="font-size: 14px; font-family: 'Tahoma', sans-serif;">${message}</div>
+          <div style="font-size: 15px; font-weight: 500;">${message}</div>
         </div>
         <div style="background: #c0c0c0; padding: 10px; text-align: center; border-top: 1px solid #808080;">
-          <button onclick="this.closest('.window').parentElement.remove()" style="padding: 5px 20px; cursor: pointer; font-family: 'Tahoma', sans-serif;">OK</button>
+          <button onclick="this.closest('.window').parentElement.remove()" style="padding: 4px 15px; cursor: pointer; font-family: 'Pixelify Sans', sans-serif; font-size: 14px;">OK</button>
         </div>
       `;
       
@@ -1567,14 +1750,15 @@ fragment remains</div>
     const audioVolume = document.getElementById('audio-volume');
     const bars = document.querySelectorAll('.bar');
     
-    let audioLogSpeech = new SpeechSynthesisUtterance("the archive remembers");
-    audioLogSpeech.rate = 0.8;
-    audioLogSpeech.pitch = 0.5;
+    let audioContext;
     let isPlaying = false;
     let visualizerInterval;
     let progressInterval;
     let audioCurrentTime = 0;
-    const audioTotalTime = 3; // seconds
+    const audioTotalTime = 14; // seconds
+    let osc, gain, noiseSource;
+    let audioStartTime = 0;
+    let pausedTime = 0;
 
     function formatTime(seconds) {
       const m = Math.floor(seconds / 60);
@@ -1597,7 +1781,9 @@ fragment remains</div>
       clearInterval(visualizerInterval);
       clearInterval(progressInterval);
       bars.forEach(bar => bar.style.height = '2px');
-      window.speechSynthesis.pause();
+      if (audioContext && audioContext.state === 'running') {
+        audioContext.suspend();
+      }
     }
 
     async function playAudioLog() {
@@ -1615,23 +1801,103 @@ fragment remains</div>
         });
       }, 100);
 
-      if (audioCurrentTime === 0) {
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(audioLogSpeech);
-      } else {
-        window.speechSynthesis.resume();
-      }
-
-      progressInterval = setInterval(() => {
-        audioCurrentTime += 0.1;
-        audioProgressSlider.value = (audioCurrentTime / audioTotalTime) * 100;
-        audioTimeCurrent.innerText = formatTime(Math.floor(audioCurrentTime));
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
         
-        if (audioCurrentTime >= audioTotalTime) {
+        const morse = "- .... . / .- .-. -.-. .... .. ...- . / .-. . -- . -- -... . .-. ...";
+        const dotDuration = 0.1;
+        let time = audioContext.currentTime + 0.5;
+        audioStartTime = time;
+        
+        osc = audioContext.createOscillator();
+        gain = audioContext.createGain();
+        
+        osc.type = 'square';
+        osc.frequency.value = 600;
+        
+        // Add distortion
+        const waveShaper = audioContext.createWaveShaper();
+        const curve = new Float32Array(400);
+        for (let i = 0; i < 400; i++) {
+          const x = i * 2 / 400 - 1;
+          curve[i] = (3 + 20) * x * 20 * (Math.PI / 180) / (Math.PI + 20 * Math.abs(x));
+        }
+        waveShaper.curve = curve;
+        waveShaper.oversample = '4x';
+        
+        // Add noise
+        const bufferSize = audioContext.sampleRate * 10;
+        const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 0.5 - 0.25;
+        }
+        noiseSource = audioContext.createBufferSource();
+        noiseSource.buffer = noiseBuffer;
+        noiseSource.loop = true;
+        
+        osc.connect(gain);
+        gain.connect(waveShaper);
+        waveShaper.connect(audioContext.destination);
+        
+        noiseSource.connect(audioContext.destination);
+        
+        gain.gain.setValueAtTime(0, time);
+        
+        for (let i = 0; i < morse.length; i++) {
+          const char = morse[i];
+          if (char === '.') {
+            gain.gain.setValueAtTime(0.5, time);
+            time += dotDuration;
+            gain.gain.setValueAtTime(0, time);
+            time += dotDuration;
+          } else if (char === '-') {
+            gain.gain.setValueAtTime(0.5, time);
+            time += dotDuration * 3;
+            gain.gain.setValueAtTime(0, time);
+            time += dotDuration;
+          } else if (char === ' ') {
+            time += dotDuration * 2;
+          } else if (char === '/') {
+            time += dotDuration * 4;
+          }
+        }
+        
+        osc.start(audioContext.currentTime);
+        noiseSource.start(audioContext.currentTime);
+        
+        osc.stop(time);
+        noiseSource.stop(time);
+        
+        osc.onended = () => {
           pauseAudioLog();
           audioCurrentTime = 0;
           audioProgressSlider.value = 0;
           audioTimeCurrent.innerText = "00:00";
+        };
+      } else if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+
+      // Update volume
+      const updateVolume = () => {
+        if (gain) gain.gain.value = (audioVolume.value / 100) * 0.5;
+        if (noiseSource) {
+          // Need a separate gain for noise to control its volume, but for simplicity we can just leave it or add one.
+        }
+      };
+      audioVolume.addEventListener('input', updateVolume);
+      updateVolume();
+
+      // Progress bar update
+      progressInterval = setInterval(() => {
+        if (audioContext && audioContext.state === 'running') {
+          audioCurrentTime = audioContext.currentTime - audioStartTime;
+          if (audioCurrentTime < 0) audioCurrentTime = 0;
+          if (audioCurrentTime > audioTotalTime) audioCurrentTime = audioTotalTime;
+          
+          audioProgressSlider.value = (audioCurrentTime / audioTotalTime) * 100;
+          audioTimeCurrent.innerText = formatTime(Math.floor(audioCurrentTime));
         }
       }, 100);
     }
@@ -2005,19 +2271,85 @@ fragment remains</div>
 
     // --- Music Player Logic ---
     const playlist = [
-      { title: "1. Mandy - 1997 Mix", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-      { title: "2. Forever Nights", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-      { title: "3. Neon Memory", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
-      { title: "4. City Lights 1997", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" }
+      { title: "1. Mandy - Barry Manilow", videoId: "tA6bE_hXjJ8" },
+      { title: "2. Billie Jean - Michael Jackson", videoId: "Zi_XLOBDo_Y" },
+      { title: "3. My Way - Frank Sinatra", videoId: "w019MzRosmk" }
     ];
     let currentTrackIndex = 0;
     let isMusicPlaying = false;
-    let musicAudio = new Audio();
+    let ytPlayer = null;
+    let ytPlayerReady = false;
+    let ytTimeInterval = null;
+
+    function initYouTubePlayer() {
+      if (ytPlayer) return;
+      ytPlayer = new YT.Player('yt-player-container', {
+        height: '1',
+        width: '1',
+        videoId: playlist[0].videoId,
+        playerVars: {
+          'playsinline': 1,
+          'controls': 0,
+          'disablekb': 1,
+          'fs': 0,
+          'rel': 0
+        },
+        events: {
+          'onReady': onPlayerReady,
+          'onStateChange': onPlayerStateChange,
+          'onError': onPlayerError
+        }
+      });
+    }
+
+    window.onYouTubeIframeAPIReady = function() {
+      initYouTubePlayer();
+    };
     
-    musicAudio.addEventListener('ended', nextTrack);
-    musicAudio.addEventListener('timeupdate', () => {
-      document.getElementById('music-time').innerText = formatMusicTime(musicAudio.currentTime);
-    });
+    // Fallback if API is already loaded
+    if (window.YT && window.YT.Player) {
+      initYouTubePlayer();
+    } else {
+      // Load YouTube API dynamically
+      var tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      var firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    }
+
+    function onPlayerError(event) {
+      console.error("YouTube Player Error:", event.data);
+      // Skip to next track if video is unplayable (e.g. embed disabled)
+      setTimeout(nextTrack, 1000);
+    }
+
+    function onPlayerReady(event) {
+      ytPlayerReady = true;
+      updateMusicVolume();
+    }
+
+    function onPlayerStateChange(event) {
+      if (event.data == YT.PlayerState.ENDED) {
+        nextTrack();
+      } else if (event.data == YT.PlayerState.PLAYING) {
+        isMusicPlaying = true;
+        document.getElementById('music-play-btn').innerText = "PAUSE";
+        if (!ytTimeInterval) {
+          ytTimeInterval = setInterval(updateYTTime, 1000);
+        }
+      } else if (event.data == YT.PlayerState.PAUSED) {
+        isMusicPlaying = false;
+        document.getElementById('music-play-btn').innerText = "PLAY";
+        clearInterval(ytTimeInterval);
+        ytTimeInterval = null;
+      }
+    }
+
+    function updateYTTime() {
+      if (ytPlayer && ytPlayer.getCurrentTime) {
+        document.getElementById('music-time').innerText = formatMusicTime(ytPlayer.getCurrentTime());
+      }
+    }
 
     function formatMusicTime(seconds) {
       if (isNaN(seconds)) return "00:00";
@@ -2035,28 +2367,30 @@ fragment remains</div>
     }
 
     function pauseMusic() {
-      if (!isMusicPlaying) return;
-      isMusicPlaying = false;
-      document.getElementById('music-play-btn').innerText = "PLAY";
-      musicAudio.pause();
+      if (!ytPlayerReady) return;
+      ytPlayer.pauseVideo();
     }
 
+    let currentLoadedTrackIndex = 0;
+
     function playMusic() {
-      if (isMusicPlaying) return;
+      if (!ytPlayerReady) {
+        console.warn("YouTube Player is not ready yet.");
+        return;
+      }
       
       // Pause audio log if playing
       if (typeof pauseAudioLog === 'function') pauseAudioLog();
       
-      isMusicPlaying = true;
-      document.getElementById('music-play-btn').innerText = "PAUSE";
-      
-      if (!musicAudio.src || !musicAudio.src.includes(playlist[currentTrackIndex].url)) {
-        musicAudio.src = playlist[currentTrackIndex].url;
+      if (currentLoadedTrackIndex !== currentTrackIndex) {
+        ytPlayer.loadVideoById(playlist[currentTrackIndex].videoId);
+        currentLoadedTrackIndex = currentTrackIndex;
+      } else {
+        ytPlayer.playVideo();
       }
       
       updateTrackDisplay();
       updateMusicVolume();
-      musicAudio.play().catch(e => console.error("Audio play failed:", e));
     }
 
     function updateTrackDisplay() {
@@ -2076,29 +2410,24 @@ fragment remains</div>
     }
 
     function playTrack(index) {
-      pauseMusic();
       currentTrackIndex = index;
-      musicAudio.src = playlist[currentTrackIndex].url;
       playMusic();
     }
 
     function nextTrack() {
-      pauseMusic();
       currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
-      musicAudio.src = playlist[currentTrackIndex].url;
       playMusic();
     }
 
     function prevTrack() {
-      pauseMusic();
       currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
-      musicAudio.src = playlist[currentTrackIndex].url;
       playMusic();
     }
 
     function updateMusicVolume() {
+      if (!ytPlayerReady) return;
       const vol = document.getElementById('music-volume').value;
-      musicAudio.volume = vol / 100;
+      ytPlayer.setVolume(vol);
     }
     
     document.getElementById('music-volume').addEventListener('input', updateMusicVolume);
