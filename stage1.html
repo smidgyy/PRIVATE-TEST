@@ -1,695 +1,2246 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The First Trial.</title>
-<meta name="x-architect-directive" content="0x48 0x65 0x78 0x20 0x69 0x73 0x20 0x6f 0x6e 0x6c 0x79 0x20 0x74 0x68 0x65 0x20 0x62 0x65 0x67 0x69 0x6e 0x6e 0x69 0x6e 0x67">
-<!-- [SYSTEM] Fragment relocated to /resonance.html -->
-<style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; background: #000; color: #d4d0c8; font-family: Georgia, 'Times New Roman', serif; overflow: hidden; }
-body { display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 1s ease, color 1s ease; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURORA OS v1.3</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&display=swap');
 
-.title { font-size: 1.6rem; letter-spacing: 0.04em; margin-bottom: 1.5rem; opacity: 0; animation: fadeIn 2s ease forwards; }
-.subtitle { font-size: 0.8rem; color: #666; letter-spacing: 0.06em; margin-bottom: 2.5rem; opacity: 0; animation: fadeIn 2s ease 2s forwards; text-align: center; }
+    :root {
+      --bg-color: #008080;
+      --window-bg: #c0c0c0;
+      --window-border-light: #dfdfdf;
+      --window-border-dark: #808080;
+      --window-border-darker: #000000;
+      --title-bg: #000080;
+      --title-text: #ffffff;
+      --text-color: #000000;
+      --taskbar-bg: #c0c0c0;
+    }
 
-.field-wrap { position: relative; width: min(480px, 85vw); opacity: 0; animation: fadeIn 2s ease 1s forwards; }
-.textarea-container { position: relative; width: 100%; height: 60px; }
-input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; border: none; border-bottom: 1px solid #333; color: #d4d0c8; font-family: Georgia, 'Times New Roman', serif; font-size: 1.2rem; text-align: center; outline: none; transition: border-color 0.6s ease, opacity 0.3s ease; letter-spacing: 0.1em; }
-input:focus { border-color: #8b7355; }
-input.hidden { opacity: 0; pointer-events: none; }
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Tahoma', 'Segoe UI', sans-serif;
+      background-color: #000;
+      color: #fff;
+      user-select: none;
+      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAZ0lEQVQ4T2NkoBAwUqifYdQAhoEwMDCwMDAw/IeT/0E0QzQ2D2QxXAAjE5oYw2A0zYgWwGgY0QKYkDQjWgCjYcQKYEIzI1oAoxnRAhiZ0MQYBsNoGNECAyWMaAEM0cxoAYyGEQeAAQClnB0x8z7k7AAAAABJRU5ErkJggg=='), auto;
+    }
 
-.response { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; font-style: italic; color: #8b7355; font-size: 0.95rem; letter-spacing: 0.03em; transition: opacity 1s ease; text-align: center; }
+    a, button, .icon, .control-btn, .start-item, .taskbar-item, .context-item, input[type="range"] {
+      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAkUlEQVQ4T2NkoBAwUqifYdQAhoEwMDCwMDAw/IeT/0E0QzQ2D2QxXAAjE5oYw2A0zYgWwGgY0QKYkDQjWgCjYcQKYEIzI1oAo2HECmBCMyNaAKNhxApwYmBg+A/FjGgBjIYRK8CJgYHhPxQzogUwGkasACcGBob/UMyIFsBoGLECnBgYGP5DMSNaAKNhxApwYmAAANk5HjG3x0zBAAAAAElFTkSuQmCC'), pointer !important;
+    }
 
-.char-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: Georgia, 'Times New Roman', serif; font-size: 1.2rem; color: #d4d0c8; pointer-events: none; transition: opacity 0.5s ease; letter-spacing: 0.1em; }
-.char { display: inline-block; transition: all 1.2s ease; }
-.char.dissolve { opacity: 0; transform: translateY(-30px) scale(0.3); filter: blur(4px); color: #8b7355; }
+    /* Boot Sequence */
+    #boot-screen {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #000;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: 'VT323', monospace;
+      font-size: 1.5rem;
+    }
 
-@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    #boot-text {
+      margin-bottom: 2rem;
+      text-align: center;
+    }
 
-/* Phase 3 Mechanics */
-#flashlight-overlay {
-  position: fixed;
-  top: 0; left: 0; width: 100vw; height: 100vh;
-  background: radial-gradient(circle 60px at var(--x, 50%) var(--y, 50%), transparent 0%, rgba(0,0,0,0.99) 80%);
-  z-index: 50;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 2s ease;
-}
-#flashlight-overlay.active { opacity: 1; }
+    #progress-container {
+      width: 300px;
+      height: 20px;
+      border: 2px solid #fff;
+      padding: 2px;
+      display: none;
+    }
 
-/* Phase 2 Bonfire */
-#glow-overlay {
-  position: fixed;
-  top: 0; left: 0; width: 100vw; height: 100vh;
-  background: radial-gradient(circle at 50% 100%, rgba(226, 88, 34, 0.15) 0%, transparent 60%);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 1.5s ease;
-  z-index: 1;
-}
-body.phase-2 #glow-overlay { opacity: 1; }
+    #progress-bar {
+      width: 0%;
+      height: 100%;
+      background: #fff;
+    }
 
-#bonfire-container {
-  position: fixed;
-  bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 128px;
-  height: 128px;
-  display: none;
-  z-index: 10;
-}
-body.phase-2 #bonfire-container, body.phase-3 #bonfire-container { display: block; }
-body.phase-3 #flames { display: none; }
+    #aurora-logo {
+      font-size: 4rem;
+      font-weight: bold;
+      display: none;
+      text-shadow: 0 0 10px rgba(255,255,255,0.5);
+    }
 
-#void-canvas {
-  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-  z-index: 45; pointer-events: none; display: none;
-}
-body.phase-3 #void-canvas { display: block; }
+    /* Desktop */
+    #desktop {
+      display: none;
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-color);
+      position: relative;
+    }
 
-.n-act {
-  position: fixed;
-  background: #111; border: 1px solid #8b7355; color: #8b7355;
-  font-family: Georgia, 'Times New Roman', serif; font-size: 0.9rem; letter-spacing: 0.2em;
-  padding: 0.5rem 1rem; cursor: pointer; z-index: 60;
-  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, color 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  opacity: 0;
-  transform: scale(0.8) translateY(10px);
-  pointer-events: none;
-}
-.n-act.visible {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-  pointer-events: auto;
-}
-.n-act:hover { background: #8b7355; color: #000; }
+    .icon {
+      width: 80px;
+      height: 90px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      margin: 5px;
+      cursor: pointer;
+      position: absolute;
+      text-align: center;
+      transition: transform 0.1s;
+      z-index: 10;
+    }
 
-body.light-mode { background: #e5e0d8; color: #111; }
-body.light-mode input { color: #111; border-color: #999; }
-body.light-mode .subtitle { color: #555; }
-body.light-mode #flashlight-overlay { display: none; }
-body.light-mode #flames { display: block !important; }
-body.light-mode #flames rect[fill="#ac3232"] { fill: #555 !important; }
-body.light-mode #flames rect[fill="#df7126"] { fill: #333 !important; }
-body.light-mode #flames rect[fill="#fbf236"] { fill: #111 !important; }
-body.light-mode #flames rect[fill="#ffffff"] { fill: #000 !important; }
+    .icon:hover {
+      transform: translateY(-2px);
+    }
 
-.hidden-clue { display: none; position: absolute; top: 20%; left: 50%; transform: translateX(-50%); font-size: 1.2rem; letter-spacing: 0.1em; color: #111; opacity: 0; transition: opacity 2s ease; }
-body.light-mode .hidden-clue { display: block; opacity: 1; }
+    .icon img {
+      width: 40px;
+      height: 40px;
+      image-rendering: pixelated;
+      margin-bottom: 5px;
+      filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));
+    }
 
-.hidden-svg { position: fixed; top: -100px; left: -100px; opacity: 0; pointer-events: none; }
-</style>
+    .icon span {
+      background: transparent;
+      color: #fff;
+      padding: 2px 4px;
+      font-size: 0.8rem;
+      text-shadow: 1px 1px 0 #000;
+      border: 1px dotted transparent;
+    }
+
+    .icon.selected span {
+      background: #000080;
+      border: 1px dotted #fff;
+    }
+
+    /* Context Menu */
+    #context-menu {
+      position: absolute;
+      background: var(--window-bg);
+      border-top: 2px solid var(--window-border-light);
+      border-left: 2px solid var(--window-border-light);
+      border-bottom: 2px solid var(--window-border-darker);
+      border-right: 2px solid var(--window-border-darker);
+      display: none;
+      flex-direction: column;
+      z-index: 2000;
+      padding: 2px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+      color: var(--text-color);
+      font-size: 0.9rem;
+    }
+    .context-item {
+      padding: 4px 15px;
+      cursor: pointer;
+    }
+    .context-item:hover {
+      background: #000080;
+      color: #fff;
+    }
+
+    /* Taskbar */
+    #taskbar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 35px;
+      background: var(--taskbar-bg);
+      border-top: 2px solid var(--window-border-light);
+      display: flex;
+      align-items: center;
+      padding: 0 2px;
+      z-index: 10000;
+      box-sizing: border-box;
+      justify-content: space-between;
+    }
+
+    .taskbar-left {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      flex-grow: 1;
+      overflow: hidden;
+    }
+
+    #taskbar-items {
+      display: flex;
+      flex-grow: 1;
+      overflow: hidden;
+      gap: 2px;
+      padding: 0 4px;
+    }
+
+    .taskbar-right {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      padding: 0 10px;
+      border-top: 2px solid var(--window-border-dark);
+      border-left: 2px solid var(--window-border-dark);
+      border-bottom: 2px solid var(--window-border-light);
+      border-right: 2px solid var(--window-border-light);
+      font-size: 0.85rem;
+      color: #000;
+      margin-right: 4px;
+      height: 25px;
+    }
+
+    #start-btn {
+      height: 28px;
+      padding: 0 8px;
+      font-weight: bold;
+      background: var(--taskbar-bg);
+      border-top: 2px solid var(--window-border-light);
+      border-left: 2px solid var(--window-border-light);
+      border-bottom: 2px solid var(--window-border-darker);
+      border-right: 2px solid var(--window-border-darker);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: #000;
+      font-size: 0.9rem;
+    }
+
+    #start-btn:active, #start-btn.active {
+      border-top: 2px solid var(--window-border-darker);
+      border-left: 2px solid var(--window-border-darker);
+      border-bottom: 2px solid var(--window-border-light);
+      border-right: 2px solid var(--window-border-light);
+      padding-top: 2px;
+      padding-left: 10px;
+    }
+
+    .taskbar-item {
+      flex: 0 1 150px;
+      height: 28px;
+      padding: 0 10px;
+      background: var(--taskbar-bg);
+      border-top: 2px solid var(--window-border-light);
+      border-left: 2px solid var(--window-border-light);
+      border-bottom: 2px solid var(--window-border-darker);
+      border-right: 2px solid var(--window-border-darker);
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--text-color);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .taskbar-item.active {
+      border-top: 2px solid var(--window-border-darker);
+      border-left: 2px solid var(--window-border-darker);
+      border-bottom: 2px solid var(--window-border-light);
+      border-right: 2px solid var(--window-border-light);
+      background: #e0e0e0;
+      padding-top: 2px;
+      padding-left: 12px;
+    }
+
+    /* Start Menu */
+    #start-menu {
+      position: absolute;
+      bottom: 35px;
+      left: 0;
+      width: 250px;
+      background: var(--window-bg);
+      border-top: 2px solid var(--window-border-light);
+      border-left: 2px solid var(--window-border-light);
+      border-bottom: 2px solid var(--window-border-darker);
+      border-right: 2px solid var(--window-border-darker);
+      display: none;
+      flex-direction: row;
+      z-index: 20000;
+      padding: 2px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+      color: var(--text-color);
+    }
+    .start-menu-sidebar {
+      width: 30px;
+      background: #000080;
+      color: #fff;
+      display: flex;
+      align-items: flex-end;
+      padding-bottom: 10px;
+    }
+    .start-menu-sidebar span {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-weight: bold;
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+    }
+    .start-menu-items {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 2px;
+      background: var(--window-bg);
+    }
+    .start-item {
+      padding: 8px 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+    }
+    .start-item:hover {
+      background: #000080;
+      color: #fff;
+    }
+    .start-divider {
+      height: 2px;
+      background: var(--window-border-dark);
+      border-bottom: 1px solid var(--window-border-light);
+      margin: 2px 4px;
+    }
+
+    /* Windows */
+    .window {
+      position: absolute;
+      background: var(--window-bg);
+      border-top: 2px solid var(--window-border-light);
+      border-left: 2px solid var(--window-border-light);
+      border-bottom: 2px solid var(--window-border-darker);
+      border-right: 2px solid var(--window-border-darker);
+      display: flex;
+      flex-direction: column;
+      min-width: 300px;
+      min-height: 200px;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+      color: var(--text-color);
+      transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+      transform: scale(0.95);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .window.open {
+      display: flex;
+      transform: scale(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .window.maximized {
+      transform: none !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: calc(100% - 35px) !important;
+      border: none !important;
+      border-radius: 0 !important;
+    }
+
+    .window.active {
+      z-index: 100;
+    }
+
+    .title-bar {
+      background: var(--title-bg);
+      color: var(--title-text);
+      padding: 3px 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      cursor: default;
+    }
+    .window:not(.active) .title-bar {
+      background: #808080;
+    }
+
+    .title-bar-text {
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+    }
+
+    .title-bar-controls {
+      display: flex;
+      gap: 2px;
+    }
+
+    .control-btn {
+      width: 16px;
+      height: 16px;
+      background: var(--taskbar-bg);
+      border-top: 1px solid var(--window-border-light);
+      border-left: 1px solid var(--window-border-light);
+      border-bottom: 1px solid var(--window-border-darker);
+      border-right: 1px solid var(--window-border-darker);
+      font-size: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      color: #000;
+      font-weight: bold;
+    }
+
+    .control-btn:active {
+      border-top: 1px solid var(--window-border-darker);
+      border-left: 1px solid var(--window-border-darker);
+      border-bottom: 1px solid var(--window-border-light);
+      border-right: 1px solid var(--window-border-light);
+      padding-top: 1px;
+      padding-left: 1px;
+    }
+
+    .window-content {
+      padding: 10px;
+      flex-grow: 1;
+      overflow: auto;
+      background: #fff;
+      margin: 2px;
+      border: 1px solid var(--window-border-dark);
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+    }
+
+    .window-content.explorer {
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      position: relative;
+    }
+
+    .explorer-status {
+      height: 20px;
+      background: var(--window-bg);
+      border-top: 1px solid var(--window-border-dark);
+      margin: 0 2px 2px 2px;
+      padding: 2px 5px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .window-content.terminal {
+      background: #000;
+      color: #0f0;
+      font-family: 'JetBrains Mono', monospace;
+      white-space: pre-wrap;
+    }
+
+    #terminal-input-line {
+      display: flex;
+    }
+
+    #terminal-input {
+      background: transparent;
+      border: none;
+      color: #0f0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      flex-grow: 1;
+      outline: none;
+    }
+
+    /* Notifications */
+    #notifications {
+      position: absolute;
+      bottom: 45px;
+      right: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 3000;
+    }
+    .notification {
+      background: var(--window-bg);
+      border-top: 2px solid var(--window-border-light);
+      border-left: 2px solid var(--window-border-light);
+      border-bottom: 2px solid var(--window-border-darker);
+      border-right: 2px solid var(--window-border-darker);
+      padding: 10px;
+      width: 250px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+      color: #000;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Hidden elements */
+    .hidden {
+      display: none !important;
+    }
+
+    /* Icon SVGs as data URIs */
+    .icon-img {
+      width: 32px; height: 32px;
+      background-color: transparent;
+      display: inline-block;
+      filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
+    }
+    
+    /* Blinking cursor */
+    .blink {
+      animation: blinker 1s linear infinite;
+    }
+    @keyframes blinker {
+      50% { opacity: 0; }
+    }
+  </style>
 </head>
 <body>
 
-<div id="glow-overlay"></div>
-
-<svg class="hidden-svg" width="10" height="10"><circle cx="5" cy="5" r="5"/></svg>
-<svg class="hidden-svg" width="10" height="10"><circle cx="5" cy="5" r="5"/></svg>
-<svg class="hidden-svg" width="10" height="10"><circle cx="5" cy="5" r="5"/></svg>
-
-<div class="title" id="main-title">The First Trial.</div>
-<div class="subtitle" id="subtitle">Many have tried. The door remains sealed.</div>
-
-<div class="field-wrap">
-  <div class="textarea-container">
-    <input type="text" id="puzzle-input" autocomplete="off" spellcheck="false" placeholder="">
-    <div class="response" id="response"></div>
+  <!-- Boot Sequence -->
+  <div id="boot-screen">
+    <div id="boot-text"></div>
+    <div id="progress-container">
+      <div id="progress-bar"></div>
+    </div>
+    <div id="aurora-logo">AURORA OS v1.3</div>
   </div>
-</div>
 
-<div id="flashlight-overlay"></div>
-<canvas id="void-canvas"></canvas>
-<div id="bonfire-container"></div>
+  <!-- Desktop -->
+  <div id="desktop">
+    <div class="icon" id="icon-recycle" ondblclick="openWindow('recycle-bin')">
+      <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="white" stroke-width="2"><rect x="6" y="8" width="20" height="20"/><path d="M10 8V4h12v4M12 12v12M20 12v12"/></svg>
+      <span>Recycle Bin</span>
+    </div>
+    <div class="icon" id="icon-casefiles" ondblclick="openWindow('case-files')">
+      <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#ffcc00" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#ffcc00"/></svg>
+      <span>Case Files</span>
+    </div>
+    <div class="icon" id="icon-notes" ondblclick="openWindow('notes-txt')">
+      <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+      <span>Notes.txt</span>
+    </div>
+    <div class="icon" id="icon-browser" ondblclick="openWindow('browser')">
+      <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#00f" stroke-width="2"><circle cx="16" cy="16" r="12"/><path d="M4 16h24M16 4c-4 0-6 6-6 12s2 12 6 12 6-6 6-12-2-12-6-12z"/></svg>
+      <span>Browser</span>
+    </div>
+    <div class="icon" id="icon-audio" ondblclick="openWindow('audio-log')">
+      <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2"><path d="M10 12v8M16 8v16M22 14v4"/></svg>
+      <span>Audio Log</span>
+    </div>
+    <div class="icon" id="icon-system" ondblclick="openWindow('system-term')">
+      <svg class="icon-img" viewBox="0 0 32 32" fill="#000" stroke="#0f0" stroke-width="2"><rect x="4" y="6" width="24" height="20"/><path d="M8 12l4 4-4 4M16 20h6"/></svg>
+      <span>System</span>
+    </div>
+    
+    <div class="icon hidden" id="icon-archive" ondblclick="openWindow('archive-folder')">
+      <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#800080" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#800080"/></svg>
+      <span>Archive</span>
+    </div>
 
-<script>
-(function(){
-  const P = {'1':'#181425','2':'#ac3232','3':'#df7126','4':'#fbf236','5':'#ffffff','6':'#3f2832','7':'#59362c','8':'#8a5342','9':'#b47b5e'};
-  const f = [
-    "                11              ",
-    "                121             ",
-    "               1221             ",
-    "               1231             ",
-    "               1231             ",
-    "              12231             ",
-    "              12331             ",
-    "             1223311            ",
-    "             1233341            ",
-    "            12233441            ",
-    "            12334441            ",
-    "           122334441            ",
-    "         111233444111           ",
-    "        12212334441221          ",
-    "        12312344451321          ",
-    "       1233123445513321         ",
-    "       1233223445513321         ",
-    "       1233334455513321         ",
-    "       1223344455543221         ",
-    "        12234444544321          ",
-    "          122344444321          ",
-    "           1223333321           ",
-    "            11222211            ",
-    "              1111              "
-  ];
-  const l = [
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "                                ",
-    "    111                 111     ",
-    "   18811               11881    ",
-    "  1898711 111     111 1178981   ",
-    "  188776118811   118811677881   ",
-    "  1776661898711 1178981666771   ",
-    "   111111887761 167788111111    ",
-    "        1776661 1666771         ",
-    "         11111   11111          ",
-    "                                "
-  ];
-  let s = '<svg viewBox="-2 -4 36 36" width="100%" height="100%" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">';
-  s += '<style>.pixel-flames { transform-origin: 16px 24px; animation: pixel-flicker 0.4s steps(2) infinite alternate; } @keyframes pixel-flicker { 0% { transform: scaleY(1) skewX(1deg); } 100% { transform: scaleY(1.05) skewX(-1deg) translateY(-1px); } }</style>';
-  s += '<g id="logs">';
-  for(let y=0;y<32;y++)for(let x=0;x<32;x++)if(l[y][x]!==' ')s+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${P[l[y][x]]}"/>`;
-  s += '</g><g id="flames" class="pixel-flames">';
-  for(let y=0;y<24;y++)for(let x=0;x<32;x++)if(f[y][x]!==' ')s+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${P[f[y][x]]}"/>`;
-  s += '</g></svg>';
-  document.getElementById('bonfire-container').innerHTML = s;
-})();
-</script>
+    <div class="icon" id="icon-messenger" ondblclick="openWindow('messenger')">
+      <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#00ffff" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      <span>Messenger</span>
+    </div>
 
-<script>
-const input = document.getElementById('puzzle-input');
-const response = document.getElementById('response');
-const container = document.querySelector('.textarea-container');
-const title = document.getElementById('main-title');
-const subtitle = document.getElementById('subtitle');
-let busy = false;
+    <div class="icon" id="icon-music" ondblclick="openWindow('music-player')">
+      <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#ff00ff" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+      <span>Music</span>
+    </div>
 
-let phase = localStorage.getItem('stage1_phase') || '1';
+    <!-- Context Menu -->
+    <div id="context-menu">
+      <div class="context-item" onclick="refreshDesktop()">Refresh</div>
+      <div class="context-item" onclick="sortIcons()">Sort Icons</div>
+      <div class="start-divider"></div>
+      <div class="context-item" onclick="openWindow('system-term')">System Info</div>
+    </div>
 
-function playBlowSound() {
-  try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
-    const bufferSize = ctx.sampleRate * 1.0;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
+    <!-- Start Menu -->
+    <div id="start-menu">
+      <div class="start-menu-sidebar"><span>AURORA OS</span></div>
+      <div class="start-menu-items">
+        <div class="start-item" onclick="openWindow('browser')">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="#00f" stroke-width="2"><circle cx="16" cy="16" r="12"/><path d="M4 16h24M16 4c-4 0-6 6-6 12s2 12 6 12 6-6 6-12-2-12-6-12z"/></svg>
+          Browser
+        </div>
+        <div class="start-item" onclick="openWindow('notes-txt')">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          Notes
+        </div>
+        <div class="start-item" onclick="openWindow('audio-log')">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2"><path d="M10 12v8M16 8v16M22 14v4"/></svg>
+          Media Player
+        </div>
+        <div class="start-item" onclick="openWindow('system-term')">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="#000" stroke="#0f0" stroke-width="2"><rect x="4" y="6" width="24" height="20"/><path d="M8 12l4 4-4 4M16 20h6"/></svg>
+          Terminal
+        </div>
+        <div class="start-item" style="background: #000080; color: white;" onclick="openWindow('case-files')">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="#ffcc00" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#ffcc00"/></svg>
+          Case Files
+        </div>
+        <div class="start-item" onclick="openWindow('messenger')">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="#00ffff" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          Messenger
+        </div>
+        <div class="start-item" onclick="openWindow('music-player')">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="#ff00ff" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+          Music Player
+        </div>
+        <div class="start-divider"></div>
+        <div class="start-item" onclick="openWindow('memory-game')">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="#0f0" stroke-width="2"><rect x="4" y="4" width="10" height="10"/><rect x="18" y="4" width="10" height="10"/><rect x="4" y="18" width="10" height="10"/><rect x="18" y="18" width="10" height="10"/></svg>
+          Games -> Memory Blocks
+        </div>
+        <div class="start-divider"></div>
+        <div class="start-item" onclick="window.location.reload()">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2"><circle cx="16" cy="16" r="12"/><path d="M16 8v8"/></svg>
+          Shutdown...
+        </div>
+      </div>
+    </div>
+
+    <!-- Taskbar -->
+    <div id="taskbar">
+      <div class="taskbar-left">
+        <div id="start-btn" onclick="toggleStartMenu(event)">
+          <svg width="16" height="16" viewBox="0 0 16 16"><rect width="7" height="7" fill="#f00"/><rect x="8" width="7" height="7" fill="#0f0"/><rect y="8" width="7" height="7" fill="#00f"/><rect x="8" y="8" width="7" height="7" fill="#ff0"/></svg>
+          Start
+        </div>
+        <div id="taskbar-items"></div>
+      </div>
+      <div class="taskbar-right">
+        <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="#000" stroke-width="2" style="margin-right: 5px;"><path d="M12 20h8v8h-8zM12 4h8v12h-8z"/></svg>
+        <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="#000" stroke-width="2" style="margin-right: 5px;"><path d="M4 16h8l4-8 4 16 4-8h8"/></svg>
+        <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="#000" stroke-width="2" style="margin-right: 10px;"><path d="M16 4v12l8 4"/></svg>
+        <span id="taskbar-clock">1:38 AM</span>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div id="notifications"></div>
+
+    <!-- Windows -->
+    
+    <!-- Recycle Bin -->
+    <div class="window" id="win-recycle-bin" style="top: 50px; left: 150px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-recycle-bin')">
+        <div class="title-bar-text">Recycle Bin</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('recycle-bin')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('recycle-bin')">□</div>
+          <div class="control-btn" onclick="closeWindow('recycle-bin')">X</div>
+        </div>
+      </div>
+      <div class="window-content explorer">
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('deleted-log')">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">deleted_user.log</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Case Files -->
+    <div class="window" id="win-case-files" style="top: 80px; left: 180px; width: 450px; height: 350px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-case-files')">
+        <div class="title-bar-text">Case Files</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('case-files')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('case-files')">□</div>
+          <div class="control-btn" onclick="closeWindow('case-files')">X</div>
+        </div>
+      </div>
+      <div class="window-content explorer" style="padding-bottom: 25px;">
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('casefile-01')" title="Type: Text Document&#10;Size: 1.2 KB&#10;Modified: 1998-04-12">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">casefile_01.txt</span>
+        </div>
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('casefile-02')" title="Type: Text Document&#10;Size: 0.8 KB&#10;Modified: 1998-04-12">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">casefile_02.txt</span>
+        </div>
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('casefile-03')" title="Type: Text Document&#10;Size: 2.1 KB&#10;Modified: 1998-04-12">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">casefile_03.txt</span>
+        </div>
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('photo-fragment')" title="Type: PNG Image&#10;Size: 45 KB&#10;Modified: 1998-04-11">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="#eee" stroke="#999" stroke-width="1"><rect x="4" y="6" width="24" height="20"/><circle cx="12" cy="12" r="3" fill="#666"/><path d="M4 26l8-8 4 4 6-6 6 6" stroke="#666" stroke-width="2" fill="none"/></svg>
+          <span style="color:#000; background:transparent;">photo_fragment.png</span>
+        </div>
+      </div>
+      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">4 object(s)</div>
+    </div>
+
+    <!-- System Logs Folder -->
+    <div class="window" id="win-system-logs" style="top: 100px; left: 200px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-system-logs')">
+        <div class="title-bar-text">System Logs</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('system-logs')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('system-logs')">□</div>
+          <div class="control-btn" onclick="closeWindow('system-logs')">X</div>
+        </div>
+      </div>
+      <div class="window-content explorer" style="padding-bottom: 25px;">
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('memory-scan-log')" title="Type: System Log&#10;Size: 0.1 KB&#10;Modified: Just now">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">memory_scan.log</span>
+        </div>
+      </div>
+      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">1 object(s)</div>
+    </div>
+
+    <!-- Memory Scan Log -->
+    <div class="window" id="win-memory-scan-log" style="top: 120px; left: 220px; width: 350px; height: 200px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-memory-scan-log')">
+        <div class="title-bar-text">memory_scan.log - Notepad</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('memory-scan-log')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('memory-scan-log')">□</div>
+          <div class="control-btn" onclick="closeWindow('memory-scan-log')">X</div>
+        </div>
+      </div>
+      <div class="window-content" style="font-family: monospace;">Memory block recovery successful.
+
+Recovered archive fragment:
+NODE_03</div>
+    </div>
+
+    <!-- Archive Folder -->
+    <div class="window" id="win-archive-folder" style="top: 100px; left: 200px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-archive-folder')">
+        <div class="title-bar-text">Archive</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('archive-folder')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('archive-folder')">□</div>
+          <div class="control-btn" onclick="closeWindow('archive-folder')">X</div>
+        </div>
+      </div>
+      <div class="window-content explorer" style="padding-bottom: 25px;">
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="window.location.href='stage2.html'" title="Type: HTML Document&#10;Size: Unknown&#10;Modified: Unknown">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">stage2.html</span>
+        </div>
+      </div>
+      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">1 object(s)</div>
+    </div>
+
+    <!-- Text Files -->
+    <div class="window" id="win-notes-txt" style="top: 110px; left: 220px; width: 400px; height: 350px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-notes-txt')">
+        <div class="title-bar-text">Notes.txt - Notepad</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('notes-txt')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('notes-txt')">□</div>
+          <div class="control-btn" onclick="closeWindow('notes-txt')">X</div>
+        </div>
+      </div>
+      <div class="window-content">They told me the archive was empty.
+
+But new records keep appearing.
+
+Files about people who were never born.
+
+Locations that were never built.
+
+I followed the trail deeper into the system logs.
+
+If anyone finds this backup, start with the photo fragment.
+
+Something is hidden there.
+
+— Vale</div>
+    </div>
+
+    <div class="window" id="win-deleted-log" style="top: 130px; left: 240px; width: 350px; height: 200px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-deleted-log')">
+        <div class="title-bar-text">deleted_user.log - Notepad</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('deleted-log')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('deleted-log')">□</div>
+          <div class="control-btn" onclick="closeWindow('deleted-log')">X</div>
+        </div>
+      </div>
+      <div class="window-content" style="font-family: monospace;">user archive deletion attempt detected
+recovery incomplete
+fragment remains</div>
+    </div>
+
+    <div class="window" id="win-casefile-01" style="width: 450px; height: 350px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-casefile-01')">
+        <div class="title-bar-text">casefile_01.txt - Dossier</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('casefile-01')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('casefile-01')">□</div>
+          <div class="control-btn" onclick="closeWindow('casefile-01')">X</div>
+        </div>
+      </div>
+      <div class="window-content" style="background: #fff; color: #000; padding: 15px; font-family: 'Times New Roman', serif; overflow-y: auto;">
+        <div style="display: flex; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
+          <div style="width: 100px; height: 120px; border: 1px solid #000; background: #ccc; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </div>
+          <div style="flex: 1;">
+            <h2 style="margin: 0 0 5px 0; font-size: 1.5rem; text-transform: uppercase;">Subject: Unknown Individual</h2>
+            <p style="margin: 2px 0;"><strong>Status:</strong> Record Incomplete</p>
+            <p style="margin: 2px 0;"><strong>Last Seen Location:</strong> Sector 3 Archive Node</p>
+            <p style="margin: 2px 0;"><strong>Last Seen Date:</strong> [REDACTED]</p>
+          </div>
+        </div>
+        <div>
+          <h3 style="margin: 0 0 5px 0; font-size: 1.2rem;">Investigation Notes:</h3>
+          <p style="margin: 0; line-height: 1.4;">"This record appeared in the archive but I cannot find any real-world evidence that this person ever existed. The subject was last seen investigating the anomalous data structures in sector 4. All physical records have been expunged. Only digital traces remain." - A. Vale</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="window" id="win-casefile-02" style="width: 450px; height: 350px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-casefile-02')">
+        <div class="title-bar-text">casefile_02.txt - Dossier</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('casefile-02')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('casefile-02')">□</div>
+          <div class="control-btn" onclick="closeWindow('casefile-02')">X</div>
+        </div>
+      </div>
+      <div class="window-content" style="background: #fff; color: #000; padding: 15px; font-family: 'Times New Roman', serif; overflow-y: auto;">
+        <div style="display: flex; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
+          <div style="width: 100px; height: 120px; border: 1px solid #000; background: #ccc; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+          </div>
+          <div style="flex: 1;">
+            <h2 style="margin: 0 0 5px 0; font-size: 1.5rem; text-transform: uppercase;">Subject: Intercepted Signal</h2>
+            <p style="margin: 2px 0;"><strong>Status:</strong> Encrypted</p>
+            <p style="margin: 2px 0;"><strong>Source Location:</strong> Unknown</p>
+            <p style="margin: 2px 0;"><strong>Date Intercepted:</strong> [REDACTED]</p>
+          </div>
+        </div>
+        <div>
+          <h3 style="margin: 0 0 5px 0; font-size: 1.2rem;">Investigation Notes:</h3>
+          <p style="margin: 0; line-height: 1.4;">"Intercepted transmission:<br><br>20-8-5<br>1-18-3-8-9-22-5<br>18-5-13-5-13-2-5-18-19<br><br>This appears to be a simple substitution cipher. I need to decode it to understand what the archive is trying to communicate." - A. Vale</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="window" id="win-casefile-03" style="width: 450px; height: 350px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-casefile-03')">
+        <div class="title-bar-text">casefile_03.txt - Dossier</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('casefile-03')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('casefile-03')">□</div>
+          <div class="control-btn" onclick="closeWindow('casefile-03')">X</div>
+        </div>
+      </div>
+      <div class="window-content" style="background: #fff; color: #000; padding: 15px; font-family: 'Times New Roman', serif; overflow-y: auto;">
+        <div style="display: flex; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
+          <div style="width: 100px; height: 120px; border: 1px solid #000; background: #ccc; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <div style="flex: 1;">
+            <h2 style="margin: 0 0 5px 0; font-size: 1.5rem; text-transform: uppercase;">Subject: Terminal Access</h2>
+            <p style="margin: 2px 0;"><strong>Status:</strong> Locked</p>
+            <p style="margin: 2px 0;"><strong>Target Node:</strong> 03</p>
+            <p style="margin: 2px 0;"><strong>Security Level:</strong> High</p>
+          </div>
+        </div>
+        <div>
+          <h3 style="margin: 0 0 5px 0; font-size: 1.2rem;">Investigation Notes:</h3>
+          <p style="margin: 0; line-height: 1.4;">"The terminal requires a specific phrase to unlock the hidden node. I've left the pieces scattered. The audio log might hold the key, but it's corrupted. The archive continues to generate records without external input." - A. Vale</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Viewer -->
+    <div class="window" id="win-photo-fragment" style="top: 50px; left: 400px; width: 400px; height: 400px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-photo-fragment')">
+        <div class="title-bar-text">photo_fragment.png - Image Viewer</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('photo-fragment')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('photo-fragment')">□</div>
+          <div class="control-btn" onclick="closeWindow('photo-fragment')">X</div>
+        </div>
+      </div>
+      <div class="window-content" style="display: flex; justify-content: center; align-items: center; background: #333; position: relative; overflow: hidden;">
+        <canvas id="corrupted-photo-canvas" width="380" height="340" style="width: 100%; height: 100%; object-fit: cover;"></canvas>
+        <!-- The actual image with metadata is hidden here -->
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAATXRFWHRDb21tZW50AEFyY2hpdmUgTm9kZTogMDMKQ29vcmRpbmF0ZXM6IDQxLjQwMzM4LCAyLjE3NDAzCktleSBGcmFnbWVudDogQVJDSElWRVGxz7wAAAALSURBVHjaY2T4DwABBQEBJxjjZgAAAABJRU5ErkJggg==" alt="photo_fragment.png" style="display: none;" id="hidden-photo-data">
+      </div>
+    </div>
+
+    <!-- Browser -->
+    <div class="window" id="win-browser" style="top: 60px; left: 350px; width: 600px; height: 450px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-browser')">
+        <div class="title-bar-text">Aurora Browser - Offline</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('browser')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('browser')">□</div>
+          <div class="control-btn" onclick="closeWindow('browser')">X</div>
+        </div>
+      </div>
+      <div class="window-content" style="padding: 0; display: flex; flex-direction: column;">
+        <div style="background: #e0e0e0; padding: 5px; border-bottom: 1px solid #888; display: flex; gap: 5px; align-items: center;">
+          <button onclick="browserNav('back')" style="cursor:pointer;">&lt; Back</button>
+          <button onclick="browserNav('forward')" style="cursor:pointer;">Forward &gt;</button>
+          <button onclick="browserNav('refresh')" style="cursor:pointer;">Refresh</button>
+          <input type="text" value="http://archive.local/node/03" disabled style="flex-grow: 1; padding: 2px;">
+          <div id="browser-spinner" style="display:none; width: 16px; height: 16px; border: 2px solid #00f; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        </div>
+        <div id="browser-page" style="padding: 20px; flex-grow: 1; overflow: auto; background: #fff; color: #000;">
+          <h1 style="border-bottom: 2px solid #000; padding-bottom: 10px;">Archive Node 03</h1>
+          <p><strong>Status:</strong> OFFLINE</p>
+          <p><strong>Last Sync:</strong> 1998-04-12 03:14:07</p>
+          <p>The connection to the main archive has been severed. Local cache is corrupted.</p>
+          <p style="color: red;">WARNING: Unauthorized access detected. System lockdown initiated.</p>
+          <p>To restore access, use the System Terminal and provide the correct archive phrase.</p>
+        </div>
+      </div>
+    </div>
+    <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
+
+    <!-- Audio Player -->
+    <div class="window" id="win-audio-log" style="width: 350px; height: 180px;">
+      <div class="title-bar">
+        <div class="title-bar-text">Audio Log - Media Player</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('audio-log')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('audio-log')">□</div>
+          <div class="control-btn" onclick="closeWindow('audio-log')">X</div>
+        </div>
+      </div>
+      <div class="window-content" style="background: #222; color: #0f0; padding: 10px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div id="audio-visualizer" style="height: 50px; display: flex; align-items: flex-end; justify-content: space-around; gap: 2px; border-bottom: 1px solid #444; padding-bottom: 5px; background: #000; border: 1px inset #666;">
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-top: 5px;">
+          <span id="audio-time-current">00:00</span>
+          <span id="audio-time-total">00:14</span>
+        </div>
+        <input type="range" id="audio-progress-slider" min="0" max="14" step="0.1" value="0" style="width: 100%; margin: 5px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <button id="play-audio-btn" onclick="toggleAudioLog()" style="background: #ccc; color: #000; border: 2px outset #fff; padding: 2px 10px; font-weight: bold; cursor: pointer;">PLAY</button>
+          <div style="display: flex; align-items: center;">
+            <span style="font-size: 10px; margin-right: 5px; color: #ccc;">VOL</span>
+            <input type="range" id="audio-volume" min="0" max="100" value="50" style="width: 80px;">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Memory Game -->
+    <div class="window" id="win-memory-game" style="width: 320px; height: 360px;">
+      <div class="title-bar">
+        <div class="title-bar-text">Memory Blocks</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('memory-game')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('memory-game')">□</div>
+          <div class="control-btn" onclick="closeWindow('memory-game')">X</div>
+        </div>
+      </div>
+      <div class="window-content" style="display: flex; flex-direction: column; align-items: center; background: #c0c0c0;">
+        <div id="memory-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; width: 100%;">
+          <!-- Generated by JS -->
+        </div>
+        <div id="memory-status" style="margin-top: 15px; font-weight: bold; text-align: center; height: 20px;"></div>
+        <button onclick="initMemoryGame()" style="margin-top: 10px; padding: 5px 15px; cursor: pointer;">Restart</button>
+      </div>
+    </div>
+
+    <!-- Messenger -->
+    <div class="window" id="win-messenger" style="width: 400px; height: 350px;">
+      <div class="title-bar">
+        <div class="title-bar-text">Aurora Messenger v1.0</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('messenger')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('messenger')">□</div>
+          <div class="control-btn" onclick="closeWindow('messenger')">X</div>
+        </div>
+      </div>
+      <div class="window-content" style="display: flex; padding: 0; background: #c0c0c0;">
+        <div style="width: 120px; border-right: 2px solid #808080; background: #fff; display: flex; flex-direction: column;">
+          <div style="padding: 5px; background: #000080; color: #fff; font-weight: bold; font-size: 12px;">Contacts</div>
+          <div class="contact-item" onclick="loadChat('elias')" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px;">Dr. Elias</div>
+          <div class="contact-item" onclick="loadChat('unknown')" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; font-weight: bold; color: #800000;">Unknown User</div>
+          <div class="contact-item" onclick="loadChat('archive')" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; color: #800080;">Archive Node</div>
+        </div>
+        <div style="flex: 1; display: flex; flex-direction: column; background: #fff;">
+          <div id="chat-history" style="flex: 1; overflow-y: auto; padding: 10px; font-size: 12px; border-bottom: 2px solid #808080;">
+            <div style="color: #666; text-align: center; margin-top: 50px;">Select a contact to view history.</div>
+          </div>
+          <div style="height: 40px; display: flex; padding: 5px; background: #c0c0c0;">
+            <input type="text" id="chat-input" disabled placeholder="Select a contact..." style="flex: 1; border: 2px inset #fff; padding: 2px 5px;" onkeydown="if(event.key==='Enter') sendChatMessage()">
+            <button id="chat-send-btn" disabled style="margin-left: 5px; padding: 0 10px;" onclick="sendChatMessage()">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Music Player -->
+    <div class="window" id="win-music-player" style="width: 300px; height: 250px;">
+      <div class="title-bar">
+        <div class="title-bar-text">WinAmp Classic</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('music-player')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('music-player')">□</div>
+          <div class="control-btn" onclick="closeWindow('music-player')">X</div>
+        </div>
+      </div>
+      <div class="window-content" style="background: #111; color: #0f0; padding: 10px; display: flex; flex-direction: column;">
+        <div style="background: #000; border: 2px inset #444; padding: 5px; margin-bottom: 10px; text-align: center; font-family: 'VT323', monospace; font-size: 1.2rem;">
+          <div id="music-track-name" style="color: #0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">1. Mandy - 1997 Mix</div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #0a0; margin-top: 5px;">
+            <span id="music-time">00:00</span>
+            <span>STEREO 128kbps</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 5px; margin-bottom: 10px; justify-content: center;">
+          <button onclick="prevTrack()" style="background: #333; color: #ccc; border: 2px outset #555; cursor: pointer; width: 30px;">|&lt;</button>
+          <button id="music-play-btn" onclick="toggleMusic()" style="background: #333; color: #ccc; border: 2px outset #555; cursor: pointer; width: 50px; font-weight: bold;">PLAY</button>
+          <button onclick="nextTrack()" style="background: #333; color: #ccc; border: 2px outset #555; cursor: pointer; width: 30px;">&gt;|</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 10px;">
+          <span>VOL</span>
+          <input type="range" id="music-volume" min="0" max="100" value="30" style="flex: 1;">
+        </div>
+        <div style="flex: 1; background: #000; border: 2px inset #444; overflow-y: auto; font-size: 12px; padding: 2px;">
+          <div class="playlist-item" style="padding: 2px; cursor: pointer; background: #000080; color: #fff;" onclick="playTrack(0)">1. Mandy</div>
+          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(1)">2. Forever Nights</div>
+          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(2)">3. Neon Memory</div>
+          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(3)">4. City Lights 1997</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Terminal -->
+    <div class="window" id="win-system-term" style="width: 500px; height: 350px;">
+      <div class="title-bar">
+        <div class="title-bar-text">System Terminal</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('system-term')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('system-term')">□</div>
+          <div class="control-btn" onclick="closeWindow('system-term')">X</div>
+        </div>
+      </div>
+      <div class="window-content terminal" id="terminal-content" onclick="document.getElementById('terminal-input').focus()">
+        <div>AURORA OS Terminal v1.3</div>
+        <div>Copyright (C) 1998 Aurora Systems.</div>
+        <br>
+        <div id="terminal-output"></div>
+        <div id="terminal-input-line">
+          <span id="terminal-prompt">C:\></span>
+          <input type="text" id="terminal-input" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="sound-manager.js"></script>
+  <script>
+    function arrangeIcons() {
+      const icons = Array.from(document.querySelectorAll('#desktop > .icon:not(.hidden)'));
+      let startX = 10;
+      let startY = 10;
+      const iconWidth = 90;
+      const iconHeight = 100;
+      
+      icons.forEach(icon => {
+        icon.style.left = startX + 'px';
+        icon.style.top = startY + 'px';
+        startY += iconHeight;
+        if (startY + iconHeight > window.innerHeight - 40) {
+          startY = 10;
+          startX += iconWidth + 10;
+        }
+      });
     }
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
 
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(300, ctx.currentTime);
-    filter.frequency.linearRampToValueAtTime(50, ctx.currentTime + 0.8);
+    // --- Boot Sequence ---
+    const bootScreen = document.getElementById('boot-screen');
+    const bootText = document.getElementById('boot-text');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    const auroraLogo = document.getElementById('aurora-logo');
+    const desktop = document.getElementById('desktop');
 
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.1);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
-
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-
-    noise.start();
-    noise.stop(ctx.currentTime + 1.0);
-  } catch (e) {
-    console.error("Audio not supported");
-  }
-}
-
-function playFlintSound() {
-  try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
-    
-    const osc = ctx.createOscillator();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(4000, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(8000, ctx.currentTime + 0.05);
-    
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-    
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    
-    osc.start();
-    osc.stop(ctx.currentTime + 0.1);
-    
-    const bufferSize = ctx.sampleRate * 0.1;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-    
-    const noiseFilter = ctx.createBiquadFilter();
-    noiseFilter.type = 'highpass';
-    noiseFilter.frequency.value = 5000;
-    
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.5, ctx.currentTime);
-    noiseGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-    
-    noise.connect(noiseFilter);
-    noiseFilter.connect(noiseGain);
-    noiseGain.connect(ctx.destination);
-    
-    noise.start();
-    noise.stop(ctx.currentTime + 0.1);
-  } catch (e) {
-    console.error("Audio not supported");
-  }
-}
-
-function initPhase() {
-  if (phase === '2') {
-    title.textContent = "The Voynich Marginalia.";
-    subtitle.textContent = "The Frenchman holds the key.";
-    document.body.classList.add('phase-2');
-    if (window.soundManager) window.soundManager.startFireCrackling();
-  } else if (phase === '3') {
-    document.body.classList.add('phase-3');
-    startPhase3();
-  }
-}
-
-async function hashInput(str) {
-  const msgUint8 = new TextEncoder().encode(str);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-function startBlackFire() {
-  const canvas = document.createElement('canvas');
-  canvas.style.position = 'fixed';
-  canvas.style.bottom = '0';
-  canvas.style.left = '0';
-  canvas.style.width = '100vw';
-  canvas.style.height = '100vh';
-  canvas.style.zIndex = '900';
-  canvas.style.pointerEvents = 'none';
-  canvas.style.imageRendering = 'pixelated';
-  document.body.appendChild(canvas);
-
-  const ctx = canvas.getContext('2d');
-  const fireWidth = Math.floor(window.innerWidth / 6);
-  const fireHeight = Math.floor(window.innerHeight / 6);
-  canvas.width = fireWidth;
-  canvas.height = fireHeight;
-
-  const firePixels = new Array(fireWidth * fireHeight).fill(0);
-
-  const palette = [];
-  for (let i = 0; i < 36; i++) {
-    if (i === 0) {
-      palette[i] = { r: 0, g: 0, b: 0, a: 0 };
-    } else if (i < 15) {
-      // Grey flames
-      const color = 40 + i * 5; 
-      palette[i] = { r: color, g: color, b: color, a: 255 };
-    } else {
-      // Pitch black
-      palette[i] = { r: 0, g: 0, b: 0, a: 255 };
-    }
-  }
-
-  const fireSourceY = new Array(fireWidth).fill(fireHeight - 1);
-  const fireSpeeds = new Array(fireWidth);
-  const baseSpeed = fireHeight / 1000; // 0.6x speed, adjusted for 30fps
-  for(let i=0; i<fireWidth; i++) {
-    fireSpeeds[i] = baseSpeed * (0.8 + Math.random() * 0.4);
-  }
-
-  // Involve the bonfire
-  const bonfire = document.getElementById('bonfire-container');
-  let bonfireX = fireWidth / 2;
-  let bonfireY = fireHeight - 10;
-  if (bonfire) {
-    const rect = bonfire.getBoundingClientRect();
-    bonfireX = Math.floor((rect.left + rect.width / 2) / 6);
-    bonfireY = Math.floor((rect.top + rect.height / 2) / 6);
-    
-    const flamesGroup = bonfire.querySelector('#flames');
-    if (flamesGroup) flamesGroup.style.display = 'block';
-    bonfire.style.zIndex = '899';
-    
-    // Ignite the floor under the bonfire immediately
-    for (let x = 0; x < fireWidth; x++) {
-      const dist = Math.abs(x - bonfireX);
-      if (dist < 12) {
-        fireSourceY[x] = fireHeight - 1 - (12 - dist) * 0.5;
-        fireSpeeds[x] = baseSpeed * 2; // Spreads slightly faster around the bonfire initially
-      }
-    }
-  }
-
-  function doFire() {
-    for (let x = 0; x < fireWidth; x++) {
-      for (let y = 1; y < fireHeight; y++) {
-        const src = y * fireWidth + x;
-        const pixel = firePixels[src];
-        if (pixel === 0) {
-          firePixels[src - fireWidth] = 0;
-        } else {
-          const spread = Math.round(Math.random() * 5) - 2;
-          const dstX = x + spread;
-          if (dstX >= 0 && dstX < fireWidth) {
-            const decay = Math.random() < 0.15 ? 1 : 0;
-            firePixels[(y - 1) * fireWidth + dstX] = Math.max(0, pixel - decay);
+    let bootStep = 0;
+    const bootSequence = [
+      { text: "Recovering corrupted user environment...", delay: 1500 },
+      { text: "Loading System Kernel", delay: 1000, action: () => {
+        progressContainer.style.display = 'block';
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += Math.random() * 15;
+          if (progress > 100) progress = 100;
+          progressBar.style.width = progress + '%';
+          if (progress === 100) {
+            clearInterval(interval);
+            setTimeout(nextBootStep, 500);
           }
+        }, 100);
+      }},
+      { text: "", delay: 2000, action: () => {
+        progressContainer.style.display = 'none';
+        auroraLogo.style.display = 'block';
+        setTimeout(nextBootStep, 2000);
+      }},
+      { text: "", delay: 500, action: () => {
+        bootScreen.style.display = 'none';
+        desktop.style.display = 'block';
+        arrangeIcons();
+      }}
+    ];
+
+    function nextBootStep() {
+      if (bootStep >= bootSequence.length) return;
+      const step = bootSequence[bootStep];
+      if (step.text !== undefined) bootText.innerText = step.text;
+      if (step.action) {
+        step.action();
+      } else {
+        setTimeout(nextBootStep, step.delay);
+      }
+      bootStep++;
+    }
+
+    // Start boot sequence
+    setTimeout(nextBootStep, 1000);
+
+
+    // --- Window Management ---
+    let zIndexCounter = 100;
+    const openWindows = new Set();
+    const windowTitles = {
+      'recycle-bin': 'Recycle Bin',
+      'case-files': 'Case Files',
+      'notes-txt': 'Notes.txt',
+      'browser': 'Browser',
+      'audio-log': 'Audio Log',
+      'system-term': 'System Terminal',
+      'deleted-log': 'deleted_user.log',
+      'casefile-01': 'casefile_01.txt',
+      'casefile-02': 'casefile_02.txt',
+      'casefile-03': 'casefile_03.txt',
+      'photo-fragment': 'photo_fragment.png',
+      'archive-folder': 'Archive',
+      'system-logs': 'System Logs',
+      'memory-scan-log': 'memory_scan.log',
+      'memory-game': 'Memory Blocks',
+      'messenger': 'Messenger',
+      'music-player': 'Music Player'
+    };
+
+    function openWindow(id) {
+      const win = document.getElementById('win-' + id);
+      if (!win) return;
+      
+      if (!openWindows.has(id)) {
+        openWindows.add(id);
+        
+        if (!win.dataset.positioned) {
+          let winWidth = parseInt(win.style.width) || win.offsetWidth || 300;
+          let winHeight = parseInt(win.style.height) || win.offsetHeight || 200;
+          
+          if (winWidth > window.innerWidth) {
+            winWidth = window.innerWidth;
+            win.style.width = winWidth + 'px';
+          }
+          if (winHeight > window.innerHeight - 35) {
+            winHeight = window.innerHeight - 35;
+            win.style.height = winHeight + 'px';
+          }
+          
+          let left = (window.innerWidth - winWidth) / 2 + (Math.random() * 40 - 20);
+          let top = (window.innerHeight - 35 - winHeight) / 2 + (Math.random() * 40 - 20);
+          
+          if (left < 0) left = 0;
+          if (top < 0) top = 0;
+          
+          win.style.left = left + 'px';
+          win.style.top = top + 'px';
+          win.dataset.positioned = 'true';
         }
-      }
-    }
-  }
-
-  function drawFire() {
-    const imgData = ctx.createImageData(fireWidth, fireHeight);
-    for (let i = 0; i < firePixels.length; i++) {
-      const p = palette[firePixels[i]];
-      if (p) {
-        imgData.data[i * 4] = p.r;
-        imgData.data[i * 4 + 1] = p.g;
-        imgData.data[i * 4 + 2] = p.b;
-        imgData.data[i * 4 + 3] = p.a;
-      }
-    }
-    ctx.putImageData(imgData, 0, 0);
-  }
-
-  setInterval(() => {
-    for (let x = 0; x < fireWidth; x++) {
-      let sy = Math.floor(fireSourceY[x]);
-      if (sy < 0) sy = 0;
-      firePixels[sy * fireWidth + x] = 35;
-      for (let y = sy + 1; y < fireHeight; y++) {
-        firePixels[y * fireWidth + x] = 35;
-      }
-    }
-
-    doFire();
-    drawFire();
-
-    // Bonfire emits grey flames
-    if (bonfireY > 0) {
-      for(let i=0; i<10; i++) {
-        const bx = bonfireX + Math.floor(Math.random() * 20) - 10;
-        const by = bonfireY + Math.floor(Math.random() * 10) - 5;
-        if (bx >= 0 && bx < fireWidth && by >= 0 && by < fireHeight) {
-           firePixels[by * fireWidth + bx] = 14;
-        }
-      }
-    }
-
-    for (let x = 0; x < fireWidth; x++) {
-      if (fireSourceY[x] > 0) {
-        fireSourceY[x] -= fireSpeeds[x];
-        if (Math.random() < 0.05) {
-          fireSpeeds[x] = baseSpeed * (0.8 + Math.random() * 0.4);
-        }
+        
+        win.classList.add('open');
+        
+        // Add to taskbar
+        const taskbarItems = document.getElementById('taskbar-items');
+        const item = document.createElement('div');
+        item.className = 'taskbar-item';
+        item.id = 'taskbar-item-' + id;
+        item.innerText = windowTitles[id];
+        item.onclick = () => toggleWindow(id);
+        taskbarItems.appendChild(item);
+      } else {
+        win.classList.add('open'); // Unminimize
       }
       
-      if (x > 0 && fireSourceY[x - 1] < fireSourceY[x] - 2) {
-        fireSourceY[x] -= baseSpeed;
+      focusWindow(id);
+      closeStartMenu();
+    }
+
+    function closeWindow(id) {
+      const win = document.getElementById('win-' + id);
+      if (win) win.classList.remove('open');
+      openWindows.delete(id);
+      
+      const taskbarItem = document.getElementById('taskbar-item-' + id);
+      if (taskbarItem) taskbarItem.remove();
+      
+      if (id === 'music-player' && typeof pauseMusic === 'function') {
+        pauseMusic();
       }
-      if (x < fireWidth - 1 && fireSourceY[x + 1] < fireSourceY[x] - 2) {
-        fireSourceY[x] -= baseSpeed;
+      if (id === 'audio-log' && typeof pauseAudioLog === 'function') {
+        pauseAudioLog();
       }
     }
-  }, 33);
-}
 
-async function dissolveAndRespond() {
-  const text = input.value.trim().toLowerCase();
-  if (busy || !text) return;
-  busy = true;
-
-  if (window.soundManager) window.soundManager.playDissolve();
-
-  input.classList.add('hidden');
-
-  let charLayer = document.createElement('div');
-  charLayer.className = 'char-layer';
-  text.split('').forEach(c => {
-    const span = document.createElement('span');
-    span.className = 'char';
-    span.textContent = c === ' ' ? '\u00a0' : c;
-    charLayer.appendChild(span);
-  });
-  container.appendChild(charLayer);
-
-  const allChars = charLayer.querySelectorAll('.char');
-  const indices = Array.from({length: allChars.length}, (_, i) => i);
-  for (let i = indices.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [indices[i], indices[j]] = [indices[j], indices[i]];
-  }
-  indices.forEach((idx, order) => {
-    setTimeout(() => { allChars[idx].classList.add('dissolve'); }, order * 40 + Math.random() * 60);
-  });
-  
-  const totalDissolveTime = indices.length * 50 + 600;
-
-  await new Promise(r => setTimeout(r, totalDissolveTime));
-  charLayer.style.opacity = '0';
-
-  const h = await hashInput(text);
-  let msg = "Incorrect. The truth eludes you.";
-  let success = false;
-
-  if (phase === '1' && h === '76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22') {
-    msg = "The earth opens. Seek the marginalia.";
-    success = true;
-    if (window.soundManager) window.soundManager.playSuccess();
-    localStorage.setItem('stage1_phase', '2');
-    setTimeout(() => { window.location.href = 'article.html'; }, 3000);
-  } 
-  else if (phase === '2' && h === 'ba6f8ed6d0d150b2a2ab2bebe99540f8c00cafb0ebdbf71a6f0b768c45425ca7') {
-    msg = "The flame is extinguished.";
-    success = true;
-    if (window.soundManager) {
-      window.soundManager.playSuccess();
-      window.soundManager.stopFireCrackling();
+    function minimizeWindow(id) {
+      const win = document.getElementById('win-' + id);
+      if (win) win.classList.remove('open');
+      
+      const taskbarItem = document.getElementById('taskbar-item-' + id);
+      if (taskbarItem) taskbarItem.classList.remove('active');
     }
-    phase = '3';
-    localStorage.setItem('stage1_phase', '3');
-    
-    // Extinguish the flame immediately
-    document.body.classList.remove('phase-2');
-    document.body.classList.add('phase-3');
-    playBlowSound();
-    
-    // Smooth fade out of text after reading it
-    setTimeout(() => {
-      title.style.transition = 'opacity 1.5s ease';
-      subtitle.style.transition = 'opacity 1.5s ease';
-      response.style.transition = 'opacity 1.5s ease';
-      title.style.opacity = '0';
-      subtitle.style.opacity = '0';
-      response.style.opacity = '0';
-    }, 2000);
 
-    setTimeout(() => { startPhase3(true); }, 4500);
-  }
-  else if (phase === '3' && h === '90b7b8654171c04a5e5de1eae884cfd86952739d50d09d9bb7680763e31faee8') {
-    msg = "GREED";
-    success = true;
-    if (window.soundManager) window.soundManager.playSuccess();
-    setTimeout(() => {
-      if (window.soundManager) window.soundManager.startBlackFire();
-      startBlackFire();
-    }, 5000);
-  }
-
-  if (!success && window.soundManager) window.soundManager.playError();
-
-  response.textContent = msg;
-  response.style.opacity = '1';
-
-  setTimeout(() => {
-    charLayer.remove();
-    if (!success) {
-      response.style.opacity = '0';
-      input.value = '';
-      input.classList.remove('hidden');
-      input.focus();
-    }
-    busy = false;
-  }, 3000);
-}
-
-input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); dissolveAndRespond(); }
-});
-
-function startPhase3(isTransition = false) {
-  phase = '3';
-  document.body.classList.add('phase-3');
-  input.classList.add('hidden');
-  
-  setTimeout(() => {
-    document.getElementById('flashlight-overlay').classList.add('active');
-  }, isTransition ? 0 : 0);
-
-  const canvas = document.getElementById('void-canvas');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  const ctx = canvas.getContext('2d');
-  
-  let dotX = canvas.width * (15 + Math.random() * 70) / 100;
-  let dotY = canvas.height * (15 + Math.random() * 70) / 100;
-  let dotActive = false;
-
-  console.log("%c[SYSTEM WARNING]", "color: red; font-size: 20px; font-weight: bold;");
-  console.log("%cThe Void cannot be parsed. The spark exists outside the DOM.", "color: #8b7355; font-size: 14px;");
-  console.log("%cPut away your tools. Rely on your eyes.", "color: #666; font-style: italic;");
-
-  setTimeout(() => {
-    ctx.fillStyle = '#1a1a1a';
-    ctx.beginPath();
-    ctx.arc(dotX, dotY, 2, 0, Math.PI * 2);
-    ctx.fill();
-    dotActive = true;
-  }, isTransition ? 2000 : 500);
-  
-  let btn = null;
-  document.addEventListener('mousemove', (e) => {
-    document.getElementById('flashlight-overlay').style.setProperty('--x', e.clientX + 'px');
-    document.getElementById('flashlight-overlay').style.setProperty('--y', e.clientY + 'px');
-
-    if (!dotActive || phase !== '3') return;
-    
-    const dx = e.clientX - dotX;
-    const dy = e.clientY - dotY;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-
-    if (dist < 6) {
-      if (!btn) {
-        btn = document.createElement('button');
-        btn.className = 'n-act';
-        btn.textContent = '[ IGNITE ]';
-        btn.style.left = (dotX + 4) + 'px';
-        btn.style.top = (dotY - 10) + 'px';
+    function maximizeWindow(id) {
+      const win = document.getElementById('win-' + id);
+      if (!win) return;
+      
+      if (win.classList.contains('maximized')) {
+        win.classList.remove('maximized');
+        win.style.width = win.dataset.prevWidth;
+        win.style.height = win.dataset.prevHeight;
+        win.style.top = win.dataset.prevTop;
+        win.style.left = win.dataset.prevLeft;
+      } else {
+        win.dataset.prevWidth = win.style.width;
+        win.dataset.prevHeight = win.style.height;
+        win.dataset.prevTop = win.style.top;
+        win.dataset.prevLeft = win.style.left;
         
-        btn.addEventListener('contextmenu', (ev) => {
-          ev.preventDefault();
-          btn.classList.remove('visible');
-          setTimeout(() => { if (btn && btn.parentNode) btn.remove(); btn = null; }, 300);
+        win.classList.add('maximized');
+        win.style.top = '0px';
+        win.style.left = '0px';
+        win.style.width = '100%';
+        win.style.height = 'calc(100% - 35px)';
+      }
+      focusWindow(id);
+    }
+
+    function toggleWindow(id) {
+      const win = document.getElementById('win-' + id);
+      if (!win) return;
+      
+      if (!win.classList.contains('open')) {
+        win.classList.add('open');
+        focusWindow(id);
+      } else {
+        if (win.style.zIndex == zIndexCounter) {
+          minimizeWindow(id);
+        } else {
+          focusWindow(id);
+        }
+      }
+    }
+
+    function focusWindow(id) {
+      const win = document.getElementById('win-' + id);
+      if (win) {
+        zIndexCounter++;
+        win.style.zIndex = zIndexCounter;
+      }
+      
+      document.querySelectorAll('.taskbar-item').forEach(el => el.classList.remove('active'));
+      const taskbarItem = document.getElementById('taskbar-item-' + id);
+      if (taskbarItem) taskbarItem.classList.add('active');
+
+      if (id === 'system-term') {
+        document.getElementById('terminal-input').focus();
+      }
+    }
+
+    // Window and Icon Dragging
+    let isDragging = false;
+    let currentDragElement = null;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    function dragElement(e, el) {
+      if (e.target.classList.contains('control-btn')) return;
+      if (el.classList.contains('maximized')) return;
+      
+      isDragging = true;
+      currentDragElement = el;
+      
+      if (el.classList.contains('window')) {
+        focusWindow(el.id.replace('win-', ''));
+      }
+      
+      const rect = currentDragElement.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+    }
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging || !currentDragElement) return;
+      
+      let x = e.clientX - offsetX;
+      let y = e.clientY - offsetY;
+      
+      // Boundaries
+      if (x < 0) x = 0;
+      if (y < 0) y = 0;
+      if (y > window.innerHeight - 60) y = window.innerHeight - 60;
+      if (x > window.innerWidth - 50) x = window.innerWidth - 50;
+      if (x + currentDragElement.offsetWidth < 50) x = 50 - currentDragElement.offsetWidth;
+      
+      currentDragElement.style.left = x + 'px';
+      currentDragElement.style.top = y + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      currentDragElement = null;
+    });
+
+    function dragWindow(e, winId) {
+      dragElement(e, document.getElementById(winId));
+    }
+    document.querySelectorAll('.title-bar').forEach(bar => {
+      bar.addEventListener('mousedown', (e) => {
+        dragElement(e, bar.parentElement);
+      });
+    });
+
+    // Attach drag to desktop icons
+    document.querySelectorAll('.icon').forEach(icon => {
+      if (icon.parentElement.id === 'desktop') {
+        icon.addEventListener('mousedown', (e) => {
+          dragElement(e, icon);
         });
+      }
+    });
+
+    // Desktop Icon Selection
+    document.querySelectorAll('.icon').forEach(icon => {
+      icon.addEventListener('mousedown', (e) => {
+        document.querySelectorAll('.icon').forEach(i => i.classList.remove('selected'));
+        icon.classList.add('selected');
+        e.stopPropagation();
+      });
+    });
+
+    document.getElementById('desktop').addEventListener('mousedown', (e) => {
+      document.querySelectorAll('.icon').forEach(i => i.classList.remove('selected'));
+      closeContextMenu();
+      closeStartMenu();
+    });
+
+    // --- Context Menu ---
+    const contextMenu = document.getElementById('context-menu');
+    document.getElementById('desktop').addEventListener('contextmenu', (e) => {
+      if (e.target.id === 'desktop') {
+        e.preventDefault();
+        contextMenu.style.display = 'flex';
+        contextMenu.style.left = e.clientX + 'px';
+        contextMenu.style.top = e.clientY + 'px';
+      }
+    });
+
+    function closeContextMenu() {
+      contextMenu.style.display = 'none';
+    }
+
+    function refreshDesktop() {
+      closeContextMenu();
+      document.querySelectorAll('.icon').forEach(icon => {
+        icon.style.display = 'none';
+        setTimeout(() => icon.style.display = 'flex', 100);
+      });
+    }
+
+    function sortIcons() {
+      closeContextMenu();
+      arrangeIcons();
+      refreshDesktop();
+    }
+
+    // --- Start Menu ---
+    const startMenu = document.getElementById('start-menu');
+    const startBtn = document.getElementById('start-btn');
+    
+    function toggleStartMenu(e) {
+      e.stopPropagation();
+      if (startMenu.style.display === 'flex') {
+        closeStartMenu();
+      } else {
+        startMenu.style.display = 'flex';
+        startBtn.classList.add('active');
+        closeContextMenu();
+      }
+    }
+
+    function closeStartMenu() {
+      startMenu.style.display = 'none';
+      startBtn.classList.remove('active');
+    }
+
+    // --- Clock ---
+    const clockEl = document.getElementById('taskbar-clock');
+    setInterval(() => {
+      // Glitch flicker effect
+      if (Math.random() > 0.95) {
+        clockEl.style.opacity = Math.random() > 0.5 ? '0' : '1';
+        clockEl.innerText = Math.random() > 0.5 ? 'ERR' : '1:38 AM';
+      } else {
+        clockEl.style.opacity = '1';
+        clockEl.innerText = '1:38 AM';
+      }
+    }, 200);
+
+    // --- Error Dialog ---
+    function showError(title, message) {
+      if (window.soundManager) window.soundManager.playError();
+      
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+      overlay.style.zIndex = '10000';
+      overlay.style.display = 'flex';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      
+      const dialog = document.createElement('div');
+      dialog.className = 'window';
+      dialog.style.width = '300px';
+      dialog.style.position = 'relative';
+      dialog.style.boxShadow = '5px 5px 15px rgba(0,0,0,0.8)';
+      
+      dialog.innerHTML = `
+        <div class="title-bar" style="background: #800000;">
+          <div class="title-bar-text">${title}</div>
+          <div class="title-bar-controls">
+            <div class="control-btn" onclick="this.closest('.window').parentElement.remove()">X</div>
+          </div>
+        </div>
+        <div class="window-content" style="background: #c0c0c0; color: #000; display: flex; align-items: center; padding: 20px;">
+          <svg width="40" height="40" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2" style="margin-right: 15px; flex-shrink: 0;">
+            <circle cx="16" cy="16" r="14" fill="#fff"></circle>
+            <path d="M10 10l12 12M22 10L10 22" stroke="#f00" stroke-width="4"></path>
+          </svg>
+          <div style="font-size: 14px; font-family: 'Tahoma', sans-serif;">${message}</div>
+        </div>
+        <div style="background: #c0c0c0; padding: 10px; text-align: center; border-top: 1px solid #808080;">
+          <button onclick="this.closest('.window').parentElement.remove()" style="padding: 5px 20px; cursor: pointer; font-family: 'Tahoma', sans-serif;">OK</button>
+        </div>
+      `;
+      
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+    }
+
+    // --- Notifications ---
+    const notifications = [
+      "Background archive sync failed.",
+      "Unauthorized archive query detected.",
+      "Sector 4 memory block corrupted.",
+      "Connection to main node lost."
+    ];
+    
+    function showNotification(msg) {
+      const container = document.getElementById('notifications');
+      const notif = document.createElement('div');
+      notif.className = 'notification';
+      notif.innerHTML = `<svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2"><path d="M16 4l12 24H4L16 4z"/><path d="M16 12v8M16 24v2"/></svg> <span>${msg}</span>`;
+      container.appendChild(notif);
+      
+      setTimeout(() => {
+        notif.style.opacity = '0';
+        setTimeout(() => notif.remove(), 300);
+      }, 5000);
+    }
+
+    setInterval(() => {
+      if (Math.random() > 0.8 && desktop.style.display !== 'none') {
+        showNotification(notifications[Math.floor(Math.random() * notifications.length)]);
+      }
+    }, 15000);
+
+    // --- Audio Player ---
+    // --- Audio Player Logic ---
+    const playBtn = document.getElementById('play-audio-btn');
+    const audioProgressSlider = document.getElementById('audio-progress-slider');
+    const audioTimeCurrent = document.getElementById('audio-time-current');
+    const audioVolume = document.getElementById('audio-volume');
+    const bars = document.querySelectorAll('.bar');
+    
+    let audioContext;
+    let isPlaying = false;
+    let visualizerInterval;
+    let progressInterval;
+    let audioCurrentTime = 0;
+    const audioTotalTime = 14; // seconds
+    let osc, gain, noiseSource;
+    let audioStartTime = 0;
+    let pausedTime = 0;
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      return `0${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function toggleAudioLog() {
+      if (isPlaying) {
+        pauseAudioLog();
+      } else {
+        playAudioLog();
+      }
+    }
+
+    function pauseAudioLog() {
+      if (!isPlaying) return;
+      isPlaying = false;
+      playBtn.innerText = "PLAY";
+      clearInterval(visualizerInterval);
+      clearInterval(progressInterval);
+      bars.forEach(bar => bar.style.height = '2px');
+      if (audioContext && audioContext.state === 'running') {
+        audioContext.suspend();
+      }
+    }
+
+    async function playAudioLog() {
+      if (isPlaying) return;
+      isPlaying = true;
+      playBtn.innerText = "PAUSE";
+      
+      // Stop music if playing
+      if (typeof pauseMusic === 'function') pauseMusic();
+      
+      // Start visualizer
+      visualizerInterval = setInterval(() => {
+        bars.forEach(bar => {
+          bar.style.height = (2 + Math.random() * 40) + 'px';
+        });
+      }, 100);
+
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
         
-        let igniteClicks = 0;
-        btn.addEventListener('click', (ev) => {
-          ev.stopPropagation();
-          playFlintSound();
-          igniteClicks++;
-          
-          if (igniteClicks < 3) {
-            btn.style.transform = 'scale(0.9) translateY(0)';
-            setTimeout(() => btn.style.transform = '', 150);
-            return;
+        const morse = "- .... . / .- .-. -.-. .... .. ...- . / .-. . -- . -- -... . .-. ...";
+        const dotDuration = 0.1;
+        let time = audioContext.currentTime + 0.5;
+        audioStartTime = time;
+        
+        osc = audioContext.createOscillator();
+        gain = audioContext.createGain();
+        
+        osc.type = 'square';
+        osc.frequency.value = 600;
+        
+        // Add distortion
+        const waveShaper = audioContext.createWaveShaper();
+        const curve = new Float32Array(400);
+        for (let i = 0; i < 400; i++) {
+          const x = i * 2 / 400 - 1;
+          curve[i] = (3 + 20) * x * 20 * (Math.PI / 180) / (Math.PI + 20 * Math.abs(x));
+        }
+        waveShaper.curve = curve;
+        waveShaper.oversample = '4x';
+        
+        // Add noise
+        const bufferSize = audioContext.sampleRate * 10;
+        const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 0.5 - 0.25;
+        }
+        noiseSource = audioContext.createBufferSource();
+        noiseSource.buffer = noiseBuffer;
+        noiseSource.loop = true;
+        
+        osc.connect(gain);
+        gain.connect(waveShaper);
+        waveShaper.connect(audioContext.destination);
+        
+        noiseSource.connect(audioContext.destination);
+        
+        gain.gain.setValueAtTime(0, time);
+        
+        for (let i = 0; i < morse.length; i++) {
+          const char = morse[i];
+          if (char === '.') {
+            gain.gain.setValueAtTime(0.5, time);
+            time += dotDuration;
+            gain.gain.setValueAtTime(0, time);
+            time += dotDuration;
+          } else if (char === '-') {
+            gain.gain.setValueAtTime(0.5, time);
+            time += dotDuration * 3;
+            gain.gain.setValueAtTime(0, time);
+            time += dotDuration;
+          } else if (char === ' ') {
+            time += dotDuration * 2;
+          } else if (char === '/') {
+            time += dotDuration * 4;
           }
-
-          document.body.classList.add('light-mode');
-          btn.remove();
-          canvas.remove();
-          title.innerHTML = 'The <a href="https://en.wikipedia.org/wiki/Light" target="_blank" style="color: inherit; text-decoration: none; cursor: pointer;">Light</a>.';
-          subtitle.textContent = "What was hidden is revealed.";
-          input.classList.remove('hidden');
-          input.focus();
-        });
+        }
         
-        document.body.appendChild(btn);
-        requestAnimationFrame(() => {
-          if (btn) btn.classList.add('visible');
-        });
+        osc.start(audioContext.currentTime);
+        noiseSource.start(audioContext.currentTime);
+        
+        osc.stop(time);
+        noiseSource.stop(time);
+        
+        osc.onended = () => {
+          pauseAudioLog();
+          audioCurrentTime = 0;
+          audioProgressSlider.value = 0;
+          audioTimeCurrent.innerText = "00:00";
+        };
+      } else if (audioContext.state === 'suspended') {
+        audioContext.resume();
       }
-    } else if (btn) {
-      const rect = btn.getBoundingClientRect();
-      const isOverBtn = e.clientX >= rect.left - 5 && e.clientX <= rect.right + 5 &&
-                        e.clientY >= rect.top - 5 && e.clientY <= rect.bottom + 5;
-      if (!isOverBtn && dist > 15) {
-        btn.classList.remove('visible');
-        const oldBtn = btn;
-        btn = null;
-        setTimeout(() => { if (oldBtn.parentNode) oldBtn.remove(); }, 300);
+
+      // Update volume
+      const updateVolume = () => {
+        if (gain) gain.gain.value = (audioVolume.value / 100) * 0.5;
+        if (noiseSource) {
+          // Need a separate gain for noise to control its volume, but for simplicity we can just leave it or add one.
+        }
+      };
+      audioVolume.addEventListener('input', updateVolume);
+      updateVolume();
+
+      // Progress
+      progressInterval = setInterval(() => {
+        audioCurrentTime += 0.1;
+        if (audioCurrentTime >= audioTotalTime) {
+          audioCurrentTime = audioTotalTime;
+          pauseAudioLog();
+        }
+        audioProgressSlider.value = audioCurrentTime;
+        audioTimeCurrent.innerText = formatTime(audioCurrentTime);
+      }, 100);
+    }
+    
+    audioProgressSlider.addEventListener('input', (e) => {
+      audioCurrentTime = parseFloat(e.target.value);
+      audioTimeCurrent.innerText = formatTime(audioCurrentTime);
+      // Seeking not fully supported with generated oscillator, but UI updates
+    });
+
+
+    // --- Corrupted Photo Canvas ---
+    const photoCanvas = document.getElementById('corrupted-photo-canvas');
+    if (photoCanvas) {
+      const ctx = photoCanvas.getContext('2d');
+      const w = photoCanvas.width;
+      const h = photoCanvas.height;
+      const imgData = ctx.createImageData(w, h);
+      
+      setInterval(() => {
+        if (document.getElementById('win-photo-fragment').style.display !== 'none') {
+          for (let i = 0; i < imgData.data.length; i += 4) {
+            const noise = Math.random() * 255;
+            imgData.data[i] = noise;
+            imgData.data[i+1] = noise;
+            imgData.data[i+2] = noise;
+            imgData.data[i+3] = 255;
+          }
+          ctx.putImageData(imgData, 0, 0);
+          
+          // Draw some corrupted lines
+          ctx.fillStyle = 'rgba(0,0,0,0.5)';
+          ctx.fillRect(0, Math.random() * h, w, Math.random() * 20);
+          ctx.fillStyle = 'rgba(255,255,255,0.5)';
+          ctx.fillRect(0, Math.random() * h, w, Math.random() * 10);
+        }
+      }, 100);
+    }
+
+    // --- Browser ---
+    function browserNav(action) {
+      const spinner = document.getElementById('browser-spinner');
+      const page = document.getElementById('browser-page');
+      
+      spinner.style.display = 'block';
+      page.style.opacity = '0.5';
+      
+      setTimeout(() => {
+        spinner.style.display = 'none';
+        page.style.opacity = '1';
+        if (action === 'back' || action === 'forward') {
+          showError("NETWORK ERROR", "Navigation failed. The system is currently in offline mode. Connection to the external network is severed.");
+        } else if (action === 'refresh') {
+          showNotification("Page refreshed from local cache.");
+        }
+      }, 800);
+    }
+
+    // --- Terminal ---
+    const termInput = document.getElementById('terminal-input');
+    const termOutput = document.getElementById('terminal-output');
+    const termPrompt = document.getElementById('terminal-prompt');
+    
+    let terminalState = 'normal';
+    let failedAttempts = 0;
+    let cmdHistory = [];
+    let historyIndex = -1;
+
+    function printTerminal(text) {
+      const div = document.createElement('div');
+      termOutput.appendChild(div);
+      
+      // Typewriter effect
+      let i = 0;
+      function type() {
+        if (i < text.length) {
+          div.textContent += text.charAt(i);
+          i++;
+          document.getElementById('terminal-content').scrollTop = document.getElementById('terminal-content').scrollHeight;
+          setTimeout(type, 5);
+        }
+      }
+      type();
+    }
+
+    termInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const cmd = termInput.value.trim();
+        termInput.value = '';
+        
+        if (cmd) {
+          cmdHistory.push(cmd);
+          historyIndex = cmdHistory.length;
+        }
+        
+        if (terminalState === 'normal') {
+          const div = document.createElement('div');
+          div.textContent = "C:\\> " + cmd;
+          termOutput.appendChild(div);
+          document.getElementById('terminal-content').scrollTop = document.getElementById('terminal-content').scrollHeight;
+          handleCommand(cmd.toLowerCase());
+        } else if (terminalState === 'archive_password') {
+          const div = document.createElement('div');
+          div.textContent = cmd.replace(/./g, '*');
+          termOutput.appendChild(div);
+          document.getElementById('terminal-content').scrollTop = document.getElementById('terminal-content').scrollHeight;
+          handleArchivePassword(cmd.toUpperCase());
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (historyIndex > 0) {
+          historyIndex--;
+          termInput.value = cmdHistory[historyIndex];
+        }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (historyIndex < cmdHistory.length - 1) {
+          historyIndex++;
+          termInput.value = cmdHistory[historyIndex];
+        } else {
+          historyIndex = cmdHistory.length;
+          termInput.value = '';
+        }
+      }
+    });
+
+    function handleCommand(cmd) {
+      if (!cmd) return;
+      const args = cmd.split(' ');
+      const baseCmd = args[0];
+      
+      switch(baseCmd) {
+        case 'help':
+          printTerminal("Available commands:");
+          printTerminal("  help    - Show this message");
+          printTerminal("  dir     - List directory contents");
+          printTerminal("  open    - Open a file");
+          printTerminal("  whoami  - Display current user");
+          printTerminal("  log     - View system log");
+          printTerminal("  decrypt - Decrypt a file");
+          printTerminal("  clear   - Clear terminal output");
+          break;
+        case 'clear':
+          termOutput.innerHTML = '';
+          break;
+        case 'dir':
+          printTerminal(" Volume in drive C is AURORA");
+          printTerminal(" Directory of C:\\");
+          printTerminal(" 04/12/1998  03:14 AM    <DIR>          .");
+          printTerminal(" 04/12/1998  03:14 AM    <DIR>          ..");
+          printTerminal(" 04/11/1998  11:22 PM                42 notes.txt");
+          printTerminal(" 04/12/1998  01:05 AM    <DIR>          case_files");
+          printTerminal(" 04/12/1998  02:44 AM           1048576 audio.wav");
+          break;
+        case 'open':
+          if (args.length > 1) {
+            const filename = args[1];
+            const fileMap = {
+              'notes.txt': 'notes-txt',
+              'casefile_01.txt': 'casefile-01',
+              'casefile_02.txt': 'casefile-02',
+              'casefile_03.txt': 'casefile-03',
+              'photo_fragment.png': 'photo-fragment',
+              'deleted_user.log': 'deleted-log',
+              'audio.wav': 'audio-log',
+              'memory_scan.log': 'memory-scan-log'
+            };
+            if (fileMap[filename]) {
+              openWindow(fileMap[filename]);
+              printTerminal("Opening " + filename + "...");
+            } else {
+              printTerminal("Error: File not found or access denied.");
+            }
+          } else {
+            printTerminal("Usage: open <filename>");
+          }
+          break;
+        case 'whoami':
+          printTerminal("vale_a");
+          break;
+        case 'log':
+          printTerminal("System Log:");
+          printTerminal("[WARN] Unauthorized access attempt on node 03.");
+          printTerminal("[ERR]  Archive connection lost.");
+          printTerminal("[INFO] User 'vale_a' initiated backup sequence.");
+          break;
+        case 'decrypt':
+          if (args.length > 1) {
+            printTerminal("Error: Decryption key missing.");
+          } else {
+            printTerminal("Usage: decrypt <filename>");
+          }
+          break;
+        case 'archive':
+          printTerminal("Archive node detected.");
+          printTerminal("Enter archive phrase:");
+          terminalState = 'archive_password';
+          termPrompt.innerText = "";
+          break;
+        default:
+          printTerminal("Bad command or file name.");
       }
     }
-  });
 
-  document.addEventListener('contextmenu', (e) => {
-    if (phase === '3') e.preventDefault();
-  });
+    function handleArchivePassword(pwd) {
+      if (pwd === "THE ARCHIVE REMEMBERS") {
+        printTerminal("Access granted.");
+        terminalState = 'normal';
+        termPrompt.innerText = "C:\\>";
+        
+        // Unlock archive
+        document.getElementById('icon-archive').classList.remove('hidden');
+        if (window.soundManager) window.soundManager.playSuccess();
+      } else {
+        failedAttempts++;
+        if (failedAttempts >= 3) {
+          printTerminal("");
+          printTerminal("SYSTEM ALERT");
+          printTerminal("Archive protection triggered.");
+          printTerminal("");
+          failedAttempts = 0;
+        } else {
+          printTerminal("Access denied.");
+        }
+        terminalState = 'normal';
+        termPrompt.innerText = "C:\\>";
+      }
+    }
 
-  setTimeout(() => {
-    title.textContent = "The Void.";
-    subtitle.textContent = "Find the spark.";
-    title.style.transition = 'opacity 3s ease';
-    subtitle.style.transition = 'opacity 3s ease';
-    title.style.opacity = '1';
-    subtitle.style.opacity = '1';
+    // --- Messenger Logic ---
+    const chats = {
+      'elias': [
+        { sender: 'Dr. Elias', time: '10:42 AM', text: 'Adrian, did you find the logs?' },
+        { sender: 'You', time: '10:45 AM', text: 'Still looking. The system is fighting me.' },
+        { sender: 'Dr. Elias', time: '10:47 AM', text: 'Be careful. They monitor everything.' }
+      ],
+      'unknown': [
+        { sender: 'Unknown', time: '11:00 PM', text: 'Stop digging.' },
+        { sender: 'Unknown', time: '11:01 PM', text: 'You will end up like the others.' },
+        { sender: 'You', time: '11:05 PM', text: 'Who is this?' },
+        { sender: 'Unknown', time: '11:06 PM', text: 'A warning.' }
+      ],
+      'archive': [
+        { sender: 'Archive Node', time: '00:00 AM', text: 'CONNECTION ESTABLISHED' },
+        { sender: 'Archive Node', time: '00:01 AM', text: 'AWAITING INPUT...' }
+      ]
+    };
+
+    let currentChatContact = null;
+
+    function loadChat(contactId) {
+      currentChatContact = contactId;
+      const historyDiv = document.getElementById('chat-history');
+      const inputField = document.getElementById('chat-input');
+      const sendBtn = document.getElementById('chat-send-btn');
+      
+      const chat = chats[contactId];
+      if (!chat) return;
+      
+      // Update UI
+      document.querySelectorAll('.contact-item').forEach(item => {
+        item.style.background = 'transparent';
+        item.style.color = item.innerText === 'Unknown User' ? '#800000' : (item.innerText === 'Archive Node' ? '#800080' : '#000');
+      });
+      event.currentTarget.style.background = '#000080';
+      event.currentTarget.style.color = '#fff';
+      
+      inputField.disabled = false;
+      sendBtn.disabled = false;
+      inputField.placeholder = "Type a message...";
+      inputField.focus();
+      
+      renderChatHistory();
+    }
+
+    function renderChatHistory() {
+      if (!currentChatContact) return;
+      const historyDiv = document.getElementById('chat-history');
+      const chat = chats[currentChatContact];
+      
+      let html = '';
+      chat.forEach(msg => {
+        const isYou = msg.sender === 'You';
+        html += `
+          <div style="margin-bottom: 10px; text-align: ${isYou ? 'right' : 'left'};">
+            <div style="font-weight: bold; color: ${isYou ? '#000080' : '#800000'};">${msg.sender} <span style="font-size: 10px; color: #666; font-weight: normal;">${msg.time}</span></div>
+            <div style="background: ${isYou ? '#e6e6ff' : '#ffe6e6'}; padding: 5px; border-radius: 5px; display: inline-block; max-width: 80%; border: 1px solid #ccc; text-align: left;">${msg.text}</div>
+          </div>
+        `;
+      });
+      historyDiv.innerHTML = html;
+      historyDiv.scrollTop = historyDiv.scrollHeight;
+    }
+
+    function sendChatMessage() {
+      const inputField = document.getElementById('chat-input');
+      const text = inputField.value.trim();
+      if (!text || !currentChatContact) return;
+      
+      const now = new Date();
+      let hours = now.getHours();
+      const ampm = hours >= 12 ? ' PM' : ' AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12; // the hour '0' should be '12'
+      const minutes = now.getMinutes() < 10 ? '0' + now.getMinutes() : now.getMinutes();
+      const timeStr = hours + ':' + minutes + ampm;
+      
+      chats[currentChatContact].push({ sender: 'You', time: timeStr, text: text });
+      inputField.value = '';
+      renderChatHistory();
+      
+      // Auto-reply logic
+      setTimeout(() => {
+        let reply = "";
+        if (currentChatContact === 'elias') {
+          reply = "I'm currently offline. If you find the archive phrase, use the terminal.";
+        } else if (currentChatContact === 'unknown') {
+          reply = "You are running out of time.";
+        } else if (currentChatContact === 'archive') {
+          if (text.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
+            reply = "ACCESS GRANTED. NODE 03 UNLOCKED.";
+            // Unlock archive
+            document.getElementById('icon-archive').classList.remove('hidden');
+            if (window.soundManager) window.soundManager.playSuccess();
+          } else {
+            reply = "INVALID INPUT.";
+          }
+        }
+        
+        chats[currentChatContact].push({ 
+          sender: currentChatContact === 'elias' ? 'Dr. Elias' : (currentChatContact === 'unknown' ? 'Unknown' : 'Archive Node'), 
+          time: timeStr, 
+          text: reply 
+        });
+        renderChatHistory();
+        if (window.soundManager) window.soundManager.playClick();
+      }, 1500);
+    }
+
+    // --- Music Player Logic ---
+    const playlist = [
+      { title: "1. Mandy - 1997 Mix", duration: 180 },
+      { title: "2. Forever Nights", duration: 210 },
+      { title: "3. Neon Memory", duration: 195 },
+      { title: "4. City Lights 1997", duration: 240 }
+    ];
+    let currentTrackIndex = 0;
+    let isMusicPlaying = false;
+    let musicInterval;
+    let musicCurrentTime = 0;
+    let musicOscillators = [];
+    let musicGain;
+
+    function formatMusicTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      return `0${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function toggleMusic() {
+      if (isMusicPlaying) {
+        pauseMusic();
+      } else {
+        playMusic();
+      }
+    }
+
+    function pauseMusic() {
+      if (!isMusicPlaying) return;
+      isMusicPlaying = false;
+      document.getElementById('music-play-btn').innerText = "PLAY";
+      clearInterval(musicInterval);
+      if (audioContext && audioContext.state === 'running') {
+        // We don't suspend the whole context if audio log is playing, but we stop the music oscillators
+        musicOscillators.forEach(osc => {
+          try { osc.stop(); } catch(e) {}
+        });
+        musicOscillators = [];
+      }
+    }
+
+    function playMusic() {
+      if (isMusicPlaying) return;
+      
+      // Pause audio log if playing
+      if (typeof pauseAudioLog === 'function') pauseAudioLog();
+      
+      isMusicPlaying = true;
+      document.getElementById('music-play-btn').innerText = "PAUSE";
+      
+      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === 'suspended') audioContext.resume();
+      
+      updateTrackDisplay();
+      
+      // Generate some retro synth sounds for the music
+      musicGain = audioContext.createGain();
+      musicGain.connect(audioContext.destination);
+      updateMusicVolume();
+      
+      const osc1 = audioContext.createOscillator();
+      const osc2 = audioContext.createOscillator();
+      
+      osc1.type = 'sawtooth';
+      osc2.type = 'square';
+      
+      // Base frequency based on track
+      const baseFreq = 110 + (currentTrackIndex * 55);
+      osc1.frequency.value = baseFreq;
+      osc2.frequency.value = baseFreq * 1.5;
+      
+      // LFO for retro feel
+      const lfo = audioContext.createOscillator();
+      lfo.type = 'sine';
+      lfo.frequency.value = 2; // 2Hz
+      const lfoGain = audioContext.createGain();
+      lfoGain.gain.value = 10;
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc1.frequency);
+      
+      osc1.connect(musicGain);
+      osc2.connect(musicGain);
+      
+      osc1.start();
+      osc2.start();
+      lfo.start();
+      
+      musicOscillators = [osc1, osc2, lfo];
+      
+      musicInterval = setInterval(() => {
+        musicCurrentTime++;
+        if (musicCurrentTime >= playlist[currentTrackIndex].duration) {
+          nextTrack();
+        } else {
+          document.getElementById('music-time').innerText = formatMusicTime(musicCurrentTime);
+        }
+      }, 1000);
+    }
+
+    function updateTrackDisplay() {
+      document.getElementById('music-track-name').innerText = playlist[currentTrackIndex].title;
+      document.getElementById('music-time').innerText = formatMusicTime(musicCurrentTime);
+      
+      // Highlight playlist item
+      const items = document.querySelectorAll('.playlist-item');
+      items.forEach((item, index) => {
+        if (index === currentTrackIndex) {
+          item.style.background = '#000080';
+          item.style.color = '#fff';
+        } else {
+          item.style.background = 'transparent';
+          item.style.color = '#0f0';
+        }
+      });
+    }
+
+    function playTrack(index) {
+      pauseMusic();
+      currentTrackIndex = index;
+      musicCurrentTime = 0;
+      playMusic();
+    }
+
+    function nextTrack() {
+      pauseMusic();
+      currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+      musicCurrentTime = 0;
+      playMusic();
+    }
+
+    function prevTrack() {
+      pauseMusic();
+      currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
+      musicCurrentTime = 0;
+      playMusic();
+    }
+
+    function updateMusicVolume() {
+      const vol = document.getElementById('music-volume').value;
+      if (musicGain) {
+        musicGain.gain.value = (vol / 100) * 0.1; // Keep it soft
+      }
+    }
     
-    // Add random glitch sounds in the void
-    const glitchInterval = setInterval(() => {
-      if (phase === '3' && !document.body.classList.contains('light-mode')) {
-        if (Math.random() < 0.2 && window.soundManager) {
-          window.soundManager.playGlitch();
+    document.getElementById('music-volume').addEventListener('input', updateMusicVolume);
+
+    // --- Memory Game ---
+    let memoryCards = [];
+    let flippedCards = [];
+    let matchedPairs = 0;
+    const totalPairs = 8;
+
+    function initMemoryGame() {
+      const grid = document.getElementById('memory-grid');
+      const status = document.getElementById('memory-status');
+      grid.innerHTML = '';
+      status.innerText = '';
+      flippedCards = [];
+      matchedPairs = 0;
+      
+      const symbols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+      memoryCards = [...symbols, ...symbols].sort(() => Math.random() - 0.5);
+      
+      memoryCards.forEach((symbol, index) => {
+        const card = document.createElement('div');
+        card.style.width = '100%';
+        card.style.height = '60px';
+        card.style.background = '#808080';
+        card.style.borderTop = '2px solid #fff';
+        card.style.borderLeft = '2px solid #fff';
+        card.style.borderBottom = '2px solid #000';
+        card.style.borderRight = '2px solid #000';
+        card.style.display = 'flex';
+        card.style.justifyContent = 'center';
+        card.style.alignItems = 'center';
+        card.style.fontSize = '24px';
+        card.style.fontWeight = 'bold';
+        card.style.cursor = 'pointer';
+        card.dataset.symbol = symbol;
+        card.dataset.index = index;
+        
+        card.onclick = () => flipCard(card);
+        grid.appendChild(card);
+      });
+    }
+
+    function flipCard(card) {
+      if (flippedCards.length >= 2 || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+      
+      card.innerText = card.dataset.symbol;
+      card.style.background = '#fff';
+      card.style.borderTop = '2px solid #000';
+      card.style.borderLeft = '2px solid #000';
+      card.style.borderBottom = '2px solid #fff';
+      card.style.borderRight = '2px solid #fff';
+      card.classList.add('flipped');
+      
+      flippedCards.push(card);
+      
+      if (flippedCards.length === 2) {
+        setTimeout(checkMatch, 500);
+      }
+    }
+
+    function checkMatch() {
+      const [card1, card2] = flippedCards;
+      
+      if (card1.dataset.symbol === card2.dataset.symbol) {
+        card1.classList.add('matched');
+        card2.classList.add('matched');
+        matchedPairs++;
+        
+        if (matchedPairs === totalPairs) {
+          document.getElementById('memory-status').innerText = "System memory scan complete.";
+          showNotification("Memory block recovery successful.");
+          // Reveal system logs
+          const sysLogs = document.getElementById('icon-system-logs');
+          if (!sysLogs) {
+            const desk = document.getElementById('desktop');
+            const icon = document.createElement('div');
+            icon.className = 'icon';
+            icon.id = 'icon-system-logs';
+            icon.style.top = '20px';
+            icon.style.left = '220px';
+            icon.ondblclick = () => openWindow('system-logs');
+            icon.addEventListener('mousedown', (e) => {
+              dragElement(e, icon);
+            });
+            icon.innerHTML = `<svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#ffcc00" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#ffcc00"/></svg><span>System Logs</span>`;
+            desk.appendChild(icon);
+          }
         }
       } else {
-        clearInterval(glitchInterval);
+        card1.innerText = '';
+        card1.style.background = '#808080';
+        card1.style.borderTop = '2px solid #fff';
+        card1.style.borderLeft = '2px solid #fff';
+        card1.style.borderBottom = '2px solid #000';
+        card1.style.borderRight = '2px solid #000';
+        card1.classList.remove('flipped');
+        
+        card2.innerText = '';
+        card2.style.background = '#808080';
+        card2.style.borderTop = '2px solid #fff';
+        card2.style.borderLeft = '2px solid #fff';
+        card2.style.borderBottom = '2px solid #000';
+        card2.style.borderRight = '2px solid #000';
+        card2.classList.remove('flipped');
       }
-    }, 3000);
-  }, isTransition ? 3000 : 100);
-}
+      
+      flippedCards = [];
+    }
 
-// Subtle console initialization
-setTimeout(() => {
-  console.log('%c[TEST]%c initialized', 'color:#8b7355;font-weight:bold;', 'color:#444;');
-}, 2000);
+    // Init game on load
+    initMemoryGame();
 
-window.onload = () => {
-  initPhase();
-  if (!input.classList.contains('hidden')) input.focus();
-};
-document.addEventListener('click', () => {
-  if (!input.classList.contains('hidden')) input.focus();
-});
-</script>
-<button onclick="localStorage.clear(); window.location.reload();" style="position: fixed; bottom: 10px; right: 10px; font-size: 10px; color: #666; background: transparent; border: 1px solid #666; padding: 4px; cursor: pointer; z-index: 9999;">[DEV] Reset Progress</button>
-<script src="sound-manager.js"></script>
+  </script>
 </body>
 </html>
