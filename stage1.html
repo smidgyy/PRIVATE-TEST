@@ -1023,7 +1023,7 @@ fragment remains</div>
 
     <!-- Music Player -->
     <div class="window" id="win-music-player" style="width: 300px; height: 250px;">
-      <audio id="local-audio-player" style="display: none;"></audio>
+      <video id="local-audio-player" style="display: none;" playsinline></video>
       <div class="title-bar">
         <div class="title-bar-text">WinAmp Classic</div>
         <div class="title-bar-controls">
@@ -2306,12 +2306,22 @@ fragment remains</div>
     });
 
     audioPlayer.addEventListener('error', (e) => {
-      console.error("Audio Player Error:", e);
+      console.error("Audio Player Error:", audioPlayer.error);
       isMusicPlaying = false;
       document.getElementById('music-play-btn').innerText = "PLAY";
       clearInterval(audioTimeInterval);
       audioTimeInterval = null;
-      document.getElementById('music-track-name').innerText = "Error: File not found";
+      
+      let errMsg = "Error loading media";
+      if (audioPlayer.error) {
+        switch (audioPlayer.error.code) {
+          case 1: errMsg = "Error: Playback aborted"; break;
+          case 2: errMsg = "Error: Network issue"; break;
+          case 3: errMsg = "Error: Decoding failed"; break;
+          case 4: errMsg = "Error: File not found or format unsupported"; break;
+        }
+      }
+      document.getElementById('music-track-name').innerText = errMsg;
     });
 
     function updateAudioTime() {
