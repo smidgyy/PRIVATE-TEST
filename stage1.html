@@ -1023,7 +1023,7 @@ fragment remains</div>
 
     <!-- Music Player -->
     <div class="window" id="win-music-player" style="width: 300px; height: 250px;">
-      <video id="local-audio-player" style="display: none;" playsinline></video>
+      <audio id="local-audio-player" style="display: none;"></audio>
       <div class="title-bar">
         <div class="title-bar-text">WinAmp Classic</div>
         <div class="title-bar-controls">
@@ -1034,7 +1034,7 @@ fragment remains</div>
       </div>
       <div class="window-content" style="background: #111; color: #0f0; padding: 10px; display: flex; flex-direction: column;">
         <div style="background: #000; border: 2px inset #444; padding: 5px; margin-bottom: 10px; text-align: center; font-family: 'VT323', monospace; font-size: 1.2rem;">
-          <div id="music-track-name" style="color: #0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">1. My Way - Frank Sinatra</div>
+          <div id="music-track-name" style="color: #0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">1. Cybernetic Groove</div>
           <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #0a0; margin-top: 5px;">
             <span id="music-time">00:00</span>
             <span>STEREO 128kbps</span>
@@ -1050,9 +1050,9 @@ fragment remains</div>
           <input type="range" id="music-volume" min="0" max="100" value="30" style="flex: 1;">
         </div>
         <div style="flex: 1; background: #000; border: 2px inset #444; overflow-y: auto; font-size: 12px; padding: 2px;">
-          <div class="playlist-item" style="padding: 2px; cursor: pointer; background: #000080; color: #fff;" onclick="playTrack(0)">1. My Way - Frank Sinatra</div>
-          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(1)">2. Mandy - Barry Manilow</div>
-          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(2)">3. Billie Jean - Michael Jackson</div>
+          <div class="playlist-item" style="padding: 2px; cursor: pointer; background: #000080; color: #fff;" onclick="playTrack(0)">1. Cybernetic Groove</div>
+          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(1)">2. Neon Nights</div>
+          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(2)">3. Synthwave Drift</div>
         </div>
       </div>
     </div>
@@ -2275,9 +2275,9 @@ fragment remains</div>
 
     // --- Music Player Logic ---
     const playlist = [
-      { title: "1. My Way - Frank Sinatra", src: "vidplayback1.mp4" },
-      { title: "2. Mandy - Barry Manilow", src: "vidplayback2.mp4" },
-      { title: "3. Billie Jean - Michael Jackson", src: "vidplayback3.mp4" }
+      { title: "1. Cybernetic Groove", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+      { title: "2. Neon Nights", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+      { title: "3. Synthwave Drift", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
     ];
     let currentTrackIndex = 0;
     let isMusicPlaying = false;
