@@ -28,11 +28,6 @@
       background-color: #000;
       color: #fff;
       user-select: none;
-      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAZ0lEQVQ4T2NkoBAwUqifYdQAhoEwMDCwMDAw/IeT/0E0QzQ2D2QxXAAjE5oYw2A0zYgWwGgY0QKYkDQjWgCjYcQKYEIzI1oAoxnRAhiZ0MQYBsNoGNECAyWMaAEM0cxoAYyGEQeAAQClnB0x8z7k7AAAAABJRU5ErkJggg=='), auto;
-    }
-
-    a, button, .icon, .control-btn, .start-item, .taskbar-item, .context-item, input[type="range"] {
-      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAkUlEQVQ4T2NkoBAwUqifYdQAhoEwMDCwMDAw/IeT/0E0QzQ2D2QxXAAjE5oYw2A0zYgWwGgY0QKYkDQjWgCjYcQKYEIzI1oAo2HECmBCMyNaAKNhxApwYmBg+A/FjGgBjIYRK8CJgYHhPxQzogUwGkasACcGBob/UMyIFsBoGLECnBgYGP5DMSNaAKNhxApwYmAAANk5HjG3x0zBAAAAAElFTkSuQmCC'), pointer !important;
     }
 
     /* Boot Sequence */
@@ -1986,19 +1981,22 @@ fragment remains</div>
 
     // --- Music Player Logic ---
     const playlist = [
-      { title: "1. Mandy - 1997 Mix", duration: 180 },
-      { title: "2. Forever Nights", duration: 210 },
-      { title: "3. Neon Memory", duration: 195 },
-      { title: "4. City Lights 1997", duration: 240 }
+      { title: "1. Mandy - 1997 Mix", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+      { title: "2. Forever Nights", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+      { title: "3. Neon Memory", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
+      { title: "4. City Lights 1997", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" }
     ];
     let currentTrackIndex = 0;
     let isMusicPlaying = false;
-    let musicInterval;
-    let musicCurrentTime = 0;
-    let musicOscillators = [];
-    let musicGain;
+    let musicAudio = new Audio();
+    
+    musicAudio.addEventListener('ended', nextTrack);
+    musicAudio.addEventListener('timeupdate', () => {
+      document.getElementById('music-time').innerText = formatMusicTime(musicAudio.currentTime);
+    });
 
     function formatMusicTime(seconds) {
+      if (isNaN(seconds)) return "00:00";
       const m = Math.floor(seconds / 60);
       const s = Math.floor(seconds % 60);
       return `0${m}:${s < 10 ? '0' : ''}${s}`;
@@ -2016,14 +2014,7 @@ fragment remains</div>
       if (!isMusicPlaying) return;
       isMusicPlaying = false;
       document.getElementById('music-play-btn').innerText = "PLAY";
-      clearInterval(musicInterval);
-      if (audioContext && audioContext.state === 'running') {
-        // We don't suspend the whole context if audio log is playing, but we stop the music oscillators
-        musicOscillators.forEach(osc => {
-          try { osc.stop(); } catch(e) {}
-        });
-        musicOscillators = [];
-      }
+      musicAudio.pause();
     }
 
     function playMusic() {
@@ -2035,58 +2026,17 @@ fragment remains</div>
       isMusicPlaying = true;
       document.getElementById('music-play-btn').innerText = "PAUSE";
       
-      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === 'suspended') audioContext.resume();
+      if (!musicAudio.src || !musicAudio.src.includes(playlist[currentTrackIndex].url)) {
+        musicAudio.src = playlist[currentTrackIndex].url;
+      }
       
       updateTrackDisplay();
-      
-      // Generate some retro synth sounds for the music
-      musicGain = audioContext.createGain();
-      musicGain.connect(audioContext.destination);
       updateMusicVolume();
-      
-      const osc1 = audioContext.createOscillator();
-      const osc2 = audioContext.createOscillator();
-      
-      osc1.type = 'sawtooth';
-      osc2.type = 'square';
-      
-      // Base frequency based on track
-      const baseFreq = 110 + (currentTrackIndex * 55);
-      osc1.frequency.value = baseFreq;
-      osc2.frequency.value = baseFreq * 1.5;
-      
-      // LFO for retro feel
-      const lfo = audioContext.createOscillator();
-      lfo.type = 'sine';
-      lfo.frequency.value = 2; // 2Hz
-      const lfoGain = audioContext.createGain();
-      lfoGain.gain.value = 10;
-      lfo.connect(lfoGain);
-      lfoGain.connect(osc1.frequency);
-      
-      osc1.connect(musicGain);
-      osc2.connect(musicGain);
-      
-      osc1.start();
-      osc2.start();
-      lfo.start();
-      
-      musicOscillators = [osc1, osc2, lfo];
-      
-      musicInterval = setInterval(() => {
-        musicCurrentTime++;
-        if (musicCurrentTime >= playlist[currentTrackIndex].duration) {
-          nextTrack();
-        } else {
-          document.getElementById('music-time').innerText = formatMusicTime(musicCurrentTime);
-        }
-      }, 1000);
+      musicAudio.play().catch(e => console.error("Audio play failed:", e));
     }
 
     function updateTrackDisplay() {
       document.getElementById('music-track-name').innerText = playlist[currentTrackIndex].title;
-      document.getElementById('music-time').innerText = formatMusicTime(musicCurrentTime);
       
       // Highlight playlist item
       const items = document.querySelectorAll('.playlist-item');
@@ -2104,29 +2054,27 @@ fragment remains</div>
     function playTrack(index) {
       pauseMusic();
       currentTrackIndex = index;
-      musicCurrentTime = 0;
+      musicAudio.src = playlist[currentTrackIndex].url;
       playMusic();
     }
 
     function nextTrack() {
       pauseMusic();
       currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
-      musicCurrentTime = 0;
+      musicAudio.src = playlist[currentTrackIndex].url;
       playMusic();
     }
 
     function prevTrack() {
       pauseMusic();
       currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
-      musicCurrentTime = 0;
+      musicAudio.src = playlist[currentTrackIndex].url;
       playMusic();
     }
 
     function updateMusicVolume() {
       const vol = document.getElementById('music-volume').value;
-      if (musicGain) {
-        musicGain.gain.value = (vol / 100) * 0.1; // Keep it soft
-      }
+      musicAudio.volume = vol / 100;
     }
     
     document.getElementById('music-volume').addEventListener('input', updateMusicVolume);
