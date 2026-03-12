@@ -916,7 +916,7 @@ fragment remains</div>
       </div>
       <div class="window-content" style="display: flex; justify-content: center; align-items: center; background: #333; position: relative; overflow: hidden;">
         <canvas id="corrupted-photo-canvas" width="380" height="340" style="width: 100%; height: 100%; object-fit: cover;"></canvas>
-        <!-- The actual image with metadata is hidden here -->
+        <!-- archive -->
         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAATXRFWHRDb21tZW50AEFyY2hpdmUgTm9kZTogMDMKQ29vcmRpbmF0ZXM6IDQxLjQwMzM4LCAyLjE3NDAzCktleSBGcmFnbWVudDogQVJDSElWRVGxz7wAAAALSURBVHjaY2T4DwABBQEBJxjjZgAAAABJRU5ErkJggg==" alt="photo_fragment.png" style="display: none;" id="hidden-photo-data">
       </div>
     </div>
@@ -2205,6 +2205,7 @@ fragment remains</div>
         
         // Unlock archive
         document.getElementById('icon-archive').classList.remove('hidden');
+        arrangeIcons();
         localStorage.setItem('aurora_stage1_complete', 'true');
         if (window.soundManager) window.soundManager.playSuccess();
       } else {
@@ -2317,6 +2318,7 @@ fragment remains</div>
             reply = "ACCESS GRANTED. NODE 03 UNLOCKED.";
             // Unlock archive
             document.getElementById('icon-archive').classList.remove('hidden');
+            arrangeIcons();
             localStorage.setItem('aurora_stage1_complete', 'true');
             if (window.soundManager) window.soundManager.playSuccess();
           } else {
