@@ -2027,6 +2027,7 @@ fragment remains</div>
           page.style.padding = '0';
           page.style.position = 'relative';
           page.style.overflow = 'hidden';
+          page.style.background = '#000'; // Ensure background is black to avoid white flashes
           
           const iframe = document.createElement('iframe');
           iframe.src = 'stage2.html';
@@ -2034,27 +2035,21 @@ fragment remains</div>
           iframe.style.position = 'absolute';
           iframe.style.top = '0';
           iframe.style.left = '0';
-          
-          const baseW = window.innerWidth;
-          const baseH = window.innerHeight;
-          iframe.style.width = baseW + 'px';
-          iframe.style.height = baseH + 'px';
           iframe.style.transformOrigin = 'top left';
           
           page.appendChild(iframe);
           
           function updateIframeScale() {
-            if (!page.contains(iframe)) return;
-            const scaleX = page.clientWidth / baseW;
-            const scaleY = page.clientHeight / baseH;
-            const scale = Math.min(scaleX, scaleY);
+            if (!page.contains(iframe) || page.clientHeight === 0) return;
+            const baseH = 720;
+            const aspect = page.clientWidth / page.clientHeight;
+            const baseW = baseH * aspect;
             
-            const scaledWidth = baseW * scale;
-            const scaledHeight = baseH * scale;
-            const offsetX = (page.clientWidth - scaledWidth) / 2;
-            const offsetY = (page.clientHeight - scaledHeight) / 2;
+            iframe.style.width = baseW + 'px';
+            iframe.style.height = baseH + 'px';
             
-            iframe.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+            const scale = page.clientHeight / baseH;
+            iframe.style.transform = `scale(${scale})`;
           }
           
           const ro = new ResizeObserver(updateIframeScale);

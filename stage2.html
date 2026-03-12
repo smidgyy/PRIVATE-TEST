@@ -4,7 +4,7 @@
 <script>
 if (!localStorage.getItem('aurora_stage1_complete')) {
   document.documentElement.innerHTML = '<body style="background:#000;color:#f00;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;margin:0;"><div><h1>ARCHIVE ACCESS DENIED</h1><p>Node authentication required.</p></div></body>';
-  setTimeout(function(){ window.location.href = 'stage1.html'; }, 3000);
+  setTimeout(function(){ window.top.location.href = 'stage1.html'; }, 3000);
   throw new Error('Access Denied');
 }
 </script>
@@ -64,8 +64,8 @@ body.phase-2 #glow-overlay { opacity: 1; }
   bottom: 40px;
   left: 50%;
   transform: translateX(-50%);
-  width: 128px;
-  height: 128px;
+  width: 108px;
+  height: 108px;
   display: none;
   z-index: 10;
 }
@@ -708,7 +708,7 @@ document.addEventListener('click', () => {
   if (!input.classList.contains('hidden')) input.focus();
 });
 </script>
-<button onclick="localStorage.clear(); window.location.reload();" style="position: fixed; bottom: 10px; right: 10px; font-size: 10px; color: #666; background: transparent; border: 1px solid #666; padding: 4px; cursor: pointer; z-index: 9999;">[DEV] Reset Progress</button>
+<button onclick="let a = localStorage.getItem('aurora_stage1_complete'); localStorage.clear(); if(a) localStorage.setItem('aurora_stage1_complete', a); window.location.reload();" style="position: fixed; bottom: 10px; right: 10px; font-size: 10px; color: #666; background: transparent; border: 1px solid #666; padding: 4px; cursor: pointer; z-index: 9999;">[DEV] Reset Progress</button>
 <script src="sound-manager.js"></script>
 </body>
 </html>
