@@ -2704,34 +2704,36 @@ fragment remains</div>
     }
   </style>
   <script>
-    // 1. Append to deleted_user.log
-    const deletedLog = document.querySelector('#win-deleted-log .window-content');
-    if (deletedLog) {
-      deletedLog.innerHTML += '<br><br>fragment recovered: ZGVwdGg=';
+    // Helper to update clues dynamically based on stage3_step
+    function updateStage3Clues() {
+      let step = parseInt(localStorage.getItem('aurora_stage3_step') || '0');
+      
+      if (step >= 1) {
+        const deletedLog = document.querySelector('#win-deleted-log .window-content');
+        if (deletedLog && !deletedLog.innerHTML.includes('fragment recovered')) {
+          deletedLog.innerHTML += '<br><br>[SYS] 1998-04-12 03:14:07 - fragment recovered: ZGVwdGg=';
+        }
+      }
+      
+      if (step >= 3) {
+        const caseFile3 = document.querySelector('#win-casefile-03 .window-content p:last-child');
+        if (caseFile3 && !caseFile3.innerHTML.includes('7 15 12 4')) {
+          caseFile3.innerHTML += '<br><br>7 15 12 4';
+        }
+      }
+      
+      if (step >= 4) {
+        const audioPlayer = document.getElementById('local-audio-player');
+        if (audioPlayer) {
+          audioPlayer.setAttribute('data-track_note', 'crown');
+        }
+      }
     }
+    
+    // Call initially
+    updateStage3Clues();
 
-    // 2. Append to casefile_03.txt
-    const caseFile3 = document.querySelector('#win-casefile-03 .window-content p:last-child');
-    if (caseFile3) {
-      caseFile3.innerHTML += '<br><br>7 15 12 4';
-    }
-
-    // 3. Audio Clue (hidden label)
-    const audioVis = document.getElementById('audio-visualizer');
-    if (audioVis) {
-      const crownLabel = document.createElement('div');
-      crownLabel.innerText = 'CROWN';
-      crownLabel.style.position = 'absolute';
-      crownLabel.style.bottom = '5px';
-      crownLabel.style.right = '10px';
-      crownLabel.style.fontSize = '8px';
-      crownLabel.style.color = '#111'; // Very subtle
-      crownLabel.style.zIndex = '10';
-      audioVis.parentElement.style.position = 'relative';
-      audioVis.parentElement.appendChild(crownLabel);
-    }
-
-    // 4. Override Messenger
+    // Override Messenger
     if (typeof sendChatMessage !== 'undefined') {
       const _originalSendChatMessage = sendChatMessage;
       sendChatMessage = function() {
@@ -2741,9 +2743,16 @@ fragment remains</div>
         
         if (currentChatContact === 'archive') {
           const t = text.toUpperCase();
-          const stage3Triggers = ['GREED', 'DEPTH', 'MONEY', 'GOLD', 'CROWN'];
+          let step = parseInt(localStorage.getItem('aurora_stage3_step') || '0');
+          let expectedHash = '';
           
-          if (stage3Triggers.includes(t)) {
+          if (step === 0) expectedHash = 'R1JFRUQ=';
+          else if (step === 1) expectedHash = 'REVQVEg=';
+          else if (step === 2) expectedHash = 'TU9ORVk=';
+          else if (step === 3) expectedHash = 'R09MRA==';
+          else if (step === 4) expectedHash = 'Q1JPV04=';
+          
+          if (btoa(t) === expectedHash) {
             const now = new Date();
             let hours = now.getHours();
             const ampm = hours >= 12 ? ' PM' : ' AM';
@@ -2756,68 +2765,55 @@ fragment remains</div>
             inputField.value = '';
             renderChatHistory();
             
+            // Advance step
+            step++;
+            localStorage.setItem('aurora_stage3_step', step.toString());
+            updateStage3Clues();
+            
             // Messenger typing delay
             setTimeout(() => {
               let reply = "";
-              if (t === 'GREED') {
+              if (step === 1) {
                 reply = "So you solved Vale’s second lock.<br><br>Greed was only the beginning.<br><br>Greed leaves traces.<br><br>Vale tried to erase one of them.<br><br>Check the trash.";
-              } else if (t === 'DEPTH') {
+              } else if (step === 2) {
                 reply = "Correct.<br><br>Vale encrypted the next fragment.<br><br>Use the terminal.";
-              } else if (t === 'MONEY') {
+              } else if (step === 3) {
                 reply = "No.<br><br>Money is only the mask.<br><br>Look deeper.";
-              } else if (t === 'GOLD') {
+              } else if (step === 4) {
                 reply = "Closer.<br><br>Vale didn’t follow wealth.<br><br>He followed power.<br><br>Listen.";
-              } else if (t === 'CROWN') {
+              } else if (step === 5) {
                 reply = "You are beginning to see the pattern.<br><br>Greed becomes wealth.<br><br>Wealth becomes power.<br><br>Vale reached this point.<br><br>But he went further.";
                 
                 // Final Event
                 setTimeout(() => {
-                  const browserUrl = document.getElementById('browser-url');
-                  const browserPage = document.getElementById('browser-page');
-                  const urlInput = document.querySelector('#win-browser input[type="text"]');
-                  
-                  if (urlInput && browserPage) {
-                    urlInput.value = 'http://archive.local/node04';
-                    browserPage.innerHTML = '<div style="padding: 4rem 2rem; text-align: center; color: #0f0; font-family: \\"VT323\\", monospace; animation: fadeIn 2s ease forwards;"><h2 style="font-size: 2.5rem; letter-spacing: 0.1em; text-shadow: 0 0 10px #0f0;">ARCHIVE NODE 04 UNLOCKED</h2></div>';
-                    
-                    // Slight browser loading delay
-                    const spinner = document.getElementById('browser-spinner');
-                    if (spinner) {
-                      spinner.style.display = 'block';
-                      browserPage.style.opacity = '0.5';
-                      setTimeout(() => {
-                        spinner.style.display = 'none';
-                        browserPage.style.opacity = '1';
-                        if (window.soundManager) window.soundManager.playSuccess();
-                      }, 800);
-                    } else {
-                      if (window.soundManager) window.soundManager.playSuccess();
-                    }
-                    
-                    // Subtle system notification
-                    const notif = document.createElement('div');
-                    notif.style.position = 'fixed';
-                    notif.style.bottom = '20px';
-                    notif.style.right = '20px';
-                    notif.style.background = 'rgba(0, 20, 0, 0.9)';
-                    notif.style.color = '#0f0';
-                    notif.style.border = '1px solid #0f0';
-                    notif.style.padding = '10px 20px';
-                    notif.style.fontFamily = "'VT323', monospace";
-                    notif.style.fontSize = '1.2rem';
-                    notif.style.zIndex = '10000';
-                    notif.style.boxShadow = '0 0 10px rgba(0, 255, 0, 0.2)';
-                    notif.style.opacity = '0';
-                    notif.style.transition = 'opacity 0.5s ease';
-                    notif.innerText = 'System Notification: Node 04 Unlocked';
-                    document.body.appendChild(notif);
-                    
-                    setTimeout(() => notif.style.opacity = '1', 100);
-                    setTimeout(() => {
-                      notif.style.opacity = '0';
-                      setTimeout(() => notif.remove(), 500);
-                    }, 4000);
+                  localStorage.setItem('aurora_stage3_complete', 'true');
+                  if (typeof openBrowserUrl !== 'undefined') {
+                    openBrowserUrl('archive://node/04');
                   }
+                  
+                  // Subtle system notification
+                  const notif = document.createElement('div');
+                  notif.style.position = 'fixed';
+                  notif.style.bottom = '20px';
+                  notif.style.right = '20px';
+                  notif.style.background = 'rgba(0, 20, 0, 0.9)';
+                  notif.style.color = '#0f0';
+                  notif.style.border = '1px solid #0f0';
+                  notif.style.padding = '10px 20px';
+                  notif.style.fontFamily = "'VT323', monospace";
+                  notif.style.fontSize = '1.2rem';
+                  notif.style.zIndex = '10000';
+                  notif.style.boxShadow = '0 0 10px rgba(0, 255, 0, 0.2)';
+                  notif.style.opacity = '0';
+                  notif.style.transition = 'opacity 0.5s ease';
+                  notif.innerText = 'System Notification: Node 04 Unlocked';
+                  document.body.appendChild(notif);
+                  
+                  setTimeout(() => notif.style.opacity = '1', 100);
+                  setTimeout(() => {
+                    notif.style.opacity = '0';
+                    setTimeout(() => notif.remove(), 500);
+                  }, 4000);
                 }, 2000);
               }
               
@@ -2838,7 +2834,7 @@ fragment remains</div>
       };
     }
 
-    // 5. Override Terminal Command
+    // Override Terminal Command
     if (typeof handleCommand !== 'undefined') {
       const _originalHandleCommand = handleCommand;
       handleCommand = function(cmd) {
@@ -2846,12 +2842,15 @@ fragment remains</div>
         const args = cmd.trim().split(/\s+/);
         const baseCmd = args[0].toLowerCase();
         
-        if (baseCmd === 'decrypt' && args.length > 1 && args[1].toLowerCase() === 'depth') {
+        let step = parseInt(localStorage.getItem('aurora_stage3_step') || '0');
+        
+        if (step >= 2 && baseCmd === 'decrypt' && args.length > 1 && args[1].toLowerCase() === 'depth') {
           printTerminal("algorithm: caesar");
           printTerminal("shift: 7");
           printTerminal("");
           printTerminal("encoded string:");
           printTerminal("kwws://dufklyh.orfdo/qrgh03/vhfuhw");
+          localStorage.setItem('aurora_stage3_step1', 'true');
           return;
         }
         
@@ -2859,35 +2858,96 @@ fragment remains</div>
       };
     }
 
-    // 6. Override Browser Navigation for the secret page
+    // Override Browser Navigation for virtual routing
+    if (typeof openBrowserUrl !== 'undefined') {
+      const _originalOpenBrowserUrl = openBrowserUrl;
+      openBrowserUrl = function(url) {
+        let targetUrl = url;
+        if (url === 'http://archive.local/' + 'stage' + '2.html') {
+          targetUrl = 'archive://node/02';
+        } else if (url === 'archive.local/node03/secret' || url === 'http://archive.local/node03/secret') {
+          targetUrl = 'archive://node/03/secret';
+        }
+        
+        if (targetUrl === 'archive://node/02' || targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://node/04') {
+          openWindow('browser');
+          const spinner = document.getElementById('browser-spinner');
+          const page = document.getElementById('browser-page');
+          const urlInput = document.querySelector('#win-browser input[type="text"]');
+          
+          if (urlInput) urlInput.value = targetUrl;
+          if (spinner) spinner.style.display = 'block';
+          if (page) page.style.opacity = '0.5';
+          
+          setTimeout(() => {
+            if (spinner) spinner.style.display = 'none';
+            if (page) {
+              page.style.opacity = '1';
+              page.innerHTML = '';
+              page.style.padding = '0';
+              page.style.position = 'relative';
+              page.style.overflow = 'hidden';
+              page.style.background = '#000';
+              
+              const iframe = document.createElement('iframe');
+              iframe.style.border = 'none';
+              iframe.style.position = 'absolute';
+              iframe.style.top = '0';
+              iframe.style.left = '0';
+              iframe.style.width = '100%';
+              iframe.style.height = '100%';
+              
+              let fetchPath = '';
+              if (targetUrl === 'archive://node/02') fetchPath = '/' + 'stage' + '2.html';
+              else if (targetUrl === 'archive://node/03/secret') fetchPath = '/' + 'node03' + '/' + 'secret.html';
+              else if (targetUrl === 'archive://node/04') fetchPath = '/' + 'node04' + '.html';
+              
+              fetch(fetchPath)
+                .then(res => res.text())
+                .then(html => {
+                  iframe.srcdoc = html;
+                  page.appendChild(iframe);
+                })
+                .catch(err => {
+                  page.innerHTML = '<div style="padding: 20px; color: red;">Error loading node.</div>';
+                });
+            }
+            if (window.soundManager && targetUrl === 'archive://node/04') {
+              window.soundManager.playSuccess();
+            }
+          }, 800);
+          return;
+        }
+        
+        _originalOpenBrowserUrl(url);
+      };
+    }
+
+    // Update existing links to use virtual routes and sanitize DOM
+    document.querySelectorAll('a').forEach(a => {
+      if (a.innerText === 'http://archive.local/' + 'stage' + '2.html') {
+        a.innerText = 'archive://node/02';
+        a.setAttribute('onclick', "openBrowserUrl('archive://node/02'); return false;");
+      }
+    });
+
+    // Sanitize script tags to hide stage2.html from inspector without modifying original file source
+    document.querySelectorAll('script').forEach(script => {
+      const s2 = 'stage' + '2.html';
+      if (script.innerHTML.includes(s2) && !script.innerHTML.includes('fetchPath')) {
+        script.innerHTML = script.innerHTML.replace(new RegExp('http://archive.local/' + s2, 'g'), 'archive://node/02')
+                                           .replace(new RegExp("'" + s2 + "'", 'g'), "'archive://node/02'");
+      }
+    });
+
+    // Enable browser input
     const browserInput = document.querySelector('#win-browser input[type="text"]');
     if (browserInput) {
       browserInput.disabled = false;
       browserInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           const url = this.value.trim().toLowerCase();
-          if (url === 'http://archive.local/node03/secret') {
-            const spinner = document.getElementById('browser-spinner');
-            const page = document.getElementById('browser-page');
-            
-            if (spinner) spinner.style.display = 'block';
-            if (page) page.style.opacity = '0.5';
-            
-            setTimeout(() => {
-              if (spinner) spinner.style.display = 'none';
-              if (page) {
-                page.style.opacity = '1';
-                page.style.padding = '0';
-                page.innerHTML = `
-                  <div style="padding: 4rem 2rem; text-align: center; color: #c4c0b8; font-family: 'VT323', monospace;">
-                    <!-- greed always reveals the crown -->
-                    <h2 style="font-size: 2rem; color: #8b7355; margin-bottom: 2rem; letter-spacing: 0.1em;">ARCHIVE FRAGMENT RECOVERED</h2>
-                    <div style="font-size: 2.5rem; letter-spacing: 0.3em; color: #e0dcd0;">13-15-14-5-25</div>
-                  </div>
-                `;
-              }
-            }, 1000); // Slight loading delay
-          } else if (typeof openBrowserUrl !== 'undefined') {
+          if (typeof openBrowserUrl !== 'undefined') {
             openBrowserUrl(url);
           }
         }

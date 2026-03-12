@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+if (!localStorage.getItem('aurora_stage3_complete')) {
+  document.documentElement.innerHTML = '<body style="background:#000;color:#f00;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;margin:0;"><div><h1>ACCESS DENIED</h1><p>Node authentication required.</p></div></body>';
+  setTimeout(function(){ window.top.location.href = '/stage1.html'; }, 3000);
+  throw new Error('Access Denied');
+}
+</script>
+<meta charset="UTF-8">
+<style>
+  body { background: #000; color: #0f0; font-family: 'VT323', monospace; margin: 0; padding: 0; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</head>
+<body>
+  <div style="padding: 4rem 2rem; text-align: center; animation: fadeIn 2s ease forwards;">
+    <h2 style="font-size: 2.5rem; letter-spacing: 0.1em; text-shadow: 0 0 10px #0f0;">ARCHIVE NODE 04 UNLOCKED</h2>
+  </div>
+</body>
+</html>
