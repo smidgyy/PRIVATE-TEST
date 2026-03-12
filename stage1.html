@@ -24,10 +24,14 @@
       padding: 0;
       height: 100%;
       overflow: hidden;
-      font-family: 'Tahoma', 'Segoe UI', sans-serif;
+      font-family: 'Pixelify Sans', sans-serif;
       background-color: #000;
       color: #fff;
       user-select: none;
+    }
+    
+    button, input, select, textarea {
+      font-family: 'Pixelify Sans', sans-serif;
     }
 
     /* Boot Sequence */
@@ -77,6 +81,7 @@
       height: 100%;
       background-color: var(--bg-color);
       position: relative;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
     }
 
     .icon {
@@ -90,12 +95,16 @@
       cursor: pointer;
       position: absolute;
       text-align: center;
-      transition: transform 0.1s;
+      transition: transform 0.1s, background-color 0.1s, border 0.1s;
       z-index: 10;
+      border: 1px dotted transparent;
+      border-radius: 2px;
     }
 
     .icon:hover {
       transform: translateY(-2px);
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px dotted rgba(255, 255, 255, 0.5);
     }
 
     .icon img {
@@ -103,7 +112,7 @@
       height: 40px;
       image-rendering: pixelated;
       margin-bottom: 5px;
-      filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));
+      filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.5));
     }
 
     .icon span {
@@ -111,7 +120,7 @@
       color: #fff;
       padding: 2px 4px;
       font-size: 0.8rem;
-      text-shadow: 1px 1px 0 #000;
+      text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
       border: 1px dotted transparent;
     }
 
@@ -135,10 +144,18 @@
       box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
       color: var(--text-color);
       font-size: 0.9rem;
+      transform-origin: top left;
+      animation: contextMenuOpen 0.1s ease-out;
+    }
+    
+    @keyframes contextMenuOpen {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
     }
     .context-item {
       padding: 4px 15px;
       cursor: pointer;
+      transition: background 0.1s, color 0.1s;
     }
     .context-item:hover {
       background: #000080;
@@ -192,6 +209,13 @@
       margin-right: 4px;
       height: 25px;
     }
+    .taskbar-right svg {
+      transition: stroke 0.1s;
+      cursor: help;
+    }
+    .taskbar-right svg:hover {
+      stroke: #000080;
+    }
 
     #start-btn {
       height: 28px;
@@ -208,6 +232,7 @@
       gap: 5px;
       color: #000;
       font-size: 0.9rem;
+      transition: background 0.1s, border 0.1s;
     }
 
     #start-btn:active, #start-btn.active {
@@ -236,6 +261,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      transition: background 0.1s, border 0.1s;
     }
     .taskbar-item.active {
       border-top: 2px solid var(--window-border-darker);
@@ -264,6 +290,13 @@
       padding: 2px;
       box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
       color: var(--text-color);
+      transform-origin: bottom left;
+      animation: startMenuOpen 0.15s ease-out;
+    }
+    
+    @keyframes startMenuOpen {
+      from { opacity: 0; transform: scaleY(0.9) translateY(10px); }
+      to { opacity: 1; transform: scaleY(1) translateY(0); }
     }
     .start-menu-sidebar {
       width: 30px;
@@ -294,6 +327,7 @@
       align-items: center;
       gap: 10px;
       font-size: 0.9rem;
+      transition: background 0.1s, color 0.1s;
     }
     .start-item:hover {
       background: #000080;
@@ -318,12 +352,13 @@
       flex-direction: column;
       min-width: 300px;
       min-height: 200px;
-      box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+      box-shadow: 4px 4px 15px rgba(0,0,0,0.6);
       color: var(--text-color);
       transition: transform 0.15s ease-out, opacity 0.15s ease-out;
       transform: scale(0.95);
       opacity: 0;
       pointer-events: none;
+      padding: 2px;
     }
 
     .window.open {
@@ -341,6 +376,7 @@
       height: calc(100% - 35px) !important;
       border: none !important;
       border-radius: 0 !important;
+      padding: 0;
     }
 
     .window.active {
@@ -348,27 +384,29 @@
     }
 
     .title-bar {
-      background: var(--title-bg);
+      background: linear-gradient(90deg, #000080, #1084d0);
       color: var(--title-text);
-      padding: 3px 5px;
+      padding: 3px 4px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-weight: bold;
       cursor: default;
+      margin-bottom: 2px;
     }
     .window:not(.active) .title-bar {
-      background: #808080;
+      background: linear-gradient(90deg, #808080, #b0b0b0);
     }
 
     .title-bar-text {
       font-size: 0.85rem;
       letter-spacing: 0.5px;
+      text-shadow: 1px 1px 0 #000;
     }
 
     .title-bar-controls {
       display: flex;
-      gap: 2px;
+      gap: 3px;
     }
 
     .control-btn {
@@ -386,6 +424,8 @@
       cursor: pointer;
       color: #000;
       font-weight: bold;
+      box-shadow: inset -1px -1px 1px rgba(0,0,0,0.2);
+      transition: background 0.1s, box-shadow 0.1s;
     }
 
     .control-btn:active {
@@ -395,6 +435,11 @@
       border-right: 1px solid var(--window-border-light);
       padding-top: 1px;
       padding-left: 1px;
+      box-shadow: inset 1px 1px 1px rgba(0,0,0,0.2);
+    }
+
+    .control-btn:hover {
+      background: #dfdfdf;
     }
 
     .window-content {
@@ -402,8 +447,11 @@
       flex-grow: 1;
       overflow: auto;
       background: #fff;
-      margin: 2px;
-      border: 1px solid var(--window-border-dark);
+      margin: 0;
+      border-top: 2px solid var(--window-border-dark);
+      border-left: 2px solid var(--window-border-dark);
+      border-bottom: 2px solid var(--window-border-light);
+      border-right: 2px solid var(--window-border-light);
       font-size: 0.9rem;
       white-space: pre-wrap;
     }
@@ -426,11 +474,25 @@
       align-items: center;
     }
 
+    @keyframes crtFlicker {
+      0% { opacity: 0.95; }
+      5% { opacity: 0.85; }
+      10% { opacity: 0.95; }
+      15% { opacity: 1; }
+      100% { opacity: 1; }
+    }
+
     .window-content.terminal {
       background: #000;
       color: #0f0;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'VT323', monospace;
       white-space: pre-wrap;
+      text-shadow: 0 0 5px rgba(0, 255, 0, 0.8), 0 0 2px rgba(0, 255, 0, 0.5);
+      position: relative;
+      overflow-y: auto;
+      background-image: linear-gradient(rgba(0, 255, 0, 0.03) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      animation: crtFlicker 0.15s infinite;
     }
 
     #terminal-input-line {
@@ -441,10 +503,11 @@
       background: transparent;
       border: none;
       color: #0f0;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
+      font-family: 'VT323', monospace;
+      font-size: 1.2rem;
       flex-grow: 1;
       outline: none;
+      text-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
     }
 
     /* Notifications */
@@ -488,7 +551,7 @@
       width: 32px; height: 32px;
       background-color: transparent;
       display: inline-block;
-      filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
+      filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.5));
     }
     
     /* Blinking cursor */
@@ -519,6 +582,27 @@
       margin: 10px;
       width: 100px;
       height: 100px;
+      border: 1px dotted transparent;
+      border-radius: 2px;
+    }
+
+    .window-content.explorer .icon:hover {
+      background-color: rgba(0, 0, 255, 0.1);
+      border: 1px dotted rgba(0, 0, 255, 0.3);
+    }
+
+    .window-content.explorer .icon-img {
+      width: 48px;
+      height: 48px;
+      filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.2));
+    }
+
+    .window-content.explorer .icon span {
+      color: #000 !important;
+      text-shadow: none !important;
+      font-weight: 500;
+      margin-top: 5px;
+      padding: 2px 4px;
     }
   </style>
 </head>
@@ -613,7 +697,7 @@
           <svg width="16" height="16" viewBox="0 0 32 32" fill="#000" stroke="#0f0" stroke-width="2"><rect x="4" y="6" width="24" height="20"/><path d="M8 12l4 4-4 4M16 20h6"/></svg>
           Terminal
         </div>
-        <div class="start-item" style="background: #000080; color: white;" onclick="openWindow('case-files')">
+        <div class="start-item" onclick="openWindow('case-files')">
           <svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="#ffcc00" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#ffcc00"/></svg>
           Case Files
         </div>
@@ -738,7 +822,7 @@
           <div class="control-btn" onclick="closeWindow('memory-scan-log')">X</div>
         </div>
       </div>
-      <div class="window-content" style="font-family: monospace;">Memory block recovery successful.
+      <div class="window-content" style="font-family: 'VT323', monospace; font-size: 1.2rem;">Memory block recovery successful.
 
 Recovered archive fragment:
 NODE_03</div>
@@ -773,7 +857,7 @@ NODE_03</div>
           <div class="control-btn" onclick="closeWindow('stage2-note')">X</div>
         </div>
       </div>
-      <div class="window-content" style="background: #fff; color: #000; font-family: 'Courier New', Courier, monospace; white-space: pre-wrap; padding: 15px;">
+      <div class="window-content" style="background: #fff; color: #000; font-family: 'VT323', monospace; font-size: 1.2rem; white-space: pre-wrap; padding: 15px;">
 Recovered archive link:
 <a href="#" onclick="openBrowserUrl('http://archive.local/stage2.html'); return false;" style="color: blue; text-decoration: underline;">http://archive.local/stage2.html</a>
       </div>
@@ -815,7 +899,7 @@ Something is hidden there.
           <div class="control-btn" onclick="closeWindow('deleted-log')">X</div>
         </div>
       </div>
-      <div class="window-content" style="font-family: monospace;">user archive deletion attempt detected
+      <div class="window-content" style="font-family: 'VT323', monospace; font-size: 1.2rem;">user archive deletion attempt detected
 recovery incomplete
 fragment remains</div>
     </div>
@@ -829,7 +913,7 @@ fragment remains</div>
           <div class="control-btn" onclick="closeWindow('casefile-01')">X</div>
         </div>
       </div>
-      <div class="window-content" style="background: #fff; color: #000; padding: 15px; font-family: 'Times New Roman', serif; overflow-y: auto;">
+      <div class="window-content" style="background: #fff; color: #000; padding: 15px; font-family: 'Pixelify Sans', sans-serif; overflow-y: auto;">
         <div style="display: flex; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
           <div style="width: 100px; height: 120px; border: 1px solid #000; background: #ccc; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
             <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -857,7 +941,7 @@ fragment remains</div>
           <div class="control-btn" onclick="closeWindow('casefile-02')">X</div>
         </div>
       </div>
-      <div class="window-content" style="background: #fff; color: #000; padding: 15px; font-family: 'Times New Roman', serif; overflow-y: auto;">
+      <div class="window-content" style="background: #fff; color: #000; padding: 15px; font-family: 'Pixelify Sans', sans-serif; overflow-y: auto;">
         <div style="display: flex; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
           <div style="width: 100px; height: 120px; border: 1px solid #000; background: #ccc; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
             <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
@@ -885,7 +969,7 @@ fragment remains</div>
           <div class="control-btn" onclick="closeWindow('casefile-03')">X</div>
         </div>
       </div>
-      <div class="window-content" style="background: #fff; color: #000; padding: 15px; font-family: 'Times New Roman', serif; overflow-y: auto;">
+      <div class="window-content" style="background: #fff; color: #000; padding: 15px; font-family: 'Pixelify Sans', sans-serif; overflow-y: auto;">
         <div style="display: flex; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
           <div style="width: 100px; height: 120px; border: 1px solid #000; background: #ccc; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
             <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
@@ -939,17 +1023,29 @@ fragment remains</div>
           <input type="text" value="http://archive.local/node/03" disabled style="flex-grow: 1; padding: 2px;">
           <div id="browser-spinner" style="display:none; width: 16px; height: 16px; border: 2px solid #00f; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
         </div>
-        <div id="browser-page" style="padding: 20px; flex-grow: 1; overflow: auto; background: #fff; color: #000;">
-          <h1 style="border-bottom: 2px solid #000; padding-bottom: 10px;">Archive Node 03</h1>
-          <p><strong>Status:</strong> OFFLINE</p>
-          <p><strong>Last Sync:</strong> 1998-04-12 03:14:07</p>
-          <p>The connection to the main archive has been severed. Local cache is corrupted.</p>
-          <p style="color: red;">WARNING: Unauthorized access detected. System lockdown initiated.</p>
-          <p>To restore access, use the System Terminal and provide the correct archive phrase.</p>
+        <div id="browser-page" style="padding: 0; flex-grow: 1; overflow-x: hidden; overflow-y: auto; background: #0a0a0a; color: #c4c0b8; font-family: 'Pixelify Sans', sans-serif; line-height: 1.8;">
+          <div style="max-width: 700px; margin: 0 auto; padding: 4rem 2rem; animation: fadeIn 3s ease forwards;">
+            <div style="text-align: left; margin-bottom: 4rem; border-bottom: 2px solid #333; padding-bottom: 1rem;">
+              <div style="font-size: 2.5rem; font-weight: bold; letter-spacing: 0.05em; color: #e0dcd0;">Archive Node 03</div>
+            </div>
+
+            <p style="font-size: 1.2rem; margin-bottom: 2.5rem;"><strong style="color: #8b7355; font-family: 'VT323', monospace; font-size: 1.4rem;">Status:</strong> OFFLINE</p>
+
+            <p style="font-size: 1.2rem; margin-bottom: 2.5rem;"><strong style="color: #8b7355; font-family: 'VT323', monospace; font-size: 1.4rem;">Last Sync:</strong> 1998-04-12 03:14:07</p>
+
+            <p style="font-size: 1.2rem; margin-bottom: 2.5rem;">The connection to the main archive has been severed. Local cache is corrupted.</p>
+
+            <p style="color: #ff4444; font-size: 1.2rem; margin-bottom: 2.5rem;">WARNING: Unauthorized access detected. System lockdown initiated.</p>
+
+            <p style="font-size: 1.2rem; margin-bottom: 2.5rem;">To restore access, use the System Terminal and provide the correct archive phrase.</p>
+          </div>
         </div>
       </div>
     </div>
-    <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
+    <style>
+      @keyframes spin { 100% { transform: rotate(360deg); } }
+      .void-text::selection { background: #8b7355; color: #000; }
+    </style>
 
     <!-- Audio Player -->
     <div class="window" id="win-audio-log" style="width: 350px; height: 180px;">
@@ -961,29 +1057,29 @@ fragment remains</div>
           <div class="control-btn" onclick="closeWindow('audio-log')">X</div>
         </div>
       </div>
-      <div class="window-content" style="background: #222; color: #0f0; padding: 10px; display: flex; flex-direction: column; justify-content: space-between;">
-        <div id="audio-visualizer" style="height: 50px; display: flex; align-items: flex-end; justify-content: space-around; gap: 2px; border-bottom: 1px solid #444; padding-bottom: 5px; background: #000; border: 1px inset #666;">
-          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
-          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
-          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
-          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
-          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
-          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
-          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
-          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
-          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
-          <div class="bar" style="width: 8px; height: 2px; background: #0f0;"></div>
+      <div class="window-content" style="background: #111; color: #0f0; padding: 10px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div id="audio-visualizer" style="height: 50px; display: flex; align-items: flex-end; justify-content: space-around; gap: 2px; border-bottom: 1px solid #444; padding-bottom: 5px; background: #000; border: 2px inset #444;">
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0; transition: height 0.05s ease;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0; transition: height 0.05s ease;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0; transition: height 0.05s ease;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0; transition: height 0.05s ease;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0; transition: height 0.05s ease;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0; transition: height 0.05s ease;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0; transition: height 0.05s ease;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0; transition: height 0.05s ease;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0; transition: height 0.05s ease;"></div>
+          <div class="bar" style="width: 8px; height: 2px; background: #0f0; transition: height 0.05s ease;"></div>
         </div>
-        <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-top: 5px;">
+        <div style="display: flex; justify-content: space-between; font-family: 'VT323', monospace; font-size: 18px; margin-top: 5px; color: #0f0; text-shadow: 0 0 5px #0f0;">
           <span id="audio-time-current">00:00</span>
           <span id="audio-time-total">00:16</span>
         </div>
-        <input type="range" id="audio-progress-slider" min="0" max="16.3" step="0.1" value="0" style="width: 100%; margin: 5px 0; pointer-events: none;">
+        <input type="range" id="audio-progress-slider" min="0" max="16.3" step="0.1" value="0" style="width: 100%; margin: 5px 0; pointer-events: none; accent-color: #0f0;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <button id="play-audio-btn" onclick="toggleAudioLog()" style="background: #ccc; color: #000; border: 2px outset #fff; padding: 2px 10px; font-weight: bold; cursor: pointer;">PLAY</button>
+          <button id="play-audio-btn" onclick="toggleAudioLog()" style="background: #c0c0c0; color: #000; border: 2px outset #fff; padding: 4px 12px; font-weight: bold; cursor: pointer; box-shadow: 1px 1px 2px rgba(0,0,0,0.5);">PLAY</button>
           <div style="display: flex; align-items: center;">
             <span style="font-size: 10px; margin-right: 5px; color: #ccc;">VOL</span>
-            <input type="range" id="audio-volume" min="0" max="100" value="50" style="width: 80px;">
+            <input type="range" id="audio-volume" min="0" max="100" value="50" style="width: 80px; accent-color: #0f0;">
           </div>
         </div>
       </div>
@@ -1010,7 +1106,7 @@ fragment remains</div>
 
     <!-- Messenger -->
     <div class="window" id="win-messenger" style="width: 400px; height: 350px;">
-      <div class="title-bar">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-messenger')">
         <div class="title-bar-text">Aurora Messenger v1.0</div>
         <div class="title-bar-controls">
           <div class="control-btn" onclick="minimizeWindow('messenger')">_</div>
@@ -1018,20 +1114,20 @@ fragment remains</div>
           <div class="control-btn" onclick="closeWindow('messenger')">X</div>
         </div>
       </div>
-      <div class="window-content" style="display: flex; padding: 0; background: #c0c0c0;">
-        <div style="width: 120px; border-right: 2px solid #808080; background: #fff; display: flex; flex-direction: column;">
-          <div style="padding: 5px; background: #000080; color: #fff; font-weight: bold; font-size: 12px;">Contacts</div>
-          <div class="contact-item" onclick="loadChat('elias')" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px;">Dr. Elias</div>
-          <div class="contact-item" onclick="loadChat('unknown')" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; font-weight: bold; color: #800000;">Unknown User</div>
-          <div class="contact-item" onclick="loadChat('archive')" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; color: #800080;">Archive Node</div>
+      <div class="window-content" style="display: flex; padding: 0; background: var(--window-bg);">
+        <div style="width: 120px; border-right: 2px solid var(--window-border-dark); background: #fff; display: flex; flex-direction: column;">
+          <div style="padding: 5px; background: #000080; color: #fff; font-weight: bold; font-size: 12px; border-bottom: 1px solid var(--window-border-dark);">Contacts</div>
+          <div class="contact-item" onclick="loadChat('elias')" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; transition: background 0.1s;">Dr. Elias</div>
+          <div class="contact-item" onclick="loadChat('unknown')" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; font-weight: bold; color: #800000; transition: background 0.1s;">Unknown User</div>
+          <div class="contact-item" onclick="loadChat('archive')" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; color: #800080; transition: background 0.1s;">Archive Node</div>
         </div>
-        <div style="flex: 1; display: flex; flex-direction: column; background: #fff;">
-          <div id="chat-history" style="flex: 1; overflow-y: auto; padding: 10px; font-size: 12px; border-bottom: 2px solid #808080;">
+        <div style="flex: 1; display: flex; flex-direction: column; background: #f0f0f0;">
+          <div id="chat-history" style="flex: 1; overflow-y: auto; padding: 10px; font-size: 12px; border-bottom: 2px solid var(--window-border-dark); background: #e8e8e8; box-shadow: inset 1px 1px 3px rgba(0,0,0,0.1);">
             <div style="color: #666; text-align: center; margin-top: 50px;">Select a contact to view history.</div>
           </div>
-          <div style="height: 40px; display: flex; padding: 5px; background: #c0c0c0;">
+          <div style="height: 40px; display: flex; padding: 5px; background: var(--window-bg);">
             <input type="text" id="chat-input" disabled placeholder="Select a contact..." style="flex: 1; border: 2px inset #fff; padding: 2px 5px;" onkeydown="if(event.key==='Enter') sendChatMessage()">
-            <button id="chat-send-btn" disabled style="margin-left: 5px; padding: 0 10px;" onclick="sendChatMessage()">Send</button>
+            <button id="chat-send-btn" disabled style="margin-left: 5px; padding: 0 10px; border: 2px outset #fff; background: #c0c0c0; cursor: pointer;" onclick="sendChatMessage()">Send</button>
           </div>
         </div>
       </div>
@@ -1049,26 +1145,31 @@ fragment remains</div>
         </div>
       </div>
       <div class="window-content" style="background: #111; color: #0f0; padding: 10px; display: flex; flex-direction: column;">
-        <div style="background: #000; border: 2px inset #444; padding: 5px; margin-bottom: 10px; text-align: center; font-family: 'VT323', monospace; font-size: 1.2rem;">
-          <div id="music-track-name" style="color: #0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">1. Cybernetic Groove</div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #0a0; margin-top: 5px;">
+        <div style="background: #000; border: 2px inset #444; padding: 5px; margin-bottom: 10px; text-align: center; font-family: 'VT323', monospace; font-size: 1.2rem; box-shadow: inset 0 0 5px rgba(0,255,0,0.2);">
+          <div id="music-track-name" style="color: #0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 5px #0f0; font-weight: bold;">1. Cybernetic Groove</div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #0a0; margin-top: 5px; text-shadow: 0 0 3px #0a0;">
             <span id="music-time">00:00</span>
             <span>STEREO 128kbps</span>
           </div>
         </div>
         <div style="display: flex; gap: 5px; margin-bottom: 10px; justify-content: center;">
-          <button onclick="prevTrack()" style="background: #333; color: #ccc; border: 2px outset #555; cursor: pointer; width: 30px;">|&lt;</button>
-          <button id="music-play-btn" onclick="toggleMusic()" style="background: #333; color: #ccc; border: 2px outset #555; cursor: pointer; width: 50px; font-weight: bold;">PLAY</button>
-          <button onclick="nextTrack()" style="background: #333; color: #ccc; border: 2px outset #555; cursor: pointer; width: 30px;">&gt;|</button>
+          <button onclick="prevTrack()" style="background: #333; color: #ccc; border: 2px outset #555; cursor: pointer; width: 30px; transition: background 0.1s;" onmouseover="this.style.background='#444'" onmouseout="this.style.background='#333'">|&lt;</button>
+          <button id="music-play-btn" onclick="toggleMusic()" style="background: #333; color: #ccc; border: 2px outset #555; cursor: pointer; width: 50px; font-weight: bold; transition: background 0.1s;" onmouseover="this.style.background='#444'" onmouseout="this.style.background='#333'">PLAY</button>
+          <button onclick="nextTrack()" style="background: #333; color: #ccc; border: 2px outset #555; cursor: pointer; width: 30px; transition: background 0.1s;" onmouseover="this.style.background='#444'" onmouseout="this.style.background='#333'">&gt;|</button>
         </div>
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 10px;">
           <span>VOL</span>
-          <input type="range" id="music-volume" min="0" max="100" value="30" style="flex: 1;">
+          <input type="range" id="music-volume" min="0" max="100" value="30" style="flex: 1; accent-color: #0f0;">
         </div>
+        <style>
+          .playlist-item { padding: 2px; cursor: pointer; transition: background 0.1s; }
+          .playlist-item:hover { background: #222 !important; }
+          .playlist-item.active { background: #000080 !important; color: #fff !important; }
+        </style>
         <div style="flex: 1; background: #000; border: 2px inset #444; overflow-y: auto; font-size: 12px; padding: 2px;">
-          <div class="playlist-item" style="padding: 2px; cursor: pointer; background: #000080; color: #fff;" onclick="playTrack(0)">1. Cybernetic Groove</div>
-          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(1)">2. Neon Nights</div>
-          <div class="playlist-item" style="padding: 2px; cursor: pointer;" onclick="playTrack(2)">3. Synthwave Drift</div>
+          <div class="playlist-item active" onclick="playTrack(0)">1. Cybernetic Groove</div>
+          <div class="playlist-item" onclick="playTrack(1)">2. Neon Nights</div>
+          <div class="playlist-item" onclick="playTrack(2)">3. Synthwave Drift</div>
         </div>
       </div>
     </div>
@@ -1205,6 +1306,7 @@ fragment remains</div>
 
     document.getElementById('boot-start-btn').addEventListener('click', () => {
       document.getElementById('boot-start-btn').style.display = 'none';
+      if (window.soundManager) window.soundManager.startComputerHum();
       playBootSound();
       setTimeout(nextBootStep, 1000);
     });
@@ -1240,6 +1342,7 @@ fragment remains</div>
       
       if (!openWindows.has(id)) {
         openWindows.add(id);
+        if (window.soundManager) window.soundManager.playWindowOpen();
         
         if (!win.dataset.positioned) {
           let winWidth = parseInt(win.style.width) || win.offsetWidth || 300;
@@ -1287,6 +1390,7 @@ fragment remains</div>
       const win = document.getElementById('win-' + id);
       if (win) win.classList.remove('open');
       openWindows.delete(id);
+      if (window.soundManager) window.soundManager.playWindowClose();
       
       const taskbarItem = document.getElementById('taskbar-item-' + id);
       if (taskbarItem) taskbarItem.remove();
@@ -2057,6 +2161,9 @@ fragment remains</div>
     let historyIndex = -1;
 
     function printTerminal(text) {
+      if (window.soundManager && (text.startsWith("Error") || text.startsWith("Bad command") || text.startsWith("Access denied") || text.startsWith("[ERR]"))) {
+        window.soundManager.playSystemError();
+      }
       const div = document.createElement('div');
       termOutput.appendChild(div);
       
@@ -2279,9 +2386,9 @@ fragment remains</div>
       chat.forEach(msg => {
         const isYou = msg.sender === 'You';
         html += `
-          <div style="margin-bottom: 10px; text-align: ${isYou ? 'right' : 'left'};">
-            <div style="font-weight: bold; color: ${isYou ? '#000080' : '#800000'};">${msg.sender} <span style="font-size: 10px; color: #666; font-weight: normal;">${msg.time}</span></div>
-            <div style="background: ${isYou ? '#e6e6ff' : '#ffe6e6'}; padding: 5px; border-radius: 5px; display: inline-block; max-width: 80%; border: 1px solid #ccc; text-align: left;">${msg.text}</div>
+          <div style="margin-bottom: 12px; text-align: ${isYou ? 'right' : 'left'};">
+            <div style="font-weight: bold; color: ${isYou ? '#000080' : '#800000'}; margin-bottom: 2px;">${msg.sender} <span style="font-size: 10px; color: #666; font-weight: normal;">${msg.time}</span></div>
+            <div style="background: ${isYou ? '#e6e6ff' : '#ffe6e6'}; padding: 6px 8px; border-radius: 2px; display: inline-block; max-width: 80%; border: 1px solid ${isYou ? '#b3b3ff' : '#ffb3b3'}; text-align: left; box-shadow: 1px 1px 0 rgba(0,0,0,0.1);">${msg.text}</div>
           </div>
         `;
       });
@@ -2332,7 +2439,7 @@ fragment remains</div>
           text: reply 
         });
         renderChatHistory();
-        if (window.soundManager) window.soundManager.playClick();
+        if (window.soundManager) window.soundManager.playPing();
       }, 1500);
     }
 
@@ -2439,11 +2546,13 @@ fragment remains</div>
       const items = document.querySelectorAll('.playlist-item');
       items.forEach((item, index) => {
         if (index === currentTrackIndex) {
-          item.style.background = '#000080';
-          item.style.color = '#fff';
+          item.classList.add('active');
+          item.style.background = ''; // Clear inline style
+          item.style.color = ''; // Clear inline style
         } else {
-          item.style.background = 'transparent';
-          item.style.color = '#0f0';
+          item.classList.remove('active');
+          item.style.background = ''; // Clear inline style
+          item.style.color = ''; // Clear inline style
         }
       });
     }
@@ -2580,6 +2689,209 @@ fragment remains</div>
     // Init game on load
     initMemoryGame();
 
+  </script>
+
+  <!-- STAGE 3 EXTENSION -->
+  <style>
+    /* Faint terminal cursor flicker */
+    #terminal-input {
+      animation: term-flicker 0.15s infinite alternate;
+    }
+    @keyframes term-flicker {
+      from { text-shadow: 0 0 2px #0f0; }
+      to { text-shadow: 0 0 5px #0f0, 0 0 1px #fff; }
+    }
+  </style>
+  <script>
+    // 1. Append to deleted_user.log
+    const deletedLog = document.querySelector('#win-deleted-log .window-content');
+    if (deletedLog) {
+      deletedLog.innerHTML += '<br><br>fragment recovered: ZGVwdGg=';
+    }
+
+    // 2. Append to casefile_03.txt
+    const caseFile3 = document.querySelector('#win-casefile-03 .window-content p:last-child');
+    if (caseFile3) {
+      caseFile3.innerHTML += '<br><br>7 15 12 4';
+    }
+
+    // 3. Audio Clue (hidden label)
+    const audioVis = document.getElementById('audio-visualizer');
+    if (audioVis) {
+      const crownLabel = document.createElement('div');
+      crownLabel.innerText = 'CROWN';
+      crownLabel.style.position = 'absolute';
+      crownLabel.style.bottom = '5px';
+      crownLabel.style.right = '10px';
+      crownLabel.style.fontSize = '8px';
+      crownLabel.style.color = '#111'; // Very subtle
+      crownLabel.style.zIndex = '10';
+      audioVis.parentElement.style.position = 'relative';
+      audioVis.parentElement.appendChild(crownLabel);
+    }
+
+    // 4. Override Messenger
+    if (typeof sendChatMessage !== 'undefined') {
+      const _originalSendChatMessage = sendChatMessage;
+      sendChatMessage = function() {
+        const inputField = document.getElementById('chat-input');
+        const text = inputField.value.trim();
+        if (!text || !currentChatContact) return;
+        
+        if (currentChatContact === 'archive') {
+          const t = text.toUpperCase();
+          const stage3Triggers = ['GREED', 'DEPTH', 'MONEY', 'GOLD', 'CROWN'];
+          
+          if (stage3Triggers.includes(t)) {
+            const now = new Date();
+            let hours = now.getHours();
+            const ampm = hours >= 12 ? ' PM' : ' AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const minutes = now.getMinutes() < 10 ? '0' + now.getMinutes() : now.getMinutes();
+            const timeStr = hours + ':' + minutes + ampm;
+            
+            chats[currentChatContact].push({ sender: 'You', time: timeStr, text: text });
+            inputField.value = '';
+            renderChatHistory();
+            
+            // Messenger typing delay
+            setTimeout(() => {
+              let reply = "";
+              if (t === 'GREED') {
+                reply = "So you solved Vale’s second lock.<br><br>Greed was only the beginning.<br><br>Greed leaves traces.<br><br>Vale tried to erase one of them.<br><br>Check the trash.";
+              } else if (t === 'DEPTH') {
+                reply = "Correct.<br><br>Vale encrypted the next fragment.<br><br>Use the terminal.";
+              } else if (t === 'MONEY') {
+                reply = "No.<br><br>Money is only the mask.<br><br>Look deeper.";
+              } else if (t === 'GOLD') {
+                reply = "Closer.<br><br>Vale didn’t follow wealth.<br><br>He followed power.<br><br>Listen.";
+              } else if (t === 'CROWN') {
+                reply = "You are beginning to see the pattern.<br><br>Greed becomes wealth.<br><br>Wealth becomes power.<br><br>Vale reached this point.<br><br>But he went further.";
+                
+                // Final Event
+                setTimeout(() => {
+                  const browserUrl = document.getElementById('browser-url');
+                  const browserPage = document.getElementById('browser-page');
+                  const urlInput = document.querySelector('#win-browser input[type="text"]');
+                  
+                  if (urlInput && browserPage) {
+                    urlInput.value = 'http://archive.local/node04';
+                    browserPage.innerHTML = '<div style="padding: 4rem 2rem; text-align: center; color: #0f0; font-family: \\"VT323\\", monospace; animation: fadeIn 2s ease forwards;"><h2 style="font-size: 2.5rem; letter-spacing: 0.1em; text-shadow: 0 0 10px #0f0;">ARCHIVE NODE 04 UNLOCKED</h2></div>';
+                    
+                    // Slight browser loading delay
+                    const spinner = document.getElementById('browser-spinner');
+                    if (spinner) {
+                      spinner.style.display = 'block';
+                      browserPage.style.opacity = '0.5';
+                      setTimeout(() => {
+                        spinner.style.display = 'none';
+                        browserPage.style.opacity = '1';
+                        if (window.soundManager) window.soundManager.playSuccess();
+                      }, 800);
+                    } else {
+                      if (window.soundManager) window.soundManager.playSuccess();
+                    }
+                    
+                    // Subtle system notification
+                    const notif = document.createElement('div');
+                    notif.style.position = 'fixed';
+                    notif.style.bottom = '20px';
+                    notif.style.right = '20px';
+                    notif.style.background = 'rgba(0, 20, 0, 0.9)';
+                    notif.style.color = '#0f0';
+                    notif.style.border = '1px solid #0f0';
+                    notif.style.padding = '10px 20px';
+                    notif.style.fontFamily = "'VT323', monospace";
+                    notif.style.fontSize = '1.2rem';
+                    notif.style.zIndex = '10000';
+                    notif.style.boxShadow = '0 0 10px rgba(0, 255, 0, 0.2)';
+                    notif.style.opacity = '0';
+                    notif.style.transition = 'opacity 0.5s ease';
+                    notif.innerText = 'System Notification: Node 04 Unlocked';
+                    document.body.appendChild(notif);
+                    
+                    setTimeout(() => notif.style.opacity = '1', 100);
+                    setTimeout(() => {
+                      notif.style.opacity = '0';
+                      setTimeout(() => notif.remove(), 500);
+                    }, 4000);
+                  }
+                }, 2000);
+              }
+              
+              chats[currentChatContact].push({ 
+                sender: 'Archive Node', 
+                time: timeStr, 
+                text: reply 
+              });
+              renderChatHistory();
+              if (window.soundManager) window.soundManager.playPing();
+            }, 2000); // 2 second typing delay
+            
+            return;
+          }
+        }
+        
+        _originalSendChatMessage.apply(this, arguments);
+      };
+    }
+
+    // 5. Override Terminal Command
+    if (typeof handleCommand !== 'undefined') {
+      const _originalHandleCommand = handleCommand;
+      handleCommand = function(cmd) {
+        if (!cmd) return;
+        const args = cmd.trim().split(/\s+/);
+        const baseCmd = args[0].toLowerCase();
+        
+        if (baseCmd === 'decrypt' && args.length > 1 && args[1].toLowerCase() === 'depth') {
+          printTerminal("algorithm: caesar");
+          printTerminal("shift: 7");
+          printTerminal("");
+          printTerminal("encoded string:");
+          printTerminal("kwws://dufklyh.orfdo/qrgh03/vhfuhw");
+          return;
+        }
+        
+        _originalHandleCommand.apply(this, arguments);
+      };
+    }
+
+    // 6. Override Browser Navigation for the secret page
+    const browserInput = document.querySelector('#win-browser input[type="text"]');
+    if (browserInput) {
+      browserInput.disabled = false;
+      browserInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          const url = this.value.trim().toLowerCase();
+          if (url === 'http://archive.local/node03/secret') {
+            const spinner = document.getElementById('browser-spinner');
+            const page = document.getElementById('browser-page');
+            
+            if (spinner) spinner.style.display = 'block';
+            if (page) page.style.opacity = '0.5';
+            
+            setTimeout(() => {
+              if (spinner) spinner.style.display = 'none';
+              if (page) {
+                page.style.opacity = '1';
+                page.style.padding = '0';
+                page.innerHTML = `
+                  <div style="padding: 4rem 2rem; text-align: center; color: #c4c0b8; font-family: 'VT323', monospace;">
+                    <!-- greed always reveals the crown -->
+                    <h2 style="font-size: 2rem; color: #8b7355; margin-bottom: 2rem; letter-spacing: 0.1em;">ARCHIVE FRAGMENT RECOVERED</h2>
+                    <div style="font-size: 2.5rem; letter-spacing: 0.3em; color: #e0dcd0;">13-15-14-5-25</div>
+                  </div>
+                `;
+              }
+            }, 1000); // Slight loading delay
+          } else if (typeof openBrowserUrl !== 'undefined') {
+            openBrowserUrl(url);
+          }
+        }
+      });
+    }
   </script>
 </body>
 </html>

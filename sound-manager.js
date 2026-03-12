@@ -159,6 +159,97 @@ class SoundManager {
     osc.stop(this.ctx.currentTime + 0.05);
   }
   
+  playWindowOpen() {
+    if (this.ctx.state === 'suspended') return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.05, this.ctx.currentTime + 0.05);
+    gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.1);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.1);
+  }
+
+  playWindowClose() {
+    if (this.ctx.state === 'suspended') return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(300, this.ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.05, this.ctx.currentTime + 0.05);
+    gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.1);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.1);
+  }
+
+  playClick() {
+    if (this.ctx.state === 'suspended') return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.02);
+    gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.02);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.02);
+  }
+
+  playPing() {
+    if (this.ctx.state === 'suspended') return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+    osc.frequency.setValueAtTime(1108.73, this.ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.05);
+    gain.gain.setValueAtTime(0.1, this.ctx.currentTime + 0.2);
+    gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.4);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.4);
+  }
+
+  playSystemError() {
+    if (this.ctx.state === 'suspended') return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.3);
+  }
+
+  startComputerHum() {
+    if (this.humOsc) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 60; // 60Hz mains hum
+    gain.gain.value = 0.01; // Very quiet
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start();
+    this.humOsc = osc;
+  }
+
   playGlitch() {
     if (this.ctx.state === 'suspended') return;
     const bufferSize = this.ctx.sampleRate * 0.15;

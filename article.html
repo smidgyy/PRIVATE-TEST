@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Voynich Marginalia</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { background: #0a0a0a; color: #c4c0b8; font-family: 'Times New Roman', Times, serif; overflow-x: hidden; line-height: 1.8; }
+html, body { background: #0a0a0a; color: #c4c0b8; font-family: 'Pixelify Sans', sans-serif; overflow-x: hidden; line-height: 1.8; }
 body { display: flex; flex-direction: column; align-items: center; padding: 4rem 2rem; }
 
 .container { max-width: 700px; width: 100%; opacity: 0; animation: fadeIn 3s ease forwards; }
@@ -35,7 +36,7 @@ blockquote::before {
   font-size: 3rem;
   color: #8b7355;
   opacity: 0.3;
-  font-family: Georgia, serif;
+  font-family: 'Pixelify Sans', sans-serif;
 }
 
 .first-letter {
@@ -57,9 +58,9 @@ svg { max-width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(139, 115,
 }
 
 .cipher-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.2em; color: #666; margin-bottom: 1rem; }
-.cipher-text { font-family: monospace; font-size: 1.5rem; letter-spacing: 0.3em; color: #8b7355; }
+.cipher-text { font-family: 'VT323', monospace; font-size: 1.5rem; letter-spacing: 0.3em; color: #8b7355; }
 
-.base64 { font-family: monospace; font-size: 0.8rem; color: #444; word-break: break-all; margin: 2rem 0; text-align: center; }
+.base64 { font-family: 'VT323', monospace; font-size: 0.8rem; color: #444; word-break: break-all; margin: 2rem 0; text-align: center; }
 
 .return-link { margin-top: 4rem; font-size: 0.9rem; letter-spacing: 0.1em; color: #666; text-decoration: none; transition: color 0.3s ease; display: block; text-align: center; cursor: pointer; text-transform: uppercase; }
 .return-link:hover { color: #8b7355; }
@@ -98,12 +99,12 @@ svg { max-width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(139, 115,
       <circle cx="200" cy="200" r="40" fill="none" stroke="#8b7355" stroke-width="1" opacity="0.8" />
       <circle cx="200" cy="200" r="10" fill="#8b7355" opacity="0.5" />
       
-      <text font-family="monospace" font-size="11" fill="#8b7355" letter-spacing="2">
+      <text font-family="'VT323', monospace" font-size="14" fill="#8b7355" letter-spacing="2">
         <textPath href="#textPathTop" startOffset="50%" text-anchor="middle">
           SHIFT THE FOUNDATION BY THREE DEGREES.
         </textPath>
       </text>
-      <text font-family="monospace" font-size="11" fill="#8b7355" letter-spacing="2">
+      <text font-family="'VT323', monospace" font-size="14" fill="#8b7355" letter-spacing="2">
         <textPath href="#textPathBottom" startOffset="50%" text-anchor="middle">
           THE FRENCHMAN HOLDS THE KEY.
         </textPath>
