@@ -2898,19 +2898,12 @@ fragment remains</div>
               iframe.style.height = '100%';
               
               let fetchPath = '';
-              if (targetUrl === 'archive://node/02') fetchPath = '/' + 'stage' + '2.html';
-              else if (targetUrl === 'archive://node/03/secret') fetchPath = '/' + 'node03' + '/' + 'secret.html';
-              else if (targetUrl === 'archive://node/04') fetchPath = '/' + 'node04' + '.html';
+              if (targetUrl === 'archive://node/02') fetchPath = 'node02.html';
+              else if (targetUrl === 'archive://node/03/secret') fetchPath = 'node03/secret.html';
+              else if (targetUrl === 'archive://node/04') fetchPath = 'node04.html';
               
-              fetch(fetchPath)
-                .then(res => res.text())
-                .then(html => {
-                  iframe.srcdoc = html;
-                  page.appendChild(iframe);
-                })
-                .catch(err => {
-                  page.innerHTML = '<div style="padding: 20px; color: red;">Error loading node.</div>';
-                });
+              iframe.src = fetchPath;
+              page.appendChild(iframe);
             }
             if (window.soundManager && targetUrl === 'archive://node/04') {
               window.soundManager.playSuccess();
