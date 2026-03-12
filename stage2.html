@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+if (!localStorage.getItem('aurora_stage1_complete')) {
+  document.documentElement.innerHTML = '<body style="background:#000;color:#f00;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;margin:0;"><div><h1>ARCHIVE ACCESS DENIED</h1><p>Node authentication required.</p></div></body>';
+  setTimeout(function(){ window.location.href = 'stage1.html'; }, 3000);
+  throw new Error('Access Denied');
+}
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The First Trial.</title>
