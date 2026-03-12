@@ -2035,27 +2035,10 @@ fragment remains</div>
           iframe.style.position = 'absolute';
           iframe.style.top = '0';
           iframe.style.left = '0';
-          iframe.style.transformOrigin = 'top left';
+          iframe.style.width = '100%';
+          iframe.style.height = '100%';
           
           page.appendChild(iframe);
-          
-          function updateIframeScale() {
-            if (!page.contains(iframe) || page.clientHeight === 0) return;
-            const baseH = 720;
-            const aspect = page.clientWidth / page.clientHeight;
-            const baseW = baseH * aspect;
-            
-            iframe.style.width = baseW + 'px';
-            iframe.style.height = baseH + 'px';
-            
-            const scale = page.clientHeight / baseH;
-            iframe.style.transform = `scale(${scale})`;
-          }
-          
-          const ro = new ResizeObserver(updateIframeScale);
-          ro.observe(page);
-          window.addEventListener('resize', updateIframeScale);
-          updateIframeScale();
         } else {
           page.innerHTML = '<p><strong>Status:</strong> OFFLINE</p><p>The connection to the main archive has been severed.</p>';
           page.style.padding = '20px';
