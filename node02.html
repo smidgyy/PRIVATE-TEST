@@ -550,7 +550,7 @@ async function dissolveAndRespond() {
     setTimeout(() => { startPhase3(true); }, 4500);
   }
   else if (phase === '3' && h === '90b7b8654171c04a5e5de1eae884cfd86952739d50d09d9bb7680763e31faee8') {
-    msg = "GREED";
+    msg = String.fromCharCode(71, 82, 69, 69, 68);
     success = true;
     if (window.soundManager) window.soundManager.playSuccess();
     setTimeout(() => {

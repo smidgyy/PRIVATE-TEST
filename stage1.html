@@ -2120,33 +2120,77 @@ fragment remains</div>
       const page = document.getElementById('browser-page');
       const urlInput = document.querySelector('#win-browser input[type="text"]');
       
-      urlInput.value = url;
-      spinner.style.display = 'block';
-      page.style.opacity = '0.5';
+      let targetUrl = url;
+      if (url === 'http://archive.local/' + 'stage' + '2.html') {
+        targetUrl = 'archive://node/02';
+      } else if (url === 'archive.local/node03/secret' || url === 'http://archive.local/node03/secret') {
+        targetUrl = 'archive://node/03/secret';
+      }
+      
+      if (urlInput) urlInput.value = targetUrl;
+      if (spinner) spinner.style.display = 'block';
+      if (page) page.style.opacity = '0.5';
       
       setTimeout(() => {
-        spinner.style.display = 'none';
-        page.style.opacity = '1';
-        if (url === 'http://archive.local/stage2.html') {
-          page.innerHTML = '';
-          page.style.padding = '0';
-          page.style.position = 'relative';
-          page.style.overflow = 'hidden';
-          page.style.background = '#000'; // Ensure background is black to avoid white flashes
-          
-          const iframe = document.createElement('iframe');
-          iframe.src = 'stage2.html';
-          iframe.style.border = 'none';
-          iframe.style.position = 'absolute';
-          iframe.style.top = '0';
-          iframe.style.left = '0';
-          iframe.style.width = '100%';
-          iframe.style.height = '100%';
-          
-          page.appendChild(iframe);
-        } else {
-          page.innerHTML = '<p><strong>Status:</strong> OFFLINE</p><p>The connection to the main archive has been severed.</p>';
-          page.style.padding = '20px';
+        if (spinner) spinner.style.display = 'none';
+        if (page) {
+          page.style.opacity = '1';
+          if (targetUrl === 'archive://node/02' || targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://node/04') {
+            page.innerHTML = '';
+            page.style.padding = '0';
+            page.style.position = 'relative';
+            page.style.overflow = 'hidden';
+            page.style.background = '#000';
+            
+            let unlocked = false;
+            let fetchPath = '';
+            if (targetUrl === 'archive://node/02') {
+              if (localStorage.getItem('aurora_stage1_complete')) unlocked = true;
+              fetchPath = 'stage' + '2.html';
+            } else if (targetUrl === 'archive://node/03/secret') {
+              try {
+                const t = localStorage.getItem('aurora_stage3_token1');
+                if (t && atob(t) === 'true|AURORA_OS_SECRET') unlocked = true;
+              } catch(e) {}
+              fetchPath = 'node03/secret.html';
+            } else if (targetUrl === 'archive://node/04') {
+              try {
+                const t = localStorage.getItem('aurora_stage3_token_complete');
+                if (t && atob(t) === 'true|AURORA_OS_SECRET') unlocked = true;
+              } catch(e) {}
+              fetchPath = 'node04.html';
+            }
+            
+            if (!unlocked) {
+              page.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f00;font-family:monospace;text-align:center;"><div><h1>ACCESS DENIED</h1><p>Archive fragment locked.</p></div></div>';
+              if (window.soundManager) window.soundManager.playError();
+            } else {
+              const iframe = document.createElement('iframe');
+              iframe.style.border = 'none';
+              iframe.style.position = 'absolute';
+              iframe.style.top = '0';
+              iframe.style.left = '0';
+              iframe.style.width = '100%';
+              iframe.style.height = '100%';
+              page.appendChild(iframe);
+              
+              fetch(fetchPath)
+                .then(res => res.text())
+                .then(html => {
+                  iframe.srcdoc = html;
+                })
+                .catch(err => {
+                  page.innerHTML = '<div style="color:#f00;padding:20px;">Error loading archive fragment.</div>';
+                });
+              
+              if (window.soundManager && targetUrl === 'archive://node/04') {
+                window.soundManager.playSuccess();
+              }
+            }
+          } else {
+            page.innerHTML = '<p><strong>Status:</strong> OFFLINE</p><p>The connection to the main archive has been severed.</p>';
+            page.style.padding = '20px';
+          }
         }
       }, 800);
     }
@@ -2704,9 +2748,35 @@ fragment remains</div>
     }
   </style>
   <script>
+    const SECRET_KEY = "AURORA_OS_SECRET";
+    function getProgressStep() {
+      const token = localStorage.getItem('aurora_stage3_token');
+      if (!token) return 0;
+      try {
+        const decoded = atob(token);
+        const parts = decoded.split('|');
+        if (parts.length === 2 && parts[1] === SECRET_KEY) {
+          const step = parseInt(parts[0]);
+          if (!isNaN(step) && step >= 0 && step <= 5) return step;
+        }
+      } catch (e) {}
+      localStorage.removeItem('aurora_stage3_token');
+      return 0;
+    }
+    function setProgressStep(step) {
+      const token = btoa(step + '|' + SECRET_KEY);
+      localStorage.setItem('aurora_stage3_token', token);
+    }
+    
+    // Migrate old progression if it exists
+    if (localStorage.getItem('aurora_stage3_step')) {
+      setProgressStep(parseInt(localStorage.getItem('aurora_stage3_step') || '0'));
+      localStorage.removeItem('aurora_stage3_step');
+    }
+
     // Helper to update clues dynamically based on stage3_step
     function updateStage3Clues() {
-      let step = parseInt(localStorage.getItem('aurora_stage3_step') || '0');
+      let step = getProgressStep();
       
       if (step >= 1) {
         const deletedLog = document.querySelector('#win-deleted-log .window-content');
@@ -2725,7 +2795,7 @@ fragment remains</div>
       if (step >= 4) {
         const audioPlayer = document.getElementById('local-audio-player');
         if (audioPlayer) {
-          audioPlayer.setAttribute('data-track_note', 'crown');
+          audioPlayer.setAttribute('data-track_note', String.fromCharCode(99, 114, 111, 119, 110));
         }
       }
     }
@@ -2743,90 +2813,147 @@ fragment remains</div>
         
         if (currentChatContact === 'archive') {
           const t = text.toUpperCase();
-          let step = parseInt(localStorage.getItem('aurora_stage3_step') || '0');
-          let expectedHash = '';
+          let step = getProgressStep();
           
-          if (step === 0) expectedHash = 'R1JFRUQ=';
-          else if (step === 1) expectedHash = 'REVQVEg=';
-          else if (step === 2) expectedHash = 'TU9ORVk=';
-          else if (step === 3) expectedHash = 'R09MRA==';
-          else if (step === 4) expectedHash = 'Q1JPV04=';
+          const payloads = [
+            "3c702b677e650000131511172278666b7037677e65012a653d282765362b2b2420216411332920a6c7cb36653722312a2b20673e2a262f696e27377a7b30377b033537202164303336652b293e3c65302f37652721203b2b2b2d29356b7926356c7927367915372021237229202531373665303533262037696e27377a7b30377b12263e206530353b202164333d652036262120652b2937652a2267262d2029696e27377a7b30377b072f37262e64333a2065303533362d6a652f",
+            "3f673e76726611056d0716133b696a686722767266063f263a2126247a7426376e682a367b0635242165353a2b363c20202d2065243c2d642b352c3c642322352f29203e20667827226a7426376e013b2165243c2d64313526252d2b3138666638",
+            "366d2067636f1d7e7c141f0e73787b616d3c67636f01216b652f3d70793b3f71032a3728366e2c2a6d202029206d3b262079202e3d2e77712d3c7b652f3d70093622246e213c283f2b37776f32",
+            "3c6d22667d6d1d750d1f1a7473726e68653d6e7e650c202b342a3e6a7b2d3e7a7b2d3e7a112e2021672b252029adccdd336f2a2b2b232333673829252b3b246a7b2d3e7a7b2d3e7a0f2a6c222823202b302a286437203b2135617026357170263571002d343b292a696d31",
+            "387021757461000a6e011103726a6c6f703d7574610b20226e22202a772c26352639202a3c28773a2c723c322b632627326e33333b232b313c616b2c316c73353c7d153d322b27722d322d2c3f2a246e34372e3b3a2b7c73353c7d6e2d257014372e3b3a2b722d322d2c3f2a246e333d38323c6d6e2d25707f303d6918223e2a773c26332c3f2b27723b3f2730723f38272d26616b2c316c73353c7d103a236e2b376f202b2d266f313b312627323c6d7032"
+          ];
           
-          if (btoa(t) === expectedHash) {
-            const now = new Date();
-            let hours = now.getHours();
-            const ampm = hours >= 12 ? ' PM' : ' AM';
-            hours = hours % 12;
-            hours = hours ? hours : 12;
-            const minutes = now.getMinutes() < 10 ? '0' + now.getMinutes() : now.getMinutes();
-            const timeStr = hours + ':' + minutes + ampm;
+          if (step >= 0 && step < payloads.length) {
+            let str = "";
+            let hex = payloads[step];
+            for(let i=0; i<hex.length; i+=2) {
+                str += String.fromCharCode(parseInt(hex.substr(i, 2), 16) ^ t.charCodeAt((i/2) % t.length));
+            }
+            let decrypted = null;
+            try {
+                decrypted = JSON.parse(decodeURIComponent(escape(str)));
+            } catch(e) {}
             
-            chats[currentChatContact].push({ sender: 'You', time: timeStr, text: text });
-            inputField.value = '';
-            renderChatHistory();
-            
-            // Advance step
-            step++;
-            localStorage.setItem('aurora_stage3_step', step.toString());
-            updateStage3Clues();
-            
-            // Messenger typing delay
-            setTimeout(() => {
-              let reply = "";
-              if (step === 1) {
-                reply = "So you solved Vale’s second lock.<br><br>Greed was only the beginning.<br><br>Greed leaves traces.<br><br>Vale tried to erase one of them.<br><br>Check the trash.";
-              } else if (step === 2) {
-                reply = "Correct.<br><br>Vale encrypted the next fragment.<br><br>Use the terminal.";
-              } else if (step === 3) {
-                reply = "No.<br><br>Money is only the mask.<br><br>Look deeper.";
-              } else if (step === 4) {
-                reply = "Closer.<br><br>Vale didn’t follow wealth.<br><br>He followed power.<br><br>Listen.";
-              } else if (step === 5) {
-                reply = "You are beginning to see the pattern.<br><br>Greed becomes wealth.<br><br>Wealth becomes power.<br><br>Vale reached this point.<br><br>But he went further.";
-                
-                // Final Event
-                setTimeout(() => {
-                  localStorage.setItem('aurora_stage3_complete', 'true');
-                  if (typeof openBrowserUrl !== 'undefined') {
-                    openBrowserUrl('archive://node/04');
-                  }
-                  
-                  // Subtle system notification
-                  const notif = document.createElement('div');
-                  notif.style.position = 'fixed';
-                  notif.style.bottom = '20px';
-                  notif.style.right = '20px';
-                  notif.style.background = 'rgba(0, 20, 0, 0.9)';
-                  notif.style.color = '#0f0';
-                  notif.style.border = '1px solid #0f0';
-                  notif.style.padding = '10px 20px';
-                  notif.style.fontFamily = "'VT323', monospace";
-                  notif.style.fontSize = '1.2rem';
-                  notif.style.zIndex = '10000';
-                  notif.style.boxShadow = '0 0 10px rgba(0, 255, 0, 0.2)';
-                  notif.style.opacity = '0';
-                  notif.style.transition = 'opacity 0.5s ease';
-                  notif.innerText = 'System Notification: Node 04 Unlocked';
-                  document.body.appendChild(notif);
-                  
-                  setTimeout(() => notif.style.opacity = '1', 100);
-                  setTimeout(() => {
-                    notif.style.opacity = '0';
-                    setTimeout(() => notif.remove(), 500);
-                  }, 4000);
-                }, 2000);
-              }
+            if (decrypted && decrypted.n) {
+              const now = new Date();
+              let hours = now.getHours();
+              const ampm = hours >= 12 ? ' PM' : ' AM';
+              hours = hours % 12;
+              hours = hours ? hours : 12;
+              const minutes = now.getMinutes() < 10 ? '0' + now.getMinutes() : now.getMinutes();
+              const timeStr = hours + ':' + minutes + ampm;
               
-              chats[currentChatContact].push({ 
-                sender: 'Archive Node', 
-                time: timeStr, 
-                text: reply 
-              });
+              chats[currentChatContact].push({ sender: 'You', time: timeStr, text: text });
+              inputField.value = '';
               renderChatHistory();
-              if (window.soundManager) window.soundManager.playPing();
-            }, 2000); // 2 second typing delay
-            
-            return;
+              
+              // Advance step
+              step++;
+              setProgressStep(step);
+              updateStage3Clues();
+              
+              // Messenger typing delay
+              setTimeout(() => {
+                let reply = decrypted.r;
+                
+                if (decrypted.n === 'DONE') {
+                  // Final Event
+                  setTimeout(() => {
+                    localStorage.setItem('aurora_stage3_token_complete', btoa('true|AURORA_OS_SECRET'));
+                    if (typeof openBrowserUrl !== 'undefined') {
+                      openBrowserUrl('archive://node/04');
+                    }
+                    
+                    // Subtle system notification
+                    const notif = document.createElement('div');
+                    notif.style.position = 'fixed';
+                    notif.style.bottom = '20px';
+                    notif.style.right = '20px';
+                    notif.style.background = 'rgba(0, 20, 0, 0.9)';
+                    notif.style.color = '#0f0';
+                    notif.style.border = '1px solid #0f0';
+                    notif.style.padding = '10px 20px';
+                    notif.style.fontFamily = "'VT323', monospace";
+                    notif.style.fontSize = '1.2rem';
+                    notif.style.zIndex = '10000';
+                    notif.style.boxShadow = '0 0 10px rgba(0, 255, 0, 0.2)';
+                    notif.style.opacity = '0';
+                    notif.style.transition = 'opacity 0.5s ease';
+                    notif.innerText = 'System Notification: Node 04 Unlocked';
+                    document.body.appendChild(notif);
+                    
+                    setTimeout(() => notif.style.opacity = '1', 100);
+                    setTimeout(() => {
+                      notif.style.opacity = '0';
+                      setTimeout(() => notif.remove(), 500);
+                    }, 4000);
+                    
+                    // Node04 Narrative Event
+                    setTimeout(() => {
+                      const notif2 = document.createElement('div');
+                      notif2.style.position = 'fixed';
+                      notif2.style.bottom = '20px';
+                      notif2.style.right = '20px';
+                      notif2.style.background = 'rgba(0, 20, 0, 0.9)';
+                      notif2.style.color = '#0f0';
+                      notif2.style.border = '1px solid #0f0';
+                      notif2.style.padding = '10px 20px';
+                      notif2.style.fontFamily = "'VT323', monospace";
+                      notif2.style.fontSize = '1.2rem';
+                      notif2.style.zIndex = '10000';
+                      notif2.style.boxShadow = '0 0 10px rgba(0, 255, 0, 0.2)';
+                      notif2.style.opacity = '0';
+                      notif2.style.transition = 'opacity 0.5s ease';
+                      notif2.innerHTML = '<div style="font-weight:bold;margin-bottom:5px;">NEW MESSAGE RECEIVED</div><div>Unknown User</div>';
+                      document.body.appendChild(notif2);
+                      if (window.soundManager) window.soundManager.playPing();
+                      
+                      setTimeout(() => notif2.style.opacity = '1', 100);
+                      setTimeout(() => {
+                        notif2.style.opacity = '0';
+                        setTimeout(() => notif2.remove(), 500);
+                      }, 5000);
+                      
+                      // Highlight Unknown User
+                      const contactItems = document.querySelectorAll('.contact-item');
+                      contactItems.forEach(item => {
+                        if (item.innerText === 'Unknown User') {
+                          item.style.animation = 'blink 1s infinite alternate';
+                          // Add keyframes if not exists
+                          if (!document.getElementById('blink-anim')) {
+                            const style = document.createElement('style');
+                            style.id = 'blink-anim';
+                            style.innerHTML = '@keyframes blink { from { background: transparent; } to { background: #ffcccc; } }';
+                            document.head.appendChild(style);
+                          }
+                        }
+                      });
+                      
+                      // Decode Unknown User message
+                      let uStr = "";
+                      let uHex = "076f3324431439202a21554627212365475c2b21643c5f416e382b305c506e3d2124535c6e3b2c2c43143e202d2b441a722d367b0c563c7112245c516e3d2124535c2b2b640b5f502b7f706551476e3821295c1a722d367b0c563c710c2010473a20343555506e3d2136405b202b2d2b57143d272b374458376f252344513c617827420a722d367b72516e2c253755523b23643258553a6f3d2a45143b21272a46513c61";
+                      let uKey = "NODE04";
+                      for(let i=0; i<uHex.length; i+=2) {
+                          uStr += String.fromCharCode(parseInt(uHex.substr(i, 2), 16) ^ uKey.charCodeAt((i/2) % uKey.length));
+                      }
+                      const uMsg = decodeURIComponent(escape(uStr));
+                      chats['unknown'].push({ sender: 'Unknown', time: timeStr, text: uMsg });
+                      if (currentChatContact === 'unknown') renderChatHistory();
+                    }, 4000);
+                  }, 2000);
+                }
+                
+                chats[currentChatContact].push({ 
+                  sender: 'Archive Node', 
+                  time: timeStr, 
+                  text: reply 
+                });
+                renderChatHistory();
+                if (window.soundManager) window.soundManager.playPing();
+              }, 2000); // 2 second typing delay
+              
+              return;
+            }
           }
         }
         
@@ -2842,77 +2969,19 @@ fragment remains</div>
         const args = cmd.trim().split(/\s+/);
         const baseCmd = args[0].toLowerCase();
         
-        let step = parseInt(localStorage.getItem('aurora_stage3_step') || '0');
+        let step = getProgressStep();
         
-        if (step >= 2 && baseCmd === 'decrypt' && args.length > 1 && args[1].toLowerCase() === 'depth') {
+        if (step >= 2 && baseCmd === 'decrypt' && args.length > 1 && args[1].toLowerCase() === String.fromCharCode(100, 101, 112, 116, 104)) {
           printTerminal("algorithm: caesar");
           printTerminal("shift: 7");
           printTerminal("");
           printTerminal("encoded string:");
           printTerminal("kwws://dufklyh.orfdo/qrgh03/vhfuhw");
-          localStorage.setItem('aurora_stage3_step1', 'true');
+          localStorage.setItem('aurora_stage3_token1', btoa('true|AURORA_OS_SECRET'));
           return;
         }
         
         _originalHandleCommand.apply(this, arguments);
-      };
-    }
-
-    // Override Browser Navigation for virtual routing
-    if (typeof openBrowserUrl !== 'undefined') {
-      const _originalOpenBrowserUrl = openBrowserUrl;
-      openBrowserUrl = function(url) {
-        let targetUrl = url;
-        if (url === 'http://archive.local/' + 'stage' + '2.html') {
-          targetUrl = 'archive://node/02';
-        } else if (url === 'archive.local/node03/secret' || url === 'http://archive.local/node03/secret') {
-          targetUrl = 'archive://node/03/secret';
-        }
-        
-        if (targetUrl === 'archive://node/02' || targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://node/04') {
-          openWindow('browser');
-          const spinner = document.getElementById('browser-spinner');
-          const page = document.getElementById('browser-page');
-          const urlInput = document.querySelector('#win-browser input[type="text"]');
-          
-          if (urlInput) urlInput.value = targetUrl;
-          if (spinner) spinner.style.display = 'block';
-          if (page) page.style.opacity = '0.5';
-          
-          setTimeout(() => {
-            if (spinner) spinner.style.display = 'none';
-            if (page) {
-              page.style.opacity = '1';
-              page.innerHTML = '';
-              page.style.padding = '0';
-              page.style.position = 'relative';
-              page.style.overflow = 'hidden';
-              page.style.background = '#000';
-              
-              const iframe = document.createElement('iframe');
-              iframe.style.border = 'none';
-              iframe.style.position = 'absolute';
-              iframe.style.top = '0';
-              iframe.style.left = '0';
-              iframe.style.width = '100%';
-              iframe.style.height = '100%';
-              
-              let fetchPath = '';
-              if (targetUrl === 'archive://node/02') fetchPath = 'node02.html';
-              else if (targetUrl === 'archive://node/03/secret') fetchPath = 'node03/secret.html';
-              else if (targetUrl === 'archive://node/04') fetchPath = 'node04.html';
-              
-              iframe.src = fetchPath;
-              page.appendChild(iframe);
-            }
-            if (window.soundManager && targetUrl === 'archive://node/04') {
-              window.soundManager.playSuccess();
-            }
-          }, 800);
-          return;
-        }
-        
-        _originalOpenBrowserUrl(url);
       };
     }
 
