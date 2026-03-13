@@ -2152,13 +2152,13 @@ fragment remains</div>
                 const t = localStorage.getItem('aurora_stage3_token1');
                 if (t && atob(t) === 'true|AURORA_OS_SECRET') unlocked = true;
               } catch(e) {}
-              fetchPath = 'node' + '03/secret.html';
+              fetchPath = 'node03/secret.html';
             } else if (targetUrl === 'archive://node/04') {
               try {
                 const t = localStorage.getItem('aurora_stage3_token_complete');
                 if (t && atob(t) === 'true|AURORA_OS_SECRET') unlocked = true;
               } catch(e) {}
-              fetchPath = 'node' + '04.html';
+              fetchPath = 'node04.html';
             }
             
             if (!unlocked) {
@@ -2413,7 +2413,6 @@ fragment remains</div>
       });
       event.currentTarget.style.background = '#000080';
       event.currentTarget.style.color = '#fff';
-      event.currentTarget.style.animation = 'none';
       
       inputField.disabled = false;
       sendBtn.disabled = false;
@@ -2799,39 +2798,6 @@ fragment remains</div>
           audioPlayer.setAttribute('data-track_note', String.fromCharCode(99, 114, 111, 119, 110));
         }
       }
-      
-      // Failsafe for Node04 unlock
-      try {
-        const t = localStorage.getItem('aurora_stage3_token_complete');
-        if (t && atob(t) === 'true|AURORA_OS_SECRET') {
-          let uStr = "";
-          let uHex = "076f3324431439202a21554627212365475c2b21643c5f416e382b305c506e3d2124535c6e3b2c2c43143e202d2b441a722d367b0c563c7112245c516e3d2124535c2b2b640b5f502b7f706551476e3821295c1a722d367b0c563c710c2010473a20343555506e3d2136405b202b2d2b57143d272b374458376f252344513c617827420a722d367b72516e2c253755523b23643258553a6f3d2a45143b21272a46513c61";
-          let uKey = "NODE04";
-          for(let i=0; i<uHex.length; i+=2) {
-              uStr += String.fromCharCode(parseInt(uHex.substr(i, 2), 16) ^ uKey.charCodeAt((i/2) % uKey.length));
-          }
-          const uMsg = decodeURIComponent(escape(uStr));
-          
-          const hasMsg = chats['unknown'].some(m => m.text === uMsg);
-          if (!hasMsg) {
-            chats['unknown'].push({ sender: 'Unknown', time: '11:10 PM', text: uMsg });
-            if (typeof currentChatContact !== 'undefined' && currentChatContact !== 'unknown') {
-              const contactItems = document.querySelectorAll('.contact-item');
-              contactItems.forEach(item => {
-                if (item.innerText === 'Unknown User') {
-                  item.style.animation = 'blink 1s infinite alternate';
-                  if (!document.getElementById('blink-anim')) {
-                    const style = document.createElement('style');
-                    style.id = 'blink-anim';
-                    style.innerHTML = '@keyframes blink { from { background: transparent; } to { background: #ffcccc; } }';
-                    document.head.appendChild(style);
-                  }
-                }
-              });
-            }
-          }
-        }
-      } catch(e) {}
     }
     
     // Call initially
@@ -2890,7 +2856,7 @@ fragment remains</div>
               setTimeout(() => {
                 let reply = decrypted.r;
                 
-                if (atob(decrypted.n) === 'DONE') {
+                if (decrypted.n === 'DONE') {
                   // Final Event
                   setTimeout(() => {
                     localStorage.setItem('aurora_stage3_token_complete', btoa('true|AURORA_OS_SECRET'));
@@ -2898,11 +2864,56 @@ fragment remains</div>
                       openBrowserUrl('archive://node/04');
                     }
                     
-                    // Desktop notification
-                    showNotification("<b>NEW MESSAGE RECEIVED</b><br>Unknown User");
+                    // Subtle system notification
+                    const notif = document.createElement('div');
+                    notif.style.position = 'fixed';
+                    notif.style.bottom = '20px';
+                    notif.style.right = '20px';
+                    notif.style.background = 'rgba(0, 20, 0, 0.9)';
+                    notif.style.color = '#0f0';
+                    notif.style.border = '1px solid #0f0';
+                    notif.style.padding = '10px 20px';
+                    notif.style.fontFamily = "'VT323', monospace";
+                    notif.style.fontSize = '1.2rem';
+                    notif.style.zIndex = '10000';
+                    notif.style.boxShadow = '0 0 10px rgba(0, 255, 0, 0.2)';
+                    notif.style.opacity = '0';
+                    notif.style.transition = 'opacity 0.5s ease';
+                    notif.innerText = 'System Notification: Node 04 Unlocked';
+                    document.body.appendChild(notif);
+                    
+                    setTimeout(() => notif.style.opacity = '1', 100);
+                    setTimeout(() => {
+                      notif.style.opacity = '0';
+                      setTimeout(() => notif.remove(), 500);
+                    }, 4000);
                     
                     // Node04 Narrative Event
                     setTimeout(() => {
+                      const notif2 = document.createElement('div');
+                      notif2.style.position = 'fixed';
+                      notif2.style.bottom = '20px';
+                      notif2.style.right = '20px';
+                      notif2.style.background = 'rgba(0, 20, 0, 0.9)';
+                      notif2.style.color = '#0f0';
+                      notif2.style.border = '1px solid #0f0';
+                      notif2.style.padding = '10px 20px';
+                      notif2.style.fontFamily = "'VT323', monospace";
+                      notif2.style.fontSize = '1.2rem';
+                      notif2.style.zIndex = '10000';
+                      notif2.style.boxShadow = '0 0 10px rgba(0, 255, 0, 0.2)';
+                      notif2.style.opacity = '0';
+                      notif2.style.transition = 'opacity 0.5s ease';
+                      notif2.innerHTML = '<div style="font-weight:bold;margin-bottom:5px;">NEW MESSAGE RECEIVED</div><div>Unknown User</div>';
+                      document.body.appendChild(notif2);
+                      if (window.soundManager) window.soundManager.playPing();
+                      
+                      setTimeout(() => notif2.style.opacity = '1', 100);
+                      setTimeout(() => {
+                        notif2.style.opacity = '0';
+                        setTimeout(() => notif2.remove(), 500);
+                      }, 5000);
+                      
                       // Highlight Unknown User
                       const contactItems = document.querySelectorAll('.contact-item');
                       contactItems.forEach(item => {
@@ -2928,7 +2939,7 @@ fragment remains</div>
                       const uMsg = decodeURIComponent(escape(uStr));
                       chats['unknown'].push({ sender: 'Unknown', time: timeStr, text: uMsg });
                       if (currentChatContact === 'unknown') renderChatHistory();
-                    }, 2000);
+                    }, 4000);
                   }, 2000);
                 }
                 
