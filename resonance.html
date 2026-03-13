@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+if (window === window.top) {
+  window.location.href = 'stage1.html';
+} else {
+  if (!localStorage.getItem('aurora_stage1_complete')) {
+    document.documentElement.innerHTML = '<body style="background:#000;color:#f00;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;margin:0;"><div><h1>ACCESS DENIED</h1><p>Node authentication required.</p></div></body>';
+    setTimeout(function(){ window.top.location.href = 'stage1.html'; }, 3000);
+    throw new Error('Access Denied');
+  }
+}
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Resonance Data</title>
@@ -17,22 +28,128 @@
     align-items: center;
     height: 100vh;
     margin: 0;
+    position: relative;
+    overflow: hidden;
   }
   .json-block {
     background: #0a0a0a;
     padding: 2rem;
     border: 1px solid #333;
     border-radius: 4px;
+    z-index: 10;
+    box-shadow: 0 0 20px rgba(0, 255, 204, 0.1);
+    transition: all 0.5s ease;
+  }
+  .json-block:hover {
+    box-shadow: 0 0 30px rgba(0, 255, 204, 0.3);
+    border-color: #00ffcc;
+  }
+  #visualizer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
+    opacity: 0.3;
+    z-index: 1;
+  }
+  .bar {
+    width: 10px;
+    background-color: #00ffcc;
+    transition: height 0.1s ease;
   }
 </style>
 </head>
 <body>
+  <div id="visualizer"></div>
   <div class="json-block">
     {<br>
     &nbsp;&nbsp;"status": "aligned",<br>
-    &nbsp;&nbsp;"data": "U2hpZnQgdGhlIGNoYXJhY3RlcnMgb2YgJ0tGRE9CQUwnIGJ5IHRoZSBudW1iZXIgb2YgY2lyY2xlcyBpbiB0aGlzIHBhZ2Uu"<br>
+    &nbsp;&nbsp;"data": "U2hpZnQgdGhlIGNoYXJhY3RlcnMgb2YgJ0tGRE9CQUwnIGJ5IHRoZSBudW1iZXIgb2YgY2lyY2xlcyBpbiB0aGlzIHBhZ2Uu",<br>
+    &nbsp;&nbsp;"source": "digitalpuzzles.fun/resonance.html"<br>
     }
   </div>
   <script src="sound-manager.js"></script>
+  <script>
+    // Audio and Visualizer Logic
+    const NUM_BARS = 64;
+    const visualizer = document.getElementById('visualizer');
+    const bars = [];
+    
+    for (let i = 0; i < NUM_BARS; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.height = '5px';
+      visualizer.appendChild(bar);
+      bars.push(bar);
+    }
+
+    let audioCtx;
+    let droneOsc;
+    let droneGain;
+    let initialized = false;
+
+    function initAudio() {
+      if (initialized) return;
+      initialized = true;
+      
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContext();
+      
+      droneOsc = audioCtx.createOscillator();
+      droneGain = audioCtx.createGain();
+      
+      droneOsc.type = 'sine';
+      droneOsc.frequency.value = 432; // Healing frequency
+      
+      droneGain.gain.value = 0;
+      droneGain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 2);
+      
+      droneOsc.connect(droneGain);
+      droneGain.connect(audioCtx.destination);
+      
+      droneOsc.start();
+      
+      // Add a slow LFO to the frequency for a "resonance" effect
+      const lfo = audioCtx.createOscillator();
+      const lfoGain = audioCtx.createGain();
+      lfo.type = 'sine';
+      lfo.frequency.value = 0.5;
+      lfoGain.gain.value = 5;
+      lfo.connect(lfoGain);
+      lfoGain.connect(droneOsc.frequency);
+      lfo.start();
+
+      animateVisualizer();
+    }
+
+    function animateVisualizer() {
+      if (!initialized) return;
+      
+      const time = audioCtx.currentTime;
+      bars.forEach((bar, i) => {
+        // Create a wave effect based on time and index
+        const height = 10 + Math.abs(Math.sin(time * 2 + i * 0.2)) * 40 + Math.random() * 10;
+        bar.style.height = height + 'px';
+      });
+      
+      requestAnimationFrame(animateVisualizer);
+    }
+
+    // Initialize audio on first interaction
+    document.body.addEventListener('click', initAudio, { once: true });
+    document.body.addEventListener('keydown', initAudio, { once: true });
+    
+    // Also try to initialize immediately (might be blocked by browser autoplay policy)
+    setTimeout(() => {
+      if (!initialized && window.soundManager) {
+        window.soundManager.playGlitch();
+      }
+    }, 1000);
+  </script>
 </body>
 </html>
