@@ -33,28 +33,34 @@
     }
 
     .vale-journal-content {
-      background: #fdfbf7;
-      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-      color: #2c2c2c;
+      background: #f4e4bc;
+      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E"),
+                        linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.05) 100%);
+      color: #3d352a;
       font-family: 'Georgia', 'Times New Roman', serif;
-      font-size: 18px;
-      line-height: 1.7;
-      padding: 40px;
+      font-size: 19px;
+      line-height: 1.8;
+      padding: 50px;
       box-sizing: border-box;
       overflow-y: auto;
-      box-shadow: inset 0 0 50px rgba(0,0,0,0.05);
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
       text-align: left;
-      max-width: 600px;
-      margin: 14px auto;
-      width: calc(100% - 28px);
+      max-width: 650px;
+      margin: 20px auto;
+      width: calc(100% - 40px);
+      border: 1px solid #dcd0b0;
     }
     .vale-journal-content::first-line {
-      font-size: 22px;
+      font-size: 26px;
       font-weight: bold;
-      font-family: sans-serif;
+      font-family: 'Georgia', serif;
+      color: #2a251e;
+      text-decoration: underline;
+      text-underline-offset: 6px;
     }
     .vale-journal-content p {
-      margin-bottom: 1.7em;
+      margin-bottom: 1.5em;
+      text-indent: 2em;
     }
 
     :root {
