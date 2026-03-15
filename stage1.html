@@ -6,11 +6,11 @@
   <title>AURORA OS v1.3</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
-    .observer-log-content {
-      background: #0f0f0f;
-      color: #6CFF6C;
-      font-family: 'Courier New', Lucida Console, monospace;
-      font-size: 16px;
+    .window-content.observer-log-content {
+      background: #050505;
+      color: #00ff00;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
       line-height: 1.6;
       padding: 24px;
       box-sizing: border-box;
@@ -33,7 +33,7 @@
     }
 
     .vale-journal-content {
-      background: #f4ecd8;
+      background: #fdfbf7;
       background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
       color: #2c2c2c;
       font-family: 'Georgia', 'Times New Roman', serif;
@@ -60,9 +60,9 @@
     :root {
       --bg-color: #008080;
       --window-bg: #c0c0c0;
-      --window-border-light: #ffffff;
+      --window-border-light: #dfdfdf;
       --window-border-dark: #808080;
-      --window-border-darker: #404040;
+      --window-border-darker: #000000;
       --title-bg: #000080;
       --title-text: #ffffff;
       --text-color: #000000;
@@ -2207,7 +2207,10 @@ fragment remains</div>
       }
     }
 
-    let audioLog = null;
+    let audioLogCtx;
+    let audioLogOsc;
+    let audioLogGain;
+    let audioLogNoise;
 
     function pauseAudioLog() {
       if (!isPlaying) return;
@@ -2217,8 +2220,8 @@ fragment remains</div>
       clearInterval(progressInterval);
       bars.forEach(bar => bar.style.height = '2px');
       
-      if (audioLog) {
-        audioLog.pause();
+      if (audioLogCtx) {
+        audioLogCtx.suspend();
       }
     }
 
@@ -2235,29 +2238,62 @@ fragment remains</div>
         });
       }, 100);
 
-      if (!audioLog) {
-        audioLog = new Audio("assets/audio/audio_log.mp3");
-        audioLog.preload = "auto";
-        audioLog.loop = false;
-        audioLog.volume = audioVolume.value / 100;
-        audioVolume.addEventListener('input', () => {
-          if (audioLog) audioLog.volume = audioVolume.value / 100;
-        });
+      if (!audioLogCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioLogCtx = new AudioContext();
+        
+        audioLogOsc = audioLogCtx.createOscillator();
+        audioLogGain = audioLogCtx.createGain();
+        audioLogOsc.type = 'sawtooth';
+        audioLogOsc.frequency.value = 100;
+        
+        const bufferSize = audioLogCtx.sampleRate * 2;
+        const buffer = audioLogCtx.createBuffer(1, bufferSize, audioLogCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        audioLogNoise = audioLogCtx.createBufferSource();
+        audioLogNoise.buffer = buffer;
+        audioLogNoise.loop = true;
+        
+        audioLogOsc.connect(audioLogGain);
+        audioLogNoise.connect(audioLogGain);
+        audioLogGain.connect(audioLogCtx.destination);
+        
+        audioLogOsc.start();
+        audioLogNoise.start();
       }
       
-      audioLog.play();
+      audioLogGain.gain.value = audioVolume.value / 100 * 0.1;
       
+      if (audioLogCtx.state === 'suspended') {
+        audioLogCtx.resume();
+      }
+      
+      audioVolume.addEventListener('input', () => {
+        if (audioLogGain) audioLogGain.gain.value = audioVolume.value / 100 * 0.1;
+      });
+
       progressInterval = setInterval(() => {
         if (isPlaying) {
-          audioCurrentTime = audioLog.currentTime;
+          audioCurrentTime += 0.1;
           if (audioCurrentTime >= audioTotalTime) {
             pauseAudioLog();
             audioCurrentTime = 0;
             audioProgressSlider.value = 0;
             audioTimeCurrent.innerText = "00:00";
+            if (audioLogCtx) {
+              audioLogCtx.close();
+              audioLogCtx = null;
+            }
           } else {
             audioProgressSlider.value = audioCurrentTime;
             audioTimeCurrent.innerText = formatTime(Math.floor(audioCurrentTime));
+            
+            if (audioLogOsc) {
+              audioLogOsc.frequency.value = 100 + Math.sin(audioCurrentTime * 5) * 20;
+            }
           }
         }
       }, 100);
@@ -2879,9 +2915,9 @@ fragment remains</div>
 
     // --- Music Player Logic ---
     const playlist = [
-      { title: "1. Cybernetic Groove", src: "assets/audio/SoundHelix-Song-1.mp3" },
-      { title: "2. Neon Nights", src: "assets/audio/SoundHelix-Song-2.mp3" },
-      { title: "3. Synthwave Drift", src: "assets/audio/SoundHelix-Song-3.mp3" }
+      { title: "1. Cybernetic Groove", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+      { title: "2. Neon Nights", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+      { title: "3. Synthwave Drift", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
     ];
     let currentTrackIndex = 0;
     let isMusicPlaying = false;
