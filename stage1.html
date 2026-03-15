@@ -2637,6 +2637,9 @@ fragment remains</div>
       if (!cmd) return;
       const args = cmd.split(' ');
       const baseCmd = args[0];
+      const fragments = ["X3Zh", "ZGVj", "YXJj", "b2Rl", "ZQ==", "bGVf", "aGl2"];
+      const order = [1, 3, 0, 5, 2, 6, 4];
+      const reconstructedCommand = atob(order.map(i => fragments[i]).join(""));
       
       switch(baseCmd) {
         case 'help':
@@ -2705,7 +2708,7 @@ fragment remains</div>
             printTerminal("Usage: decrypt <filename>");
           }
           break;
-        case atob('ZGVjb2RlX3ZhbGVfYXJjaGl2ZQ=='):
+        case reconstructedCommand:
           if (getStage4Progress() >= 1) {
             printTerminal("Decoding archive...");
             setTimeout(() => {
