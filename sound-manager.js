@@ -14,19 +14,35 @@ class SoundManager {
     this.bgmOscillators = [];
     this.bgmStarted = false;
     
-    const resumeAudio = () => {
+    const resumeAudio = async () => {
       if (this.ctx.state === 'suspended') {
-        this.ctx.resume();
+        try {
+          await this.ctx.resume();
+        } catch (e) {
+          console.error("AudioContext resume failed:", e);
+        }
       }
-      if (!this.bgmStarted) {
+      if (!this.bgmStarted && this.ctx.state === 'running') {
         this.startBGM();
         this.bgmStarted = true;
       }
       document.removeEventListener('click', resumeAudio);
       document.removeEventListener('keydown', resumeAudio);
+      const bootBtn = document.getElementById('boot-start-btn');
+      if (bootBtn) bootBtn.removeEventListener('click', resumeAudio);
     };
+    
+    // Attach to document for general interaction, but also specifically to boot button
     document.addEventListener('click', resumeAudio);
     document.addEventListener('keydown', resumeAudio);
+    
+    // If boot button exists, attach to it directly to ensure it fires even if propagation is stopped
+    window.addEventListener('DOMContentLoaded', () => {
+      const bootBtn = document.getElementById('boot-start-btn');
+      if (bootBtn) {
+        bootBtn.addEventListener('click', resumeAudio);
+      }
+    });
   }
 
   createReverb() {

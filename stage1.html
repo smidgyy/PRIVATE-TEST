@@ -2505,40 +2505,6 @@ fragment remains</div>
     audioPlayer.volume = 0.3;
 
     audioPlayer.addEventListener('ended', nextTrack);
-    
-    audioPlayer.addEventListener('play', () => {
-      isMusicPlaying = true;
-      document.getElementById('music-play-btn').innerText = "PAUSE";
-      if (!audioTimeInterval) {
-        audioTimeInterval = setInterval(updateAudioTime, 1000);
-      }
-    });
-
-    audioPlayer.addEventListener('pause', () => {
-      isMusicPlaying = false;
-      document.getElementById('music-play-btn').innerText = "PLAY";
-      clearInterval(audioTimeInterval);
-      audioTimeInterval = null;
-    });
-
-    audioPlayer.addEventListener('error', (e) => {
-      console.error("Audio Player Error:", audioPlayer.error);
-      isMusicPlaying = false;
-      document.getElementById('music-play-btn').innerText = "PLAY";
-      clearInterval(audioTimeInterval);
-      audioTimeInterval = null;
-      
-      let errMsg = "Error loading media";
-      if (audioPlayer.error) {
-        switch (audioPlayer.error.code) {
-          case 1: errMsg = "Error: Playback aborted"; break;
-          case 2: errMsg = "Error: Network issue"; break;
-          case 3: errMsg = "Error: Decoding failed"; break;
-          case 4: errMsg = "Error: File not found or format unsupported"; break;
-        }
-      }
-      document.getElementById('music-track-name').innerText = errMsg;
-    });
 
     function updateAudioTime() {
       if (audioPlayer) {
@@ -2563,23 +2529,23 @@ fragment remains</div>
 
     function pauseMusic() {
       audioPlayer.pause();
+      isMusicPlaying = false;
+      document.getElementById('music-play-btn').innerText = "PLAY";
+      clearInterval(audioTimeInterval);
+      audioTimeInterval = null;
     }
-
-    let currentLoadedTrackIndex = 0;
 
     function playMusic() {
       // Pause audio log if playing
       if (typeof pauseAudioLog === 'function') pauseAudioLog();
       
-      if (currentLoadedTrackIndex !== currentTrackIndex) {
-        audioPlayer.src = playlist[currentTrackIndex].src;
-        currentLoadedTrackIndex = currentTrackIndex;
-      }
+      audioPlayer.play();
       
-      audioPlayer.play().catch(e => {
-        console.error("Playback failed:", e);
-        // Autoplay might be blocked
-      });
+      isMusicPlaying = true;
+      document.getElementById('music-play-btn').innerText = "PAUSE";
+      if (!audioTimeInterval) {
+        audioTimeInterval = setInterval(updateAudioTime, 1000);
+      }
       
       updateTrackDisplay();
       updateMusicVolume();
@@ -2605,16 +2571,19 @@ fragment remains</div>
 
     function playTrack(index) {
       currentTrackIndex = index;
+      audioPlayer.src = playlist[currentTrackIndex].src;
       playMusic();
     }
 
     function nextTrack() {
       currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+      audioPlayer.src = playlist[currentTrackIndex].src;
       playMusic();
     }
 
     function prevTrack() {
       currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
+      audioPlayer.src = playlist[currentTrackIndex].src;
       playMusic();
     }
 
