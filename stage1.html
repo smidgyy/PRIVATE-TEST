@@ -1282,7 +1282,7 @@ fragment remains</div>
 
     <!-- Audio Player -->
     <div class="window" id="win-audio-log" style="width: 350px; height: 180px;">
-      <audio id="audio-log-player" src="sounds/audio_log.wav" style="display: none;"></audio>
+      <audio id="audio-log-player" style="display: none;"></audio>
       <div class="title-bar">
         <div class="title-bar-text">Audio Log - Media Player</div>
         <div class="title-bar-controls">
@@ -1370,7 +1370,7 @@ fragment remains</div>
     <!-- Music Player -->
     <div class="window" id="win-music-player" style="width: 300px; height: 250px;">
       <audio id="local-audio-player" style="display: none;"></audio>
-      <audio id="stage4-ambient" src="stage4_ambience.mp3" loop style="display: none;"></audio>
+      <audio id="stage4-ambient" loop style="display: none;"></audio>
       <div class="title-bar">
         <div class="title-bar-text">WinAmp Classic</div>
         <div class="title-bar-controls">
@@ -1503,8 +1503,7 @@ fragment remains</div>
     }
 
     function playBootSound() {
-      const bootAudio = new Audio('sounds/boot.wav');
-      bootAudio.play().catch(e => console.error("Audio play failed:", e));
+      if (window.soundManager) window.soundManager.playBoot();
     }
 
     document.getElementById('boot-start-btn').addEventListener('click', () => {
@@ -2154,6 +2153,11 @@ fragment remains</div>
       }
     }
 
+    let audioLogCtx;
+    let audioLogOsc;
+    let audioLogGain;
+    let audioLogNoise;
+
     function pauseAudioLog() {
       if (!isPlaying) return;
       isPlaying = false;
@@ -2161,9 +2165,9 @@ fragment remains</div>
       clearInterval(visualizerInterval);
       clearInterval(progressInterval);
       bars.forEach(bar => bar.style.height = '2px');
-      const audioLogPlayer = document.getElementById('audio-log-player');
-      if (audioLogPlayer) {
-        audioLogPlayer.pause();
+      
+      if (audioLogCtx) {
+        audioLogCtx.suspend();
       }
     }
 
@@ -2172,51 +2176,78 @@ fragment remains</div>
       isPlaying = true;
       playBtn.innerText = "PAUSE";
       
-      // Stop music if playing
       if (typeof pauseMusic === 'function') pauseMusic();
       
-      // Start visualizer
       visualizerInterval = setInterval(() => {
         bars.forEach(bar => {
           bar.style.height = (2 + Math.random() * 40) + 'px';
         });
       }, 100);
 
-      const audioLogPlayer = document.getElementById('audio-log-player');
-      if (audioLogPlayer) {
-        audioLogPlayer.volume = audioVolume.value / 100;
-        audioLogPlayer.currentTime = audioCurrentTime;
-        audioLogPlayer.play().catch(e => console.error("Audio play failed:", e));
+      if (!audioLogCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioLogCtx = new AudioContext();
+        
+        audioLogOsc = audioLogCtx.createOscillator();
+        audioLogGain = audioLogCtx.createGain();
+        audioLogOsc.type = 'sawtooth';
+        audioLogOsc.frequency.value = 100;
+        
+        const bufferSize = audioLogCtx.sampleRate * 2;
+        const buffer = audioLogCtx.createBuffer(1, bufferSize, audioLogCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        audioLogNoise = audioLogCtx.createBufferSource();
+        audioLogNoise.buffer = buffer;
+        audioLogNoise.loop = true;
+        
+        audioLogOsc.connect(audioLogGain);
+        audioLogNoise.connect(audioLogGain);
+        audioLogGain.connect(audioLogCtx.destination);
+        
+        audioLogOsc.start();
+        audioLogNoise.start();
+      }
+      
+      audioLogGain.gain.value = audioVolume.value / 100 * 0.1;
+      
+      if (audioLogCtx.state === 'suspended') {
+        audioLogCtx.resume();
+      }
+      
+      audioVolume.addEventListener('input', () => {
+        if (audioLogGain) audioLogGain.gain.value = audioVolume.value / 100 * 0.1;
+      });
 
-        audioLogPlayer.onended = () => {
-          pauseAudioLog();
-          audioCurrentTime = 0;
-          audioProgressSlider.value = 0;
-          audioTimeCurrent.innerText = "00:00";
-        };
-
-        const updateVolume = () => {
-          audioLogPlayer.volume = audioVolume.value / 100;
-        };
-        audioVolume.addEventListener('input', updateVolume);
-
-        progressInterval = setInterval(() => {
-          if (isPlaying) {
-            audioCurrentTime = audioLogPlayer.currentTime;
+      progressInterval = setInterval(() => {
+        if (isPlaying) {
+          audioCurrentTime += 0.1;
+          if (audioCurrentTime >= audioTotalTime) {
+            pauseAudioLog();
+            audioCurrentTime = 0;
+            audioProgressSlider.value = 0;
+            audioTimeCurrent.innerText = "00:00";
+            if (audioLogCtx) {
+              audioLogCtx.close();
+              audioLogCtx = null;
+            }
+          } else {
             audioProgressSlider.value = audioCurrentTime;
             audioTimeCurrent.innerText = formatTime(Math.floor(audioCurrentTime));
+            
+            if (audioLogOsc) {
+              audioLogOsc.frequency.value = 100 + Math.sin(audioCurrentTime * 5) * 20;
+            }
           }
-        }, 100);
-      }
+        }
+      }, 100);
     }
     
     audioProgressSlider.addEventListener('input', (e) => {
       audioCurrentTime = parseFloat(e.target.value);
       audioTimeCurrent.innerText = formatTime(audioCurrentTime);
-      const audioLogPlayer = document.getElementById('audio-log-player');
-      if (audioLogPlayer) {
-        audioLogPlayer.currentTime = audioCurrentTime;
-      }
     });
 
 
@@ -2253,8 +2284,7 @@ fragment remains</div>
       if (window.soundManager) window.soundManager.playError();
       document.body.classList.add('glitching');
       
-      const crashAudio = new Audio('sounds/crash.wav');
-      crashAudio.play().catch(e => console.error("Audio play failed:", e));
+      if (window.soundManager) window.soundManager.playCrash();
 
       setTimeout(() => {
         document.body.classList.remove('glitching');
@@ -2359,10 +2389,7 @@ fragment remains</div>
         arrangeIcons();
         
         // Start ambient audio
-        const stage4Audio = document.getElementById('stage4-ambient');
-        if (stage4Audio) {
-          stage4Audio.play().catch(e => console.error("Audio play failed:", e));
-        }
+        if (window.soundManager) window.soundManager.startStage4Ambience();
         
         startSystemAliveEffects();
       }
@@ -2882,7 +2909,15 @@ fragment remains</div>
       // Pause audio log if playing
       if (typeof pauseAudioLog === 'function') pauseAudioLog();
       
-      audioPlayer.play();
+      audioPlayer.play().catch(e => {
+        const playOnInteract = () => {
+          audioPlayer.play().catch(err => {});
+          document.removeEventListener('click', playOnInteract);
+          document.removeEventListener('keydown', playOnInteract);
+        };
+        document.addEventListener('click', playOnInteract);
+        document.addEventListener('keydown', playOnInteract);
+      });
       
       isMusicPlaying = true;
       document.getElementById('music-play-btn').innerText = "PAUSE";
