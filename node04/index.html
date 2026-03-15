@@ -4,10 +4,17 @@
 <script>
 if (window === window.top) {
   window.location.href = '/stage1.html';
-} else if (!localStorage.getItem('aurora_stage3_complete')) {
-  document.documentElement.innerHTML = '<body style="background:#000;color:#f00;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;margin:0;"><div><h1>ACCESS DENIED</h1><p>Node authentication required.</p></div></body>';
-  setTimeout(function(){ window.top.location.href = '/stage1.html'; }, 3000);
-  throw new Error('Access Denied');
+} else {
+  let unlocked = false;
+  try {
+    const t = localStorage.getItem('aurora_stage3_token_complete');
+    if (t && atob(t) === 'true|AURORA_OS_SECRET') unlocked = true;
+  } catch(e) {}
+  if (!unlocked) {
+    document.documentElement.innerHTML = '<body style="background:#000;color:#f00;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;margin:0;"><div><h1>ACCESS DENIED</h1><p>Node authentication required.</p></div></body>';
+    setTimeout(function(){ window.top.location.href = '/stage1.html'; }, 3000);
+    throw new Error('Access Denied');
+  }
 }
 </script>
 <meta charset="UTF-8">

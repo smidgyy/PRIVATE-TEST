@@ -2837,6 +2837,48 @@ fragment remains</div>
     // Call initially
     updateStage3Clues();
 
+    // Reconstruct chat history
+    function reconstructChatHistory() {
+      const step = getProgressStep();
+      if (step === 0) return;
+      
+      const payloads = [
+        "3c702b677e650000131511172278666b7037677e65012a653d282765362b2b2420216411332920a6c7cb36653722312a2b20673e2a262f696e27377a7b30377b033537202164303336652b293e3c65302f37652721203b2b2b2d29356b7926356c7927367915372021237229202531373665303533262037696e27377a7b30377b12263e206530353b202164333d652036262120652b2937652a2267262d2029696e27377a7b30377b072f37262e64333a2065303533362d6a652f",
+        "3f673e76726611056d0716133b696a686722767266063f263a2126247a7426376e682a367b0635242165353a2b363c20202d2065243c2d642b352c3c642322352f29203e20667827226a7426376e013b2165243c2d64313526252d2b3138666638",
+        "366d2067636f1d7e7c141f0e73787b616d3c67636f01216b652f3d70793b3f71032a3728366e2c2a6d202029206d3b262079202e3d2e77712d3c7b652f3d70093622246e213c283f2b37776f32",
+        "3c6d22667d6d1d750d1f1a7473726e68653d6e7e650c202b342a3e6a7b2d3e7a7b2d3e7a112e2021672b252029adccdd336f2a2b2b232333673829252b3b246a7b2d3e7a7b2d3e7a0f2a6c222823202b302a286437203b2135617026357170263571002d343b292a696d31",
+        "387021757461000a6e011103726a6c6f703d7574610b20226e22202a772c26352639202a3c28773a2c723c322b632627326e33333b232b313c616b2c316c73353c7d153d322b27722d322d2c3f2a246e34372e3b3a2b7c73353c7d6e2d257014372e3b3a2b722d322d2c3f2a246e333d38323c6d6e2d25707f303d6918223e2a773c26332c3f2b27723b3f2730723f38272d26616b2c316c73353c7d103a236e2b376f202b2d266f313b312627323c6d7032"
+      ];
+      
+      const encAns = ["R1JFRUQ=", "REVQVEg=", "TU9ORVk=", "R09MRA==", "Q1JPV04="];
+      
+      for (let i = 0; i < step; i++) {
+        if (i >= payloads.length) break;
+        
+        const t = atob(encAns[i]);
+        let str = "";
+        let hex = payloads[i];
+        for(let j=0; j<hex.length; j+=2) {
+            str += String.fromCharCode(parseInt(hex.substr(j, 2), 16) ^ t.charCodeAt((j/2) % t.length));
+        }
+        let decrypted = null;
+        try {
+            decrypted = JSON.parse(decodeURIComponent(escape(str)));
+        } catch(e) {}
+        
+        if (decrypted && decrypted.n) {
+          chats['archive'].push({ sender: 'You', time: 'RECOVERED', text: t });
+          chats['archive'].push({ sender: 'Archive Node', time: 'RECOVERED', text: decrypted.r });
+        }
+      }
+      
+      if (currentChatContact === 'archive') {
+        renderChatHistory();
+      }
+    }
+    
+    reconstructChatHistory();
+
     // Override Messenger
     if (typeof sendChatMessage !== 'undefined') {
       const _originalSendChatMessage = sendChatMessage;

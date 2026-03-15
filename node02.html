@@ -12,7 +12,7 @@ if (!localStorage.getItem('aurora_stage1_complete')) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The First Trial.</title>
 <meta name="x-architect-directive" content="0x48 0x65 0x78 0x20 0x69 0x73 0x20 0x6f 0x6e 0x6c 0x79 0x20 0x74 0x68 0x65 0x20 0x62 0x65 0x67 0x69 0x6e 0x6e 0x69 0x6e 0x67">
-<!-- [SYSTEM] Fragment relocated to archive://node/resonance.html -->
+<!-- [SYSTEM] Fragment relocated to /resonance.html -->
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -473,6 +473,16 @@ function startBlackFire() {
       // Ensure the canvas is completely black
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, fireWidth, fireHeight);
+      
+      localStorage.setItem('aurora_stage3_token1', btoa('true|AURORA_OS_SECRET'));
+      
+      setTimeout(() => {
+        if (window.parent && typeof window.parent.openBrowserUrl === 'function') {
+          window.parent.openBrowserUrl('archive://node/03/secret');
+        } else {
+          window.location.href = 'node03/secret.html';
+        }
+      }, 1000);
     }
   }, 33);
 }
@@ -515,7 +525,7 @@ async function dissolveAndRespond() {
   let msg = "Incorrect. The truth eludes you.";
   let success = false;
 
-  if (phase === '1' && h === '092c79e8f80e559e404bcf660c48f3522b67aba9ff1484b0367e1a4ddef7431d') {
+  if (phase === '1' && h === '76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22') {
     msg = "The earth opens. Seek the marginalia.";
     success = true;
     if (window.soundManager) window.soundManager.playSuccess();
