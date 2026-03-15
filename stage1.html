@@ -2205,15 +2205,6 @@ fragment remains</div>
       return `0${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    const morseMap = {
-      'a': '.-', 'b': '-...', 'c': '-.-.', 'd': '-..', 'e': '.', 'f': '..-.', 'g': '--.', 'h': '....', 'i': '..', 'j': '.---', 'k': '-.-', 'l': '.-..', 'm': '--', 'n': '-.', 'o': '---', 'p': '.--.', 'q': '--.-', 'r': '.-.', 's': '...', 't': '-', 'u': '..-', 'v': '...-', 'w': '.--', 'x': '-..-', 'y': '-.--', 'z': '--..',
-      '1': '.----', '2': '..---', '3': '...--', '4': '....-', '5': '.....', '6': '-....', '7': '--...', '8': '---..', '9': '----.', '0': '-----'
-    };
-
-    function textToMorse(text) {
-      return text.toLowerCase().split('').map(char => morseMap[char] || ' ').join(' ');
-    }
-
     function toggleAudioLog() {
       if (isPlaying) {
         pauseAudioLog();
@@ -2222,37 +2213,10 @@ fragment remains</div>
       }
     }
 
-    let isTonePlaying = false;
-    function playTone(duration) {
-      isTonePlaying = true;
-      const osc = audioLogCtx.createOscillator();
-      const gain = audioLogCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = 600;
-      gain.gain.setValueAtTime(0.1, audioLogCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioLogCtx.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(audioLogCtx.destination);
-      osc.start();
-      osc.stop(audioLogCtx.currentTime + duration);
-      setTimeout(() => { isTonePlaying = false; }, duration * 1000);
-    }
-    async function playMorse(text) {
-      const morse = textToMorse(text);
-      const unit = 0.15;
-      for (const char of morse) {
-        if (!isPlaying) return;
-        if (char === '.') {
-          playTone(unit);
-          await new Promise(r => setTimeout(r, unit * 2000));
-        } else if (char === '-') {
-          playTone(unit * 3);
-          await new Promise(r => setTimeout(r, unit * 4000));
-        } else if (char === ' ') {
-          await new Promise(r => setTimeout(r, unit * 2000));
-        }
-      }
-    }
+    let audioLogCtx;
+    let audioLogOsc;
+    let audioLogGain;
+    let audioLogNoise;
 
     function pauseAudioLog() {
       if (!isPlaying) return;
@@ -2276,16 +2240,36 @@ fragment remains</div>
       
       visualizerInterval = setInterval(() => {
         bars.forEach(bar => {
-          bar.style.height = (isPlaying && isTonePlaying ? (2 + Math.random() * 40) : 2) + 'px';
+          bar.style.height = (2 + Math.random() * 40) + 'px';
         });
       }, 100);
 
       if (!audioLogCtx) {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioLogCtx = new AudioContext();
+        
+        audioLogOsc = audioLogCtx.createOscillator();
+        audioLogGain = audioLogCtx.createGain();
+        audioLogOsc.type = 'sawtooth';
+        audioLogOsc.frequency.value = 100;
+        
+        const bufferSize = audioLogCtx.sampleRate * 2;
+        const buffer = audioLogCtx.createBuffer(1, bufferSize, audioLogCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        audioLogNoise = audioLogCtx.createBufferSource();
+        audioLogNoise.buffer = buffer;
+        audioLogNoise.loop = true;
+        
+        audioLogOsc.connect(audioLogGain);
+        audioLogNoise.connect(audioLogGain);
+        audioLogGain.connect(audioLogCtx.destination);
+        
+        audioLogOsc.start();
+        audioLogNoise.start();
       }
-      
-      playMorse("the archive remembers");
       
       audioLogGain.gain.value = audioVolume.value / 100 * 0.1;
       
@@ -2482,8 +2466,6 @@ fragment remains</div>
         targetUrl = 'archive://node/02';
       } else if (url === 'archive.local/node03/secret' || url === 'http://archive.local/node03/secret') {
         targetUrl = 'archive://node/03/secret';
-      } else if (url === 'archive://node/02/resonance.html') {
-        targetUrl = 'archive://node/02/resonance.html';
       }
       
       if (urlInput) urlInput.value = targetUrl;
@@ -2494,7 +2476,7 @@ fragment remains</div>
         if (spinner) spinner.style.display = 'none';
         if (page) {
           page.style.opacity = '1';
-          if (targetUrl === 'archive://node/02' || targetUrl === 'archive://node/02/resonance.html' || targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://node/04' || targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt') || targetUrl === atob('YXJjaGl2ZTovL3JlY29yZHM=')) {
+          if (targetUrl === 'archive://node/02' || targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://node/04' || targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt') || targetUrl === atob('YXJjaGl2ZTovL3JlY29yZHM=')) {
             page.innerHTML = '';
             page.style.padding = '0';
             page.style.position = 'relative';
@@ -2509,9 +2491,6 @@ fragment remains</div>
             if (targetUrl === 'archive://node/02') {
               if (localStorage.getItem('aurora_stage1_complete')) unlocked = true;
               fetchPath = 'stage' + '2.html';
-            } else if (targetUrl === 'archive://node/02/resonance.html') {
-              unlocked = true;
-              fetchPath = 'resonance.html';
             } else if (targetUrl === 'archive://node/03/secret') {
               try {
                 const t = localStorage.getItem('aurora_stage3_token1');
@@ -2658,9 +2637,6 @@ fragment remains</div>
       if (!cmd) return;
       const args = cmd.split(' ');
       const baseCmd = args[0];
-      const fragments = ["X3Zh", "ZGVj", "YXJj", "b2Rl", "ZQ==", "bGVf", "aGl2"];
-      const order = [1, 3, 0, 5, 2, 6, 4];
-      const reconstructedCommand = atob(order.map(i => fragments[i]).join(""));
       
       switch(baseCmd) {
         case 'help':
@@ -2729,7 +2705,7 @@ fragment remains</div>
             printTerminal("Usage: decrypt <filename>");
           }
           break;
-        case reconstructedCommand:
+        case atob('ZGVjb2RlX3ZhbGVfYXJjaGl2ZQ=='):
           if (getStage4Progress() >= 1) {
             printTerminal("Decoding archive...");
             setTimeout(() => {
