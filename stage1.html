@@ -6,15 +6,16 @@
   <title>AURORA OS v1.3</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
-    .window-content.observer-log-content {
+    .observer-log-content {
       background: #050505;
-      color: #00ff00;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 14px;
-      line-height: 1.6;
-      padding: 24px;
+      color: #0f0;
+      font-family: 'VT323', monospace, 'Courier New';
+      font-size: 16px;
+      line-height: 1.5;
+      padding: 20px;
       box-sizing: border-box;
       overflow-y: auto;
+      height: 100%;
       position: relative;
     }
     .observer-log-content::before {
@@ -25,42 +26,27 @@
       left: 0;
       bottom: 0;
       right: 0;
-      background: linear-gradient(rgba(0, 255, 0, 0.02) 50%, rgba(0, 0, 0, 0.05) 50%);
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
       z-index: 2;
-      background-size: 100% 4px;
+      background-size: 100% 2px, 3px 100%;
       pointer-events: none;
-      opacity: 0.04;
     }
 
-    .window-content.vale-journal-content {
-      background: #f4e4bc;
-      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E"),
-                        linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.05) 100%);
-      color: #3d352a;
+    .vale-journal-content {
+      background: #f4ecd8;
+      color: #2c2c2c;
       font-family: 'Georgia', 'Times New Roman', serif;
-      font-size: 19px;
+      font-size: 16px;
       line-height: 1.8;
-      padding: 50px;
+      padding: 30px 40px;
       box-sizing: border-box;
       overflow-y: auto;
-      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
-      text-align: left;
-      max-width: 650px;
-      margin: 20px auto;
-      width: calc(100% - 40px);
-      border: 1px solid #dcd0b0;
+      height: 100%;
+      box-shadow: inset 0 0 50px rgba(0,0,0,0.1);
+      text-align: center;
     }
-    .window-content.vale-journal-content::first-line {
-      font-size: 26px;
-      font-weight: bold;
-      font-family: 'Georgia', serif;
-      color: #2a251e;
-      text-decoration: underline;
-      text-underline-offset: 6px;
-    }
-    .window-content.vale-journal-content p {
-      margin-bottom: 1.5em;
-      text-indent: 2em;
+    .vale-journal-content p {
+      margin-bottom: 1em;
     }
 
     :root {
@@ -415,7 +401,6 @@
       opacity: 0;
       pointer-events: none;
       padding: 2px;
-      box-sizing: border-box;
     }
 
     .window.open {
@@ -500,27 +485,22 @@
     }
 
     .window-content {
-      padding: 20px;
+      padding: 10px;
       flex-grow: 1;
       overflow: auto;
       background: #fff;
-      margin: 14px;
-      width: calc(100% - 28px);
+      margin: 0;
       border-top: 2px solid var(--window-border-dark);
       border-left: 2px solid var(--window-border-dark);
       border-bottom: 2px solid var(--window-border-light);
       border-right: 2px solid var(--window-border-light);
-      font-size: 16px;
-      line-height: 1.6;
+      font-size: 0.9rem;
       white-space: pre-wrap;
-      box-sizing: border-box;
     }
 
     .window-content.explorer {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      column-gap: 40px;
-      row-gap: 30px;
+      display: flex;
+      flex-wrap: wrap;
       align-content: flex-start;
       position: relative;
     }
@@ -548,15 +528,11 @@
       background: #000;
       color: #0f0;
       font-family: 'VT323', monospace;
-      font-size: 16px;
-      line-height: 1.5;
       white-space: pre-wrap;
-      word-wrap: break-word;
       text-shadow: 0 0 5px rgba(0, 255, 0, 0.8), 0 0 2px rgba(0, 255, 0, 0.5);
       position: relative;
       overflow-y: auto;
-      overflow-x: hidden;
-      background-image: linear-gradient(rgba(0, 255, 0, 0.02) 50%, rgba(0, 0, 0, 0.04) 50%);
+      background-image: linear-gradient(rgba(0, 255, 0, 0.03) 50%, rgba(0, 0, 0, 0.25) 50%);
       background-size: 100% 4px;
       animation: crtFlicker 0.15s infinite;
     }
@@ -570,7 +546,7 @@
       border: none;
       color: #0f0;
       font-family: 'VT323', monospace;
-      font-size: 16px;
+      font-size: 1.2rem;
       flex-grow: 1;
       outline: none;
       text-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
@@ -645,18 +621,11 @@
       position: relative !important;
       top: auto !important;
       left: auto !important;
-      margin: 0;
-      width: 100%;
-      height: auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 5px;
+      margin: 10px;
+      width: 100px;
+      height: 100px;
       border: 1px dotted transparent;
       border-radius: 2px;
-      padding: 5px;
-      text-align: center;
     }
 
     .window-content.explorer .icon:hover {
@@ -665,20 +634,17 @@
     }
 
     .window-content.explorer .icon-img {
-      width: 40px;
-      height: 40px;
+      width: 48px;
+      height: 48px;
       filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.2));
-      flex-shrink: 0;
     }
 
     .window-content.explorer .icon span {
       color: #000 !important;
       text-shadow: none !important;
       font-weight: 500;
-      margin-top: 0;
-      padding: 0;
-      text-align: center;
-      word-break: break-word;
+      margin-top: 5px;
+      padding: 2px 4px;
     }
   </style>
 </head>
@@ -877,7 +843,7 @@
           <span style="color:#000; background:transparent;">photo_fragment.png</span>
         </div>
       </div>
-      <div class="explorer-status">4 object(s)</div>
+      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">4 object(s)</div>
     </div>
 
     <!-- System Logs Folder -->
@@ -896,7 +862,7 @@
           <span style="color:#000; background:transparent;">memory_scan.log</span>
         </div>
       </div>
-      <div class="explorer-status">1 object(s)</div>
+      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">1 object(s)</div>
     </div>
 
     <!-- Memory Scan Log -->
@@ -931,7 +897,7 @@ NODE_03</div>
           <span style="color:#000; background:transparent;">stage2_note.txt</span>
         </div>
       </div>
-      <div class="explorer-status">1 object(s)</div>
+      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">1 object(s)</div>
     </div>
 
     <!-- Stage 4: Observer Folder -->
@@ -958,12 +924,12 @@ NODE_03</div>
           <span style="color:#000; background:transparent;">observer_log_03.sys</span>
         </div>
       </div>
-      <div class="explorer-status">3 object(s)</div>
+      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">3 object(s)</div>
     </div>
 
     <div class="window" id="win-observer-log-01" style="top: 150px; left: 250px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-observer-log-01')">
-        <div class="title-bar-text">SYSTEM OBSERVER LOG</div>
+        <div class="title-bar-text">observer_log_01.sys</div>
         <div class="title-bar-controls">
           <div class="control-btn" onclick="closeWindow('observer-log-01')">X</div>
         </div>
@@ -974,7 +940,7 @@ NODE_03</div>
 
     <div class="window" id="win-observer-log-02" style="top: 160px; left: 260px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-observer-log-02')">
-        <div class="title-bar-text">SYSTEM OBSERVER LOG</div>
+        <div class="title-bar-text">observer_log_02.sys</div>
         <div class="title-bar-controls">
           <div class="control-btn" onclick="closeWindow('observer-log-02')">X</div>
         </div>
@@ -985,7 +951,7 @@ NODE_03</div>
 
     <div class="window" id="win-observer-log-03" style="top: 170px; left: 270px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-observer-log-03')">
-        <div class="title-bar-text">SYSTEM OBSERVER LOG</div>
+        <div class="title-bar-text">observer_log_03.sys</div>
         <div class="title-bar-controls">
           <div class="control-btn" onclick="closeWindow('observer-log-03')">X</div>
         </div>
@@ -1038,7 +1004,7 @@ NODE_03</div>
           <span style="color:#000; background:transparent;">network_trace.sys</span>
         </div>
       </div>
-      <div class="explorer-status">8 object(s)</div>
+      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">8 object(s)</div>
     </div>
 
     <!-- Vale Journal Files -->
@@ -1316,7 +1282,7 @@ fragment remains</div>
 
     <!-- Audio Player -->
     <div class="window" id="win-audio-log" style="width: 350px; height: 180px;">
-      <audio id="audio-log-player" style="display: none;"></audio>
+      <audio id="audio-log-player" src="sounds/audio_log.wav" style="display: none;"></audio>
       <div class="title-bar">
         <div class="title-bar-text">Audio Log - Media Player</div>
         <div class="title-bar-controls">
@@ -1404,7 +1370,7 @@ fragment remains</div>
     <!-- Music Player -->
     <div class="window" id="win-music-player" style="width: 300px; height: 250px;">
       <audio id="local-audio-player" style="display: none;"></audio>
-      <audio id="stage4-ambient" loop style="display: none;"></audio>
+      <audio id="stage4-ambient" src="stage4_ambience.mp3" loop style="display: none;"></audio>
       <div class="title-bar">
         <div class="title-bar-text">WinAmp Classic</div>
         <div class="title-bar-controls">
@@ -1537,7 +1503,8 @@ fragment remains</div>
     }
 
     function playBootSound() {
-      if (window.soundManager) window.soundManager.playBoot();
+      const bootAudio = new Audio('sounds/boot.wav');
+      bootAudio.play().catch(e => console.error("Audio play failed:", e));
     }
 
     document.getElementById('boot-start-btn').addEventListener('click', () => {
@@ -1585,39 +1552,13 @@ fragment remains</div>
       'network-trace': 'network_trace.sys'
     };
 
-    async function typewriterEffect(element, html) {
-      const currentRun = Date.now();
-      element.dataset.runId = currentRun;
-      element.innerHTML = '';
-      const lines = html.split('<br>');
-      for (let i = 0; i < lines.length; i++) {
-        if (element.dataset.runId != currentRun) return;
-        const line = lines[i];
-        if (line === '') {
-          element.appendChild(document.createElement('br'));
-          continue;
-        }
-        const span = document.createElement('span');
-        element.appendChild(span);
-        for (let j = 0; j < line.length; j++) {
-          if (element.dataset.runId != currentRun) return;
-          span.innerHTML += line[j];
-          await new Promise(r => setTimeout(r, 18));
-        }
-        if (i < lines.length - 1) {
-          element.appendChild(document.createElement('br'));
-          await new Promise(r => setTimeout(r, 200));
-        }
-      }
-    }
-
     function populateStage4Content(id) {
       if (id === 'observer-log-01') {
-        typewriterEffect(document.getElementById('content-observer-log-01'), atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj7ilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIA8YnI+VGltZXN0YW1wOiAwNDoxMjozMTxicj5Ob2RlIGFjY2VzcyByZWNvcmRlZC48YnI+PGJyPlVzZXIgY2xhc3NpZmljYXRpb246IEludmVzdGlnYXRvcjxicj5QYXR0ZXJuIG1hdGNoOiBWQUxFPGJyPjxicj5Nb25pdG9yaW5nIGVzY2FsYXRpb24gZW5hYmxlZC48YnI+PGJyPkZyYWdtZW50OiBkZWNvZGVf'));
+        document.getElementById('content-observer-log-01').innerHTML = atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxMjozMTxicj5Ob2RlIGFjY2VzcyByZWNvcmRlZC48YnI+PGJyPlVzZXIgY2xhc3NpZmljYXRpb246IEludmVzdGlnYXRvcjxicj5QYXR0ZXJuIG1hdGNoOiBWQUxFPGJyPjxicj5Nb25pdG9yaW5nIGVzY2FsYXRpb24gZW5hYmxlZC48YnI+PGJyPkZyYWdtZW50OiBkZWNvZGVf');
       } else if (id === 'observer-log-02') {
-        typewriterEffect(document.getElementById('content-observer-log-02'), atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj7ilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIA8YnI+VGltZXN0YW1wOiAwNDoxNTowMjxicj5TdWJqZWN0IGJlaGF2aW9yIGFub21hbG91cy48YnI+PGJyPkZyYWdtZW50OiB2YWxlXw=='));
+        document.getElementById('content-observer-log-02').innerHTML = atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxNTowMjxicj5TdWJqZWN0IGJlaGF2aW9yIGFub21hbG91cy48YnI+PGJyPkZyYWdtZW50OiB2YWxlXw==');
       } else if (id === 'observer-log-03') {
-        typewriterEffect(document.getElementById('content-observer-log-03'), atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj7ilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIA8YnI+VGltZXN0YW1wOiAwNDoxODo0NDxicj5BcmNoaXZlIGludGVncml0eSBjb21wcm9taXNlZC48YnI+PGJyPkZyYWdtZW50OiBhcmNoaXZl'));
+        document.getElementById('content-observer-log-03').innerHTML = atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxODo0NDxicj5BcmNoaXZlIGludGVncml0eSBjb21wcm9taXNlZC48YnI+PGJyPkZyYWdtZW50OiBhcmNoaXZl');
       } else if (id === 'journal-day01') {
         document.getElementById('title-journal-day01').innerText = atob('VkFMRSBJTlZFU1RJR0FUSU9OIExPRw==');
         document.getElementById('content-journal-day01').innerHTML = atob('RGF5IDE8YnI+PGJyPkkgc3RhcnRlZCBpbnZlc3RpZ2F0aW5nIHRoZSBBcmNoaXZlIHN5c3RlbSB0b2RheS48YnI+PGJyPkF0IGZpcnN0IGl0IGxvb2tlZCBsaWtlIGEgbm9ybWFsIHN0b3JhZ2UgaW5kZXguPGJyPjxicj5CdXQgdGhlIGRlZXBlciBub2RlcyBiZWhhdmUgc3RyYW5nZWx5Ljxicj48YnI+Tm9kZTAzIHJlcXVpcmVkIG11bHRpcGxlIGVuY29kaW5nIGxheWVycy48YnI+PGJyPlNvbWVvbmUgaW50ZW50aW9uYWxseSBoaWQgdGhlIGludGVybmFsIHN0cnVjdHVyZS4=');
@@ -2213,11 +2154,6 @@ fragment remains</div>
       }
     }
 
-    let audioLogCtx;
-    let audioLogOsc;
-    let audioLogGain;
-    let audioLogNoise;
-
     function pauseAudioLog() {
       if (!isPlaying) return;
       isPlaying = false;
@@ -2225,9 +2161,9 @@ fragment remains</div>
       clearInterval(visualizerInterval);
       clearInterval(progressInterval);
       bars.forEach(bar => bar.style.height = '2px');
-      
-      if (audioLogCtx) {
-        audioLogCtx.suspend();
+      const audioLogPlayer = document.getElementById('audio-log-player');
+      if (audioLogPlayer) {
+        audioLogPlayer.pause();
       }
     }
 
@@ -2236,78 +2172,51 @@ fragment remains</div>
       isPlaying = true;
       playBtn.innerText = "PAUSE";
       
+      // Stop music if playing
       if (typeof pauseMusic === 'function') pauseMusic();
       
+      // Start visualizer
       visualizerInterval = setInterval(() => {
         bars.forEach(bar => {
           bar.style.height = (2 + Math.random() * 40) + 'px';
         });
       }, 100);
 
-      if (!audioLogCtx) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        audioLogCtx = new AudioContext();
-        
-        audioLogOsc = audioLogCtx.createOscillator();
-        audioLogGain = audioLogCtx.createGain();
-        audioLogOsc.type = 'sawtooth';
-        audioLogOsc.frequency.value = 100;
-        
-        const bufferSize = audioLogCtx.sampleRate * 2;
-        const buffer = audioLogCtx.createBuffer(1, bufferSize, audioLogCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = Math.random() * 2 - 1;
-        }
-        audioLogNoise = audioLogCtx.createBufferSource();
-        audioLogNoise.buffer = buffer;
-        audioLogNoise.loop = true;
-        
-        audioLogOsc.connect(audioLogGain);
-        audioLogNoise.connect(audioLogGain);
-        audioLogGain.connect(audioLogCtx.destination);
-        
-        audioLogOsc.start();
-        audioLogNoise.start();
-      }
-      
-      audioLogGain.gain.value = audioVolume.value / 100 * 0.1;
-      
-      if (audioLogCtx.state === 'suspended') {
-        audioLogCtx.resume();
-      }
-      
-      audioVolume.addEventListener('input', () => {
-        if (audioLogGain) audioLogGain.gain.value = audioVolume.value / 100 * 0.1;
-      });
+      const audioLogPlayer = document.getElementById('audio-log-player');
+      if (audioLogPlayer) {
+        audioLogPlayer.volume = audioVolume.value / 100;
+        audioLogPlayer.currentTime = audioCurrentTime;
+        audioLogPlayer.play().catch(e => console.error("Audio play failed:", e));
 
-      progressInterval = setInterval(() => {
-        if (isPlaying) {
-          audioCurrentTime += 0.1;
-          if (audioCurrentTime >= audioTotalTime) {
-            pauseAudioLog();
-            audioCurrentTime = 0;
-            audioProgressSlider.value = 0;
-            audioTimeCurrent.innerText = "00:00";
-            if (audioLogCtx) {
-              audioLogCtx.close();
-              audioLogCtx = null;
-            }
-          } else {
+        audioLogPlayer.onended = () => {
+          pauseAudioLog();
+          audioCurrentTime = 0;
+          audioProgressSlider.value = 0;
+          audioTimeCurrent.innerText = "00:00";
+        };
+
+        const updateVolume = () => {
+          audioLogPlayer.volume = audioVolume.value / 100;
+        };
+        audioVolume.addEventListener('input', updateVolume);
+
+        progressInterval = setInterval(() => {
+          if (isPlaying) {
+            audioCurrentTime = audioLogPlayer.currentTime;
             audioProgressSlider.value = audioCurrentTime;
             audioTimeCurrent.innerText = formatTime(Math.floor(audioCurrentTime));
-            
-            if (audioLogOsc) {
-              audioLogOsc.frequency.value = 100 + Math.sin(audioCurrentTime * 5) * 20;
-            }
           }
-        }
-      }, 100);
+        }, 100);
+      }
     }
     
     audioProgressSlider.addEventListener('input', (e) => {
       audioCurrentTime = parseFloat(e.target.value);
       audioTimeCurrent.innerText = formatTime(audioCurrentTime);
+      const audioLogPlayer = document.getElementById('audio-log-player');
+      if (audioLogPlayer) {
+        audioLogPlayer.currentTime = audioCurrentTime;
+      }
     });
 
 
@@ -2344,7 +2253,8 @@ fragment remains</div>
       if (window.soundManager) window.soundManager.playError();
       document.body.classList.add('glitching');
       
-      if (window.soundManager) window.soundManager.playCrash();
+      const crashAudio = new Audio('sounds/crash.wav');
+      crashAudio.play().catch(e => console.error("Audio play failed:", e));
 
       setTimeout(() => {
         document.body.classList.remove('glitching');
@@ -2449,7 +2359,10 @@ fragment remains</div>
         arrangeIcons();
         
         // Start ambient audio
-        if (window.soundManager) window.soundManager.startStage4Ambience();
+        const stage4Audio = document.getElementById('stage4-ambient');
+        if (stage4Audio) {
+          stage4Audio.play().catch(e => console.error("Audio play failed:", e));
+        }
         
         startSystemAliveEffects();
       }
@@ -2969,15 +2882,7 @@ fragment remains</div>
       // Pause audio log if playing
       if (typeof pauseAudioLog === 'function') pauseAudioLog();
       
-      audioPlayer.play().catch(e => {
-        const playOnInteract = () => {
-          audioPlayer.play().catch(err => {});
-          document.removeEventListener('click', playOnInteract);
-          document.removeEventListener('keydown', playOnInteract);
-        };
-        document.addEventListener('click', playOnInteract);
-        document.addEventListener('keydown', playOnInteract);
-      });
+      audioPlayer.play();
       
       isMusicPlaying = true;
       document.getElementById('music-play-btn').innerText = "PAUSE";
