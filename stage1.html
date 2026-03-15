@@ -659,6 +659,16 @@
       <span>Archive</span>
     </div>
 
+    <div class="icon hidden" id="icon-observer" ondblclick="openWindow('observer-folder')">
+      <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#0f0" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#0f0"/></svg>
+      <span>/system/observer/</span>
+    </div>
+
+    <div class="icon hidden" id="icon-vale" ondblclick="openWindow('vale-folder')">
+      <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#f00"/></svg>
+      <span>/vale/</span>
+    </div>
+
     <div class="icon" id="icon-messenger" ondblclick="openWindow('messenger')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#00ffff" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
       <span>Messenger</span>
@@ -846,6 +856,186 @@ NODE_03</div>
         </div>
       </div>
       <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">1 object(s)</div>
+    </div>
+
+    <!-- Stage 4: Observer Folder -->
+    <div class="window" id="win-observer-folder" style="top: 120px; left: 220px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-observer-folder')">
+        <div class="title-bar-text">/system/observer/</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('observer-folder')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('observer-folder')">□</div>
+          <div class="control-btn" onclick="closeWindow('observer-folder')">X</div>
+        </div>
+      </div>
+      <div class="window-content explorer" style="padding-bottom: 25px;">
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('observer-log-01')" title="Type: System Log">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">observer_log_01.sys</span>
+        </div>
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('observer-log-02')" title="Type: System Log">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">observer_log_02.sys</span>
+        </div>
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('observer-log-03')" title="Type: System Log">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">observer_log_03.sys</span>
+        </div>
+      </div>
+      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">3 object(s)</div>
+    </div>
+
+    <div class="window" id="win-observer-log-01" style="top: 150px; left: 250px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-observer-log-01')">
+        <div class="title-bar-text">observer_log_01.sys</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="closeWindow('observer-log-01')">X</div>
+        </div>
+      </div>
+      <div class="window-content" id="content-observer-log-01" style="background: #000; color: #0f0; font-family: monospace; padding: 10px; overflow-y: auto;">
+      </div>
+    </div>
+
+    <div class="window" id="win-observer-log-02" style="top: 160px; left: 260px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-observer-log-02')">
+        <div class="title-bar-text">observer_log_02.sys</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="closeWindow('observer-log-02')">X</div>
+        </div>
+      </div>
+      <div class="window-content" id="content-observer-log-02" style="background: #000; color: #0f0; font-family: monospace; padding: 10px; overflow-y: auto;">
+      </div>
+    </div>
+
+    <div class="window" id="win-observer-log-03" style="top: 170px; left: 270px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-observer-log-03')">
+        <div class="title-bar-text">observer_log_03.sys</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="closeWindow('observer-log-03')">X</div>
+        </div>
+      </div>
+      <div class="window-content" id="content-observer-log-03" style="background: #000; color: #0f0; font-family: monospace; padding: 10px; overflow-y: auto;">
+      </div>
+    </div>
+
+    <!-- Stage 4: Vale Folder -->
+    <div class="window" id="win-vale-folder" style="top: 130px; left: 230px; width: 450px; height: 350px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-vale-folder')">
+        <div class="title-bar-text">/vale/</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="minimizeWindow('vale-folder')">_</div>
+          <div class="control-btn" onclick="maximizeWindow('vale-folder')">□</div>
+          <div class="control-btn" onclick="closeWindow('vale-folder')">X</div>
+        </div>
+      </div>
+      <div class="window-content explorer" style="padding-bottom: 25px;">
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('journal-day01')">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">journal_day01.log</span>
+        </div>
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('journal-day03')">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">journal_day03.log</span>
+        </div>
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('journal-day05')">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">journal_day05.log</span>
+        </div>
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('journal-day09')">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">journal_day09.log</span>
+        </div>
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('journal-day12')">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">journal_day12.log</span>
+        </div>
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('journal-day16')">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">journal_day16.log</span>
+        </div>
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('terminal-dump')">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">terminal_dump.log</span>
+        </div>
+        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('network-trace')">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">network_trace.sys</span>
+        </div>
+      </div>
+      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">8 object(s)</div>
+    </div>
+
+    <!-- Vale Journal Files -->
+    <div class="window" id="win-journal-day01" style="top: 150px; left: 250px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day01')">
+        <div class="title-bar-text">journal_day01.log</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day01')">X</div></div>
+      </div>
+      <div class="window-content" id="content-journal-day01" style="padding: 10px; overflow-y: auto;">
+      </div>
+    </div>
+
+    <div class="window" id="win-journal-day03" style="top: 160px; left: 260px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day03')">
+        <div class="title-bar-text">journal_day03.log</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day03')">X</div></div>
+      </div>
+      <div class="window-content" id="content-journal-day03" style="padding: 10px; overflow-y: auto;">
+      </div>
+    </div>
+
+    <div class="window" id="win-journal-day05" style="top: 170px; left: 270px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day05')">
+        <div class="title-bar-text">journal_day05.log</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day05')">X</div></div>
+      </div>
+      <div class="window-content" id="content-journal-day05" style="padding: 10px; overflow-y: auto;">
+      </div>
+    </div>
+
+    <div class="window" id="win-journal-day09" style="top: 180px; left: 280px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day09')">
+        <div class="title-bar-text">journal_day09.log</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day09')">X</div></div>
+      </div>
+      <div class="window-content" id="content-journal-day09" style="padding: 10px; overflow-y: auto;">
+      </div>
+    </div>
+
+    <div class="window" id="win-journal-day12" style="top: 190px; left: 290px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day12')">
+        <div class="title-bar-text">journal_day12.log</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day12')">X</div></div>
+      </div>
+      <div class="window-content" id="content-journal-day12" style="padding: 10px; overflow-y: auto;">
+      </div>
+    </div>
+
+    <div class="window" id="win-journal-day16" style="top: 200px; left: 300px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day16')">
+        <div class="title-bar-text">journal_day16.log</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day16')">X</div></div>
+      </div>
+      <div class="window-content" id="content-journal-day16" style="padding: 10px; overflow-y: auto;">
+      </div>
+    </div>
+
+    <div class="window" id="win-terminal-dump" style="top: 210px; left: 310px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-terminal-dump')">
+        <div class="title-bar-text">terminal_dump.log</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('terminal-dump')">X</div></div>
+      </div>
+      <div class="window-content" id="content-terminal-dump" style="background: #000; color: #0f0; font-family: monospace; padding: 10px; overflow-y: auto;">
+      </div>
+    </div>
+
+    <div class="window" id="win-network-trace" style="top: 220px; left: 320px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-network-trace')">
+        <div class="title-bar-text">network_trace.sys</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('network-trace')">X</div></div>
+      </div>
+      <div class="window-content" id="content-network-trace" style="background: #000; color: #0f0; font-family: monospace; padding: 10px; overflow-y: auto;">
+      </div>
     </div>
 
     <!-- Stage 2 Note -->
@@ -1137,6 +1327,7 @@ fragment remains</div>
     <!-- Music Player -->
     <div class="window" id="win-music-player" style="width: 300px; height: 250px;">
       <audio id="local-audio-player" style="display: none;"></audio>
+      <audio id="stage4-ambient" src="stage4_ambience.mp3" loop style="display: none;"></audio>
       <div class="title-bar">
         <div class="title-bar-text">WinAmp Classic</div>
         <div class="title-bar-controls">
@@ -1334,13 +1525,63 @@ fragment remains</div>
       'memory-scan-log': 'memory_scan.log',
       'memory-game': 'Memory Blocks',
       'messenger': 'Messenger',
-      'music-player': 'Music Player'
+      'music-player': 'Music Player',
+      'observer-folder': '/system/observer/',
+      'observer-log-01': 'observer_log_01.sys',
+      'observer-log-02': 'observer_log_02.sys',
+      'observer-log-03': 'observer_log_03.sys',
+      'vale-folder': '/vale/',
+      'journal-day01': 'journal_day01.log',
+      'journal-day03': 'journal_day03.log',
+      'journal-day05': 'journal_day05.log',
+      'journal-day09': 'journal_day09.log',
+      'journal-day12': 'journal_day12.log',
+      'journal-day16': 'journal_day16.log',
+      'terminal-dump': 'terminal_dump.log',
+      'network-trace': 'network_trace.sys'
     };
+
+    function populateStage4Content(id) {
+      if (id === 'observer-log-01') {
+        document.getElementById('content-observer-log-01').innerHTML = atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxMjozMTxicj5Ob2RlIGFjY2VzcyByZWNvcmRlZC48YnI+PGJyPlVzZXIgY2xhc3NpZmljYXRpb246IEludmVzdGlnYXRvcjxicj5QYXR0ZXJuIG1hdGNoOiBWQUxFPGJyPjxicj5Nb25pdG9yaW5nIGVzY2FsYXRpb24gZW5hYmxlZC48YnI+PGJyPkZyYWdtZW50OiBkZWNvZGVf');
+      } else if (id === 'observer-log-02') {
+        document.getElementById('content-observer-log-02').innerHTML = atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxNTowMjxicj5TdWJqZWN0IGJlaGF2aW9yIGFub21hbG91cy48YnI+PGJyPkZyYWdtZW50OiB2YWxlXw==');
+      } else if (id === 'observer-log-03') {
+        document.getElementById('content-observer-log-03').innerHTML = atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxODo0NDxicj5BcmNoaXZlIGludGVncml0eSBjb21wcm9taXNlZC48YnI+PGJyPkZyYWdtZW50OiBhcmNoaXZl');
+      } else if (id === 'journal-day01') {
+        document.getElementById('content-journal-day01').innerHTML = atob('RGF5IDE8YnI+PGJyPkkgc3RhcnRlZCBpbnZlc3RpZ2F0aW5nIHRoZSBBcmNoaXZlIHN5c3RlbSB0b2RheS48YnI+PGJyPkF0IGZpcnN0IGl0IGxvb2tlZCBsaWtlIGEgbm9ybWFsIHN0b3JhZ2UgaW5kZXguPGJyPjxicj5CdXQgdGhlIGRlZXBlciBub2RlcyBiZWhhdmUgc3RyYW5nZWx5Ljxicj48YnI+Tm9kZTAzIHJlcXVpcmVkIG11bHRpcGxlIGVuY29kaW5nIGxheWVycy48YnI+PGJyPlNvbWVvbmUgaW50ZW50aW9uYWxseSBoaWQgdGhlIGludGVybmFsIHN0cnVjdHVyZS4=');
+      } else if (id === 'journal-day03') {
+        document.getElementById('content-journal-day03').innerHTML = atob('RGF5IDM8YnI+PGJyPlRoZXJlIGFyZSByZWZlcmVuY2VzIHRvIHNvbWV0aGluZyBjYWxsZWQgIlN1YmplY3RzIi48YnI+PGJyPkEgc3RvcmFnZSBzeXN0ZW0gc2hvdWxkIG5vdCB0cmFjayBzdWJqZWN0cy48YnI+PGJyPlNvbWV0aGluZyBhYm91dCB0aGlzIEFyY2hpdmUgZmVlbHMgd3Jvbmcu');
+      } else if (id === 'journal-day05') {
+        document.getElementById('content-journal-day05').innerHTML = atob('RGF5IDU8YnI+PGJyPk5vZGUwNCBpcyBoZWF2aWx5IHJlc3RyaWN0ZWQuPGJyPjxicj5XaGF0ZXZlciBpcyBzdG9yZWQgdGhlcmUgaXMgY2xlYXJseSBpbXBvcnRhbnQu');
+      } else if (id === 'journal-day09') {
+        document.getElementById('content-journal-day09').innerHTML = atob('RGF5IDk8YnI+PGJyPlNvbWV0aGluZyBpbnNpZGUgdGhlIHN5c3RlbSBub3RpY2VkIG1lLjxicj48YnI+TmV3IGxvZyBmaWxlcyBhcHBlYXJlZCBhdXRvbWF0aWNhbGx5Ljxicj48YnI+VGhlIEFyY2hpdmUgbWlnaHQgYmUgbW9uaXRvcmluZyBpbnZlc3RpZ2F0b3JzLg==');
+      } else if (id === 'journal-day12') {
+        document.getElementById('content-journal-day12').innerHTML = atob('RGF5IDEyPGJyPjxicj5UaGUgbG9ncyBub3cgcmVmZXJlbmNlIG15IG5hbWUuPGJyPjxicj5JIG5ldmVyIGVudGVyZWQgaXQgYW55d2hlcmUuPGJyPjxicj5UaGUgc3lzdGVtIHNob3VsZG4ndCBrbm93IHdobyBJIGFtLg==');
+      } else if (id === 'journal-day16') {
+        document.getElementById('content-journal-day16').innerHTML = atob('RGF5IDE2PGJyPjxicj5UaGUgQXJjaGl2ZSBpc24ndCBzdG9yYWdlLjxicj48YnI+SXQncyBhbiBvYnNlcnZlci48YnI+PGJyPkludmVzdGlnYXRvcnMgd2hvIGdvIHRvbyBkZWVwIGJlY29tZSBlbnRyaWVzLg==');
+      } else if (id === 'terminal-dump') {
+        document.getElementById('content-terminal-dump').innerHTML = atob('W1NZU10gQ09OTkVDVElPTiBURVJNSU5BVEVEPGJyPltTWVNdIEZPUkNFRCBESVNDT05ORUNUPGJyPltTWVNdIEFSQ0hJVkUgTE9DSyBJTklUSUFURUQ=');
+      } else if (id === 'network-trace') {
+        document.getElementById('content-network-trace').innerHTML = atob('VFJBQ0UgUk9VVEU6PGJyPjxicj42MTcyNjM2ODY5NzY2NTNBMkYyRjY2NkY3MjE1NkQ=');
+      }
+    }
 
     function openWindow(id) {
       const win = document.getElementById('win-' + id);
       if (!win) return;
       
+      // Stage 4 tracking
+      if (id.startsWith('observer-log-')) {
+        localStorage.setItem('aurora_stage4_observer_logs_opened', 'true');
+      }
+      if (id === 'network-trace') {
+        localStorage.setItem('aurora_stage4_network_trace_viewed', 'true');
+        if (getStage4Progress() === 2) setStage4Progress(3);
+      }
+      
+      populateStage4Content(id);
+
       if (!openWindows.has(id)) {
         openWindows.add(id);
         if (window.soundManager) window.soundManager.playWindowOpen();
@@ -2114,6 +2355,34 @@ fragment remains</div>
       }, 800);
     }
 
+    function startStage4() {
+      if (getStage4Progress() === 0) {
+        setStage4Progress(1);
+        
+        // System awareness effects
+        document.body.style.animation = 'glitch 0.2s 3';
+        setTimeout(() => { document.body.style.animation = ''; }, 600);
+        
+        const termInput = document.getElementById('term-input');
+        if (termInput) {
+          termInput.classList.add('glitching');
+          setTimeout(() => { termInput.classList.remove('glitching'); }, 1000);
+        }
+        
+        showNotification("<b>SYSTEM LOGGING ENABLED</b><br>Investigator activity detected.");
+        
+        // Unlock observer folder
+        document.getElementById('icon-observer').classList.remove('hidden');
+        arrangeIcons();
+        
+        // Start ambient audio
+        const stage4Audio = document.getElementById('stage4-ambient');
+        if (stage4Audio) {
+          stage4Audio.play().catch(e => console.error("Audio play failed:", e));
+        }
+      }
+    }
+
     function openBrowserUrl(url) {
       openWindow('browser');
       const spinner = document.getElementById('browser-spinner');
@@ -2135,7 +2404,7 @@ fragment remains</div>
         if (spinner) spinner.style.display = 'none';
         if (page) {
           page.style.opacity = '1';
-          if (targetUrl === 'archive://node/02' || targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://node/04') {
+          if (targetUrl === 'archive://node/02' || targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://node/04' || targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt') || targetUrl === atob('YXJjaGl2ZTovL3JlY29yZHM=')) {
             page.innerHTML = '';
             page.style.padding = '0';
             page.style.position = 'relative';
@@ -2144,6 +2413,9 @@ fragment remains</div>
             
             let unlocked = false;
             let fetchPath = '';
+            let dynamicHtml = '';
+            let accessDeniedMsg = 'Archive fragment locked.';
+            
             if (targetUrl === 'archive://node/02') {
               if (localStorage.getItem('aurora_stage1_complete')) unlocked = true;
               fetchPath = 'stage' + '2.html';
@@ -2159,10 +2431,27 @@ fragment remains</div>
                 if (t && atob(t) === 'true|AURORA_OS_SECRET') unlocked = true;
               } catch(e) {}
               fetchPath = 'node' + '04.html';
+            } else if (targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt')) {
+              const observerOpened = localStorage.getItem('aurora_stage4_observer_logs_opened') === 'true';
+              const networkViewed = localStorage.getItem('aurora_stage4_network_trace_viewed') === 'true';
+              if (getStage4Progress() >= 2 && observerOpened && networkViewed) {
+                unlocked = true;
+                if (getStage4Progress() < 4) setStage4Progress(4);
+                dynamicHtml = atob('PGRpdiBzdHlsZT0iY29sb3I6IzBmMDtmb250LWZhbWlseTptb25vc3BhY2U7cGFkZGluZzoyMHB4O2JhY2tncm91bmQ6IzAwMDtoZWlnaHQ6MTAwJTtvdmVyZmxvdy15OmF1dG87Ij4KICA8aDI+SU5URVJOQUwgQVJDSElWRSBGT1JVTSBbUkVBRC1PTkxZXTwvaDI+CiAgPGhyIHN0eWxlPSJib3JkZXItY29sb3I6IzBmMDsiPgogIDxwPjxzdHJvbmc+VG9waWM6PC9zdHJvbmc+IFRoZSBBbm9tYWx5PC9wPgogIDxwPjxzdHJvbmc+QXV0aG9yOjwvc3Ryb25nPiBhcmNoaXZpc3RfNDA0PC9wPgogIDxwPjxzdHJvbmc+RGF0ZTo8L3N0cm9uZz4gMTk5OC0wNC0xMiAwMzoxNCBBTTwvcD4KICA8YnI+CiAgPHA+SSd2ZSBmb3VuZCBzb21ldGhpbmcgaW4gdGhlIGxvZ3MuIEl0J3Mgbm90IGp1c3QgZGF0YSBjb3JydXB0aW9uLiBJdCdzIGxvb2tpbmcgYmFjayBhdCB1cy48L3A+CiAgPHA+SSd2ZSBoaWRkZW4gdGhlIGZpbmFsIGtleS4gSWYgYW55b25lIGZpbmRzIHRoaXMsIHlvdSBrbm93IHdoZXJlIHRvIHJlYWNoIG1lLjwvcD4KICA8cD5FeHRlcm5hbCBjb250YWN0IHByb3RvY29sIGluaXRpYXRlZC4gVGhleSBhcmUgd2F0Y2hpbmcgdGhlIG5ldHdvcmsuPC9wPgogIDxicj4KICA8cCBzdHlsZT0iY29sb3I6Izg4ODsiPltFbmQgb2YgdGhyZWFkXTwvcD4KPC9kaXY+');
+              } else {
+                accessDeniedMsg = 'Archive forum locked.';
+              }
+            } else if (targetUrl === atob('YXJjaGl2ZTovL3JlY29yZHM=')) {
+              if (getStage4Progress() >= 6) {
+                unlocked = true;
+                dynamicHtml = atob('PGRpdiBzdHlsZT0iY29sb3I6IzBmMDtmb250LWZhbWlseTptb25vc3BhY2U7cGFkZGluZzoyMHB4O2JhY2tncm91bmQ6IzAwMDtoZWlnaHQ6MTAwJTtvdmVyZmxvdy15OmF1dG87Ij4KICA8aDI+QVJDSElWRSBSRUNPUkRTIFtSRVNUT1JFRF08L2gyPgogIDxociBzdHlsZT0iYm9yZGVyLWNvbG9yOiMwZjA7Ij4KICA8cD48c3Ryb25nPlN0YXR1czo8L3N0cm9uZz4gQUxMIFNZU1RFTVMgTk9NSU5BTDwvcD4KICA8cD48c3Ryb25nPk1lc3NhZ2U6PC9zdHJvbmc+IFRoZSBhcmNoaXZlIGhhcyBiZWVuIGZ1bGx5IHJlc3RvcmVkLjwvcD4KICA8cD5UaGFuayB5b3UgZm9yIHlvdXIgYXNzaXN0YW5jZSwgSW52ZXN0aWdhdG9yLjwvcD4KICA8YnI+CiAgPHAgc3R5bGU9ImNvbG9yOiNmZmY7dGV4dC1zaGFkb3c6MCAwIDVweCAjZmZmOyI+VEhFIEVORC48L3A+CjwvZGl2Pg==');
+              } else {
+                accessDeniedMsg = 'Archive records locked.';
+              }
             }
             
             if (!unlocked) {
-              page.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f00;font-family:monospace;text-align:center;"><div><h1>ACCESS DENIED</h1><p>Archive fragment locked.</p></div></div>';
+              page.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f00;font-family:monospace;text-align:center;"><div><h1>ACCESS DENIED</h1><p>' + accessDeniedMsg + '</p></div></div>';
               if (window.soundManager) window.soundManager.playError();
             } else {
               const iframe = document.createElement('iframe');
@@ -2174,14 +2463,18 @@ fragment remains</div>
               iframe.style.height = '100%';
               page.appendChild(iframe);
               
-              fetch(fetchPath)
-                .then(res => res.text())
-                .then(html => {
-                  iframe.srcdoc = html;
-                })
-                .catch(err => {
-                  page.innerHTML = '<div style="color:#f00;padding:20px;">Error loading archive fragment.</div>';
-                });
+              if (dynamicHtml) {
+                iframe.srcdoc = dynamicHtml;
+              } else {
+                fetch(fetchPath)
+                  .then(res => res.text())
+                  .then(html => {
+                    iframe.srcdoc = html;
+                  })
+                  .catch(err => {
+                    page.innerHTML = '<div style="color:#f00;padding:20px;">Error loading archive fragment.</div>';
+                  });
+              }
               
               if (window.soundManager && targetUrl === 'archive://node/04') {
                 window.soundManager.playSuccess();
@@ -2338,15 +2631,66 @@ fragment remains</div>
             printTerminal("Usage: decrypt <filename>");
           }
           break;
+        case atob('ZGVjb2RlX3ZhbGVfYXJjaGl2ZQ=='):
+          if (getStage4Progress() >= 1) {
+            printTerminal("Decoding archive...");
+            setTimeout(() => {
+              printTerminal("Archive decoded successfully.");
+              printTerminal("Unlocking /vale/ directory...");
+              document.getElementById('icon-vale').classList.remove('hidden');
+              arrangeIcons();
+              if (getStage4Progress() < 2) setStage4Progress(2);
+              if (window.soundManager) window.soundManager.playSuccess();
+            }, 1000);
+          } else {
+            printTerminal("Bad command or file name.");
+          }
+          break;
         case 'archive':
-          printTerminal("Archive node detected.");
-          printTerminal("Enter archive phrase:");
-          terminalState = 'archive_password';
-          termPrompt.innerText = "";
+          if (args.length > 1 && args[1] === atob('NTY0MTRDNDU=') && getStage4Progress() >= 4) {
+            printTerminal("Verifying key...");
+            setTimeout(() => {
+              printTerminal("Key accepted.");
+              printTerminal("Initiating final sequence...");
+              setStage4Progress(5);
+              triggerEndingSequence();
+            }, 1000);
+          } else {
+            printTerminal("Archive node detected.");
+            printTerminal("Enter archive phrase:");
+            terminalState = 'archive_password';
+            termPrompt.innerText = "";
+          }
           break;
         default:
           printTerminal("Bad command or file name.");
       }
+    }
+
+    function triggerEndingSequence() {
+      // Screen flickers aggressively
+      document.body.style.animation = 'glitch 0.1s infinite';
+      
+      // Close all windows
+      const windowsToClose = Array.from(openWindows);
+      windowsToClose.forEach(id => {
+        closeWindow(id);
+      });
+      
+      setTimeout(() => {
+        document.body.style.animation = '';
+        
+        // System notification
+        showNotification("<b>SYSTEM OVERRIDE</b><br>The Archive is awake. Thank you, Investigator.");
+        
+        // Unlock archive://records
+        setStage4Progress(6);
+        
+        // Open the final route
+        setTimeout(() => {
+          openBrowserUrl(atob('YXJjaGl2ZTovL3JlY29yZHM='));
+        }, 3000);
+      }, 2000);
     }
 
     function handleArchivePassword(pwd) {
@@ -2360,6 +2704,16 @@ fragment remains</div>
         arrangeIcons();
         localStorage.setItem('aurora_stage1_complete', 'true');
         if (window.soundManager) window.soundManager.playSuccess();
+      } else if (pwd === atob('NTY0MTRDNDU=') && getStage4Progress() >= 4) {
+        printTerminal("Verifying key...");
+        terminalState = 'normal';
+        termPrompt.innerText = "C:\\>";
+        setTimeout(() => {
+          printTerminal("Key accepted.");
+          printTerminal("Initiating final sequence...");
+          setStage4Progress(5);
+          triggerEndingSequence();
+        }, 1000);
       } else {
         failedAttempts++;
         if (failedAttempts >= 3) {
@@ -2738,11 +3092,47 @@ fragment remains</div>
       localStorage.setItem('aurora_stage3_token', token);
     }
     
+    function getStage4Progress() {
+      const token = localStorage.getItem('aurora_stage4_token');
+      if (!token) return 0;
+      try {
+        const decoded = atob(token);
+        const parts = decoded.split('|');
+        if (parts.length === 2 && parts[1] === SECRET_KEY) {
+          const step = parseInt(parts[0]);
+          if (!isNaN(step) && step >= 0 && step <= 10) return step;
+        }
+      } catch (e) {}
+      localStorage.removeItem('aurora_stage4_token');
+      return 0;
+    }
+
+    function setStage4Progress(step) {
+      const token = btoa(step + '|' + SECRET_KEY);
+      localStorage.setItem('aurora_stage4_token', token);
+    }
+
     // Migrate old progression if it exists
     if (localStorage.getItem('aurora_stage3_step')) {
       setProgressStep(parseInt(localStorage.getItem('aurora_stage3_step') || '0'));
       localStorage.removeItem('aurora_stage3_step');
     }
+
+    // Restore Stage 4 icons on load
+    (function() {
+      const s4p = getStage4Progress();
+      if (s4p >= 1) {
+        const obsIcon = document.getElementById('icon-observer');
+        if (obsIcon) obsIcon.classList.remove('hidden');
+      }
+      if (s4p >= 2) {
+        const valeIcon = document.getElementById('icon-vale');
+        if (valeIcon) valeIcon.classList.remove('hidden');
+      }
+      if (s4p >= 1) {
+        arrangeIcons();
+      }
+    })();
 
     // Helper to update clues dynamically based on stage3_step
     function updateStage3Clues() {

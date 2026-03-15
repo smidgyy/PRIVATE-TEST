@@ -16,16 +16,35 @@ if (window === window.top) {
     throw new Error('Access Denied');
   }
 }
+
+window.onload = function() {
+  if (window.parent && typeof window.parent.startStage4 === 'function') {
+    window.parent.startStage4();
+  }
+};
 </script>
 <meta charset="UTF-8">
 <style>
-  body { background: #000; color: #0f0; font-family: 'VT323', monospace; margin: 0; padding: 0; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  body { background: #000; color: #0f0; font-family: 'VT323', monospace; margin: 0; padding: 0; overflow: hidden; }
+  @keyframes glitch {
+    0% { transform: translate(0) }
+    20% { transform: translate(-2px, 2px) }
+    40% { transform: translate(-2px, -2px) }
+    60% { transform: translate(2px, 2px) }
+    80% { transform: translate(2px, -2px) }
+    100% { transform: translate(0) }
+  }
+  .corrupted {
+    animation: glitch 0.3s infinite;
+    color: #f00;
+    text-shadow: 2px 0 #0f0, -2px 0 #00f;
+  }
 </style>
 </head>
 <body>
-  <div style="padding: 4rem 2rem; text-align: center; animation: fadeIn 2s ease forwards;">
-    <h2 style="font-size: 2.5rem; letter-spacing: 0.1em; text-shadow: 0 0 10px #0f0;">ARCHIVE NODE 04 UNLOCKED</h2>
+  <div style="padding: 4rem 2rem; text-align: center;">
+    <h2 class="corrupted" style="font-size: 2.5rem; letter-spacing: 0.1em;">ARCHIVE NODE 04</h2>
+    <p class="corrupted" style="font-size: 1.5rem;">Memory corruption detected.</p>
   </div>
 </body>
 </html>
