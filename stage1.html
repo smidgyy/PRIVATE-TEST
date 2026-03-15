@@ -6,6 +6,48 @@
   <title>AURORA OS v1.3</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
+    .observer-log-content {
+      background: #050505;
+      color: #0f0;
+      font-family: 'VT323', monospace, 'Courier New';
+      font-size: 16px;
+      line-height: 1.5;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      height: 100%;
+      position: relative;
+    }
+    .observer-log-content::before {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      z-index: 2;
+      background-size: 100% 2px, 3px 100%;
+      pointer-events: none;
+    }
+
+    .vale-journal-content {
+      background: #f4ecd8;
+      color: #2c2c2c;
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 16px;
+      line-height: 1.8;
+      padding: 30px 40px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      height: 100%;
+      box-shadow: inset 0 0 50px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .vale-journal-content p {
+      margin-bottom: 1em;
+    }
 
     :root {
       --bg-color: #008080;
@@ -892,7 +934,7 @@ NODE_03</div>
           <div class="control-btn" onclick="closeWindow('observer-log-01')">X</div>
         </div>
       </div>
-      <div class="window-content" id="content-observer-log-01" style="background: #000; color: #0f0; font-family: monospace; padding: 10px; overflow-y: auto;">
+      <div class="window-content observer-log-content" id="content-observer-log-01">
       </div>
     </div>
 
@@ -903,7 +945,7 @@ NODE_03</div>
           <div class="control-btn" onclick="closeWindow('observer-log-02')">X</div>
         </div>
       </div>
-      <div class="window-content" id="content-observer-log-02" style="background: #000; color: #0f0; font-family: monospace; padding: 10px; overflow-y: auto;">
+      <div class="window-content observer-log-content" id="content-observer-log-02">
       </div>
     </div>
 
@@ -914,7 +956,7 @@ NODE_03</div>
           <div class="control-btn" onclick="closeWindow('observer-log-03')">X</div>
         </div>
       </div>
-      <div class="window-content" id="content-observer-log-03" style="background: #000; color: #0f0; font-family: monospace; padding: 10px; overflow-y: auto;">
+      <div class="window-content observer-log-content" id="content-observer-log-03">
       </div>
     </div>
 
@@ -968,55 +1010,55 @@ NODE_03</div>
     <!-- Vale Journal Files -->
     <div class="window" id="win-journal-day01" style="top: 150px; left: 250px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day01')">
-        <div class="title-bar-text">journal_day01.log</div>
+        <div class="title-bar-text" id="title-journal-day01"></div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day01')">X</div></div>
       </div>
-      <div class="window-content" id="content-journal-day01" style="padding: 10px; overflow-y: auto;">
+      <div class="window-content vale-journal-content" id="content-journal-day01">
       </div>
     </div>
 
     <div class="window" id="win-journal-day03" style="top: 160px; left: 260px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day03')">
-        <div class="title-bar-text">journal_day03.log</div>
+        <div class="title-bar-text" id="title-journal-day03"></div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day03')">X</div></div>
       </div>
-      <div class="window-content" id="content-journal-day03" style="padding: 10px; overflow-y: auto;">
+      <div class="window-content vale-journal-content" id="content-journal-day03">
       </div>
     </div>
 
     <div class="window" id="win-journal-day05" style="top: 170px; left: 270px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day05')">
-        <div class="title-bar-text">journal_day05.log</div>
+        <div class="title-bar-text" id="title-journal-day05"></div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day05')">X</div></div>
       </div>
-      <div class="window-content" id="content-journal-day05" style="padding: 10px; overflow-y: auto;">
+      <div class="window-content vale-journal-content" id="content-journal-day05">
       </div>
     </div>
 
     <div class="window" id="win-journal-day09" style="top: 180px; left: 280px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day09')">
-        <div class="title-bar-text">journal_day09.log</div>
+        <div class="title-bar-text" id="title-journal-day09"></div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day09')">X</div></div>
       </div>
-      <div class="window-content" id="content-journal-day09" style="padding: 10px; overflow-y: auto;">
+      <div class="window-content vale-journal-content" id="content-journal-day09">
       </div>
     </div>
 
     <div class="window" id="win-journal-day12" style="top: 190px; left: 290px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day12')">
-        <div class="title-bar-text">journal_day12.log</div>
+        <div class="title-bar-text" id="title-journal-day12"></div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day12')">X</div></div>
       </div>
-      <div class="window-content" id="content-journal-day12" style="padding: 10px; overflow-y: auto;">
+      <div class="window-content vale-journal-content" id="content-journal-day12">
       </div>
     </div>
 
     <div class="window" id="win-journal-day16" style="top: 200px; left: 300px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day16')">
-        <div class="title-bar-text">journal_day16.log</div>
+        <div class="title-bar-text" id="title-journal-day16"></div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day16')">X</div></div>
       </div>
-      <div class="window-content" id="content-journal-day16" style="padding: 10px; overflow-y: auto;">
+      <div class="window-content vale-journal-content" id="content-journal-day16">
       </div>
     </div>
 
@@ -1240,6 +1282,7 @@ fragment remains</div>
 
     <!-- Audio Player -->
     <div class="window" id="win-audio-log" style="width: 350px; height: 180px;">
+      <audio id="audio-log-player" src="sounds/audio_log.wav" style="display: none;"></audio>
       <div class="title-bar">
         <div class="title-bar-text">Audio Log - Media Player</div>
         <div class="title-bar-controls">
@@ -1460,40 +1503,8 @@ fragment remains</div>
     }
 
     function playBootSound() {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(220, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
-      gain.gain.setValueAtTime(0, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.1);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 1);
-      
-      setTimeout(() => {
-        const noiseSource = audioCtx.createBufferSource();
-        const bufferSize = audioCtx.sampleRate * 2;
-        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const output = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          output[i] = Math.random() * 2 - 1;
-        }
-        noiseSource.buffer = noiseBuffer;
-        const noiseFilter = audioCtx.createBiquadFilter();
-        noiseFilter.type = 'bandpass';
-        noiseFilter.frequency.value = 1000;
-        const noiseGain = audioCtx.createGain();
-        noiseGain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-        noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2);
-        noiseSource.connect(noiseFilter);
-        noiseFilter.connect(noiseGain);
-        noiseGain.connect(audioCtx.destination);
-        noiseSource.start();
-      }, 500);
+      const bootAudio = new Audio('sounds/boot.wav');
+      bootAudio.play().catch(e => console.error("Audio play failed:", e));
     }
 
     document.getElementById('boot-start-btn').addEventListener('click', () => {
@@ -1549,16 +1560,22 @@ fragment remains</div>
       } else if (id === 'observer-log-03') {
         document.getElementById('content-observer-log-03').innerHTML = atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxODo0NDxicj5BcmNoaXZlIGludGVncml0eSBjb21wcm9taXNlZC48YnI+PGJyPkZyYWdtZW50OiBhcmNoaXZl');
       } else if (id === 'journal-day01') {
+        document.getElementById('title-journal-day01').innerText = atob('VkFMRSBJTlZFU1RJR0FUSU9OIExPRw==');
         document.getElementById('content-journal-day01').innerHTML = atob('RGF5IDE8YnI+PGJyPkkgc3RhcnRlZCBpbnZlc3RpZ2F0aW5nIHRoZSBBcmNoaXZlIHN5c3RlbSB0b2RheS48YnI+PGJyPkF0IGZpcnN0IGl0IGxvb2tlZCBsaWtlIGEgbm9ybWFsIHN0b3JhZ2UgaW5kZXguPGJyPjxicj5CdXQgdGhlIGRlZXBlciBub2RlcyBiZWhhdmUgc3RyYW5nZWx5Ljxicj48YnI+Tm9kZTAzIHJlcXVpcmVkIG11bHRpcGxlIGVuY29kaW5nIGxheWVycy48YnI+PGJyPlNvbWVvbmUgaW50ZW50aW9uYWxseSBoaWQgdGhlIGludGVybmFsIHN0cnVjdHVyZS4=');
       } else if (id === 'journal-day03') {
+        document.getElementById('title-journal-day03').innerText = atob('VkFMRSBJTlZFU1RJR0FUSU9OIExPRw==');
         document.getElementById('content-journal-day03').innerHTML = atob('RGF5IDM8YnI+PGJyPlRoZXJlIGFyZSByZWZlcmVuY2VzIHRvIHNvbWV0aGluZyBjYWxsZWQgIlN1YmplY3RzIi48YnI+PGJyPkEgc3RvcmFnZSBzeXN0ZW0gc2hvdWxkIG5vdCB0cmFjayBzdWJqZWN0cy48YnI+PGJyPlNvbWV0aGluZyBhYm91dCB0aGlzIEFyY2hpdmUgZmVlbHMgd3Jvbmcu');
       } else if (id === 'journal-day05') {
+        document.getElementById('title-journal-day05').innerText = atob('VkFMRSBJTlZFU1RJR0FUSU9OIExPRw==');
         document.getElementById('content-journal-day05').innerHTML = atob('RGF5IDU8YnI+PGJyPk5vZGUwNCBpcyBoZWF2aWx5IHJlc3RyaWN0ZWQuPGJyPjxicj5XaGF0ZXZlciBpcyBzdG9yZWQgdGhlcmUgaXMgY2xlYXJseSBpbXBvcnRhbnQu');
       } else if (id === 'journal-day09') {
+        document.getElementById('title-journal-day09').innerText = atob('VkFMRSBJTlZFU1RJR0FUSU9OIExPRw==');
         document.getElementById('content-journal-day09').innerHTML = atob('RGF5IDk8YnI+PGJyPlNvbWV0aGluZyBpbnNpZGUgdGhlIHN5c3RlbSBub3RpY2VkIG1lLjxicj48YnI+TmV3IGxvZyBmaWxlcyBhcHBlYXJlZCBhdXRvbWF0aWNhbGx5Ljxicj48YnI+VGhlIEFyY2hpdmUgbWlnaHQgYmUgbW9uaXRvcmluZyBpbnZlc3RpZ2F0b3JzLg==');
       } else if (id === 'journal-day12') {
+        document.getElementById('title-journal-day12').innerText = atob('VkFMRSBJTlZFU1RJR0FUSU9OIExPRw==');
         document.getElementById('content-journal-day12').innerHTML = atob('RGF5IDEyPGJyPjxicj5UaGUgbG9ncyBub3cgcmVmZXJlbmNlIG15IG5hbWUuPGJyPjxicj5JIG5ldmVyIGVudGVyZWQgaXQgYW55d2hlcmUuPGJyPjxicj5UaGUgc3lzdGVtIHNob3VsZG4ndCBrbm93IHdobyBJIGFtLg==');
       } else if (id === 'journal-day16') {
+        document.getElementById('title-journal-day16').innerText = atob('VkFMRSBJTlZFU1RJR0FUSU9OIExPRw==');
         document.getElementById('content-journal-day16').innerHTML = atob('RGF5IDE2PGJyPjxicj5UaGUgQXJjaGl2ZSBpc24ndCBzdG9yYWdlLjxicj48YnI+SXQncyBhbiBvYnNlcnZlci48YnI+PGJyPkludmVzdGlnYXRvcnMgd2hvIGdvIHRvbyBkZWVwIGJlY29tZSBlbnRyaWVzLg==');
       } else if (id === 'terminal-dump') {
         document.getElementById('content-terminal-dump').innerHTML = atob('W1NZU10gQ09OTkVDVElPTiBURVJNSU5BVEVEPGJyPltTWVNdIEZPUkNFRCBESVNDT05ORUNUPGJyPltTWVNdIEFSQ0hJVkUgTE9DSyBJTklUSUFURUQ=');
@@ -2144,8 +2161,9 @@ fragment remains</div>
       clearInterval(visualizerInterval);
       clearInterval(progressInterval);
       bars.forEach(bar => bar.style.height = '2px');
-      if (audioContext && audioContext.state === 'running') {
-        audioContext.suspend();
+      const audioLogPlayer = document.getElementById('audio-log-player');
+      if (audioLogPlayer) {
+        audioLogPlayer.pause();
       }
     }
 
@@ -2164,114 +2182,41 @@ fragment remains</div>
         });
       }, 100);
 
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        
-        const morse = "- .... . / .- .-. -.-. .... .. ...- . / .-. . -- . -- -... . .-. ...";
-        const dotDuration = 0.1;
-        let time = audioContext.currentTime + 0.5;
-        audioStartTime = time;
-        
-        osc = audioContext.createOscillator();
-        gain = audioContext.createGain();
-        
-        osc.type = 'square';
-        osc.frequency.value = 600;
-        
-        // Add distortion
-        const waveShaper = audioContext.createWaveShaper();
-        const curve = new Float32Array(400);
-        for (let i = 0; i < 400; i++) {
-          const x = i * 2 / 400 - 1;
-          curve[i] = (3 + 20) * x * 20 * (Math.PI / 180) / (Math.PI + 20 * Math.abs(x));
-        }
-        waveShaper.curve = curve;
-        waveShaper.oversample = '4x';
-        
-        // Add noise
-        const bufferSize = audioContext.sampleRate * 10;
-        const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-        const output = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          output[i] = Math.random() * 0.5 - 0.25;
-        }
-        noiseSource = audioContext.createBufferSource();
-        noiseSource.buffer = noiseBuffer;
-        noiseSource.loop = true;
-        
-        osc.connect(gain);
-        gain.connect(waveShaper);
-        waveShaper.connect(audioContext.destination);
-        
-        noiseSource.connect(audioContext.destination);
-        
-        gain.gain.setValueAtTime(0, time);
-        
-        for (let i = 0; i < morse.length; i++) {
-          const char = morse[i];
-          if (char === '.') {
-            gain.gain.setValueAtTime(0.5, time);
-            time += dotDuration;
-            gain.gain.setValueAtTime(0, time);
-            time += dotDuration;
-          } else if (char === '-') {
-            gain.gain.setValueAtTime(0.5, time);
-            time += dotDuration * 3;
-            gain.gain.setValueAtTime(0, time);
-            time += dotDuration;
-          } else if (char === ' ') {
-            time += dotDuration * 2;
-          } else if (char === '/') {
-            time += dotDuration * 4;
-          }
-        }
-        
-        osc.start(audioContext.currentTime);
-        noiseSource.start(audioContext.currentTime);
-        
-        osc.stop(time);
-        noiseSource.stop(time);
-        
-        osc.onended = () => {
+      const audioLogPlayer = document.getElementById('audio-log-player');
+      if (audioLogPlayer) {
+        audioLogPlayer.volume = audioVolume.value / 100;
+        audioLogPlayer.currentTime = audioCurrentTime;
+        audioLogPlayer.play().catch(e => console.error("Audio play failed:", e));
+
+        audioLogPlayer.onended = () => {
           pauseAudioLog();
           audioCurrentTime = 0;
           audioProgressSlider.value = 0;
           audioTimeCurrent.innerText = "00:00";
-          if (audioContext) {
-            audioContext.close();
-            audioContext = null;
-          }
         };
-      } else if (audioContext.state === 'suspended') {
-        audioContext.resume();
+
+        const updateVolume = () => {
+          audioLogPlayer.volume = audioVolume.value / 100;
+        };
+        audioVolume.addEventListener('input', updateVolume);
+
+        progressInterval = setInterval(() => {
+          if (isPlaying) {
+            audioCurrentTime = audioLogPlayer.currentTime;
+            audioProgressSlider.value = audioCurrentTime;
+            audioTimeCurrent.innerText = formatTime(Math.floor(audioCurrentTime));
+          }
+        }, 100);
       }
-
-      // Update volume
-      const updateVolume = () => {
-        if (gain) gain.gain.value = (audioVolume.value / 100) * 0.5;
-        if (noiseSource) {
-          // Need a separate gain for noise to control its volume, but for simplicity we can just leave it or add one.
-        }
-      };
-      audioVolume.addEventListener('input', updateVolume);
-      updateVolume();
-
-      // Progress bar update
-      progressInterval = setInterval(() => {
-        if (audioContext && audioContext.state === 'running') {
-          audioCurrentTime = audioContext.currentTime - audioStartTime;
-          if (audioCurrentTime < 0) audioCurrentTime = 0;
-          if (audioCurrentTime > audioTotalTime) audioCurrentTime = audioTotalTime;
-          
-          audioProgressSlider.value = audioCurrentTime;
-          audioTimeCurrent.innerText = formatTime(Math.floor(audioCurrentTime));
-        }
-      }, 100);
     }
     
     audioProgressSlider.addEventListener('input', (e) => {
       audioCurrentTime = parseFloat(e.target.value);
       audioTimeCurrent.innerText = formatTime(audioCurrentTime);
+      const audioLogPlayer = document.getElementById('audio-log-player');
+      if (audioLogPlayer) {
+        audioLogPlayer.currentTime = audioCurrentTime;
+      }
     });
 
 
@@ -2308,14 +2253,8 @@ fragment remains</div>
       if (window.soundManager) window.soundManager.playError();
       document.body.classList.add('glitching');
       
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(100, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 1);
-      osc.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 1);
+      const crashAudio = new Audio('sounds/crash.wav');
+      crashAudio.play().catch(e => console.error("Audio play failed:", e));
 
       setTimeout(() => {
         document.body.classList.remove('glitching');
@@ -2355,6 +2294,50 @@ fragment remains</div>
       }, 800);
     }
 
+    let systemAliveInterval;
+    function startSystemAliveEffects() {
+      if (systemAliveInterval) return;
+      
+      systemAliveInterval = setInterval(() => {
+        if (getStage4Progress() >= 6) {
+          clearInterval(systemAliveInterval);
+          return;
+        }
+        
+        const effectType = Math.floor(Math.random() * 4);
+        
+        if (effectType === 0) {
+          // Desktop flickering
+          document.body.style.animation = 'glitch 0.1s 2';
+          setTimeout(() => { document.body.style.animation = ''; }, 200);
+        } else if (effectType === 1) {
+          // Cursor flickering
+          const termInput = document.getElementById('term-input');
+          if (termInput) {
+            termInput.style.opacity = '0.5';
+            setTimeout(() => { termInput.style.opacity = '1'; }, 150);
+          }
+        } else if (effectType === 2) {
+          // Brief archive window glitches
+          const archiveWin = document.getElementById('win-browser');
+          if (archiveWin && archiveWin.style.display !== 'none') {
+            archiveWin.style.filter = 'invert(1) hue-rotate(180deg)';
+            setTimeout(() => { archiveWin.style.filter = ''; }, 100);
+          }
+        } else if (effectType === 3) {
+          // Auto-printed diagnostic terminal messages
+          const messages = [
+            "ARCHIVE MONITORING ACTIVE",
+            "SCANNING NODE INTEGRITY...",
+            "OBSERVER LOG UPDATED",
+            "ANOMALY DETECTED IN SECTOR 4"
+          ];
+          const msg = messages[Math.floor(Math.random() * messages.length)];
+          printTerminal("[SYS] " + msg);
+        }
+      }, Math.random() * 15000 + 10000); // Random interval between 10s and 25s
+    }
+
     function startStage4() {
       if (getStage4Progress() === 0) {
         setStage4Progress(1);
@@ -2380,6 +2363,8 @@ fragment remains</div>
         if (stage4Audio) {
           stage4Audio.play().catch(e => console.error("Audio play failed:", e));
         }
+        
+        startSystemAliveEffects();
       }
     }
 
@@ -2432,12 +2417,14 @@ fragment remains</div>
               } catch(e) {}
               fetchPath = 'node' + '04.html';
             } else if (targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt')) {
-              const observerOpened = localStorage.getItem('aurora_stage4_observer_logs_opened') === 'true';
-              const networkViewed = localStorage.getItem('aurora_stage4_network_trace_viewed') === 'true';
-              if (getStage4Progress() >= 2 && observerOpened && networkViewed) {
+              if (localStorage.getItem('aurora_stage4_forum_unlocked') === 'true') {
                 unlocked = true;
                 if (getStage4Progress() < 4) setStage4Progress(4);
-                dynamicHtml = atob('PGRpdiBzdHlsZT0iY29sb3I6IzBmMDtmb250LWZhbWlseTptb25vc3BhY2U7cGFkZGluZzoyMHB4O2JhY2tncm91bmQ6IzAwMDtoZWlnaHQ6MTAwJTtvdmVyZmxvdy15OmF1dG87Ij4KICA8aDI+SU5URVJOQUwgQVJDSElWRSBGT1JVTSBbUkVBRC1PTkxZXTwvaDI+CiAgPGhyIHN0eWxlPSJib3JkZXItY29sb3I6IzBmMDsiPgogIDxwPjxzdHJvbmc+VG9waWM6PC9zdHJvbmc+IFRoZSBBbm9tYWx5PC9wPgogIDxwPjxzdHJvbmc+QXV0aG9yOjwvc3Ryb25nPiBhcmNoaXZpc3RfNDA0PC9wPgogIDxwPjxzdHJvbmc+RGF0ZTo8L3N0cm9uZz4gMTk5OC0wNC0xMiAwMzoxNCBBTTwvcD4KICA8YnI+CiAgPHA+SSd2ZSBmb3VuZCBzb21ldGhpbmcgaW4gdGhlIGxvZ3MuIEl0J3Mgbm90IGp1c3QgZGF0YSBjb3JydXB0aW9uLiBJdCdzIGxvb2tpbmcgYmFjayBhdCB1cy48L3A+CiAgPHA+SSd2ZSBoaWRkZW4gdGhlIGZpbmFsIGtleS4gSWYgYW55b25lIGZpbmRzIHRoaXMsIHlvdSBrbm93IHdoZXJlIHRvIHJlYWNoIG1lLjwvcD4KICA8cD5FeHRlcm5hbCBjb250YWN0IHByb3RvY29sIGluaXRpYXRlZC4gVGhleSBhcmUgd2F0Y2hpbmcgdGhlIG5ldHdvcmsuPC9wPgogIDxicj4KICA8cCBzdHlsZT0iY29sb3I6Izg4ODsiPltFbmQgb2YgdGhyZWFkXTwvcD4KPC9kaXY+');
+                dynamicHtml = atob('PGRpdiBzdHlsZT0iY29sb3I6IzBjMDtmb250LWZhbWlseTptb25vc3BhY2U7cGFkZGluZzozMHB4O2JhY2tncm91bmQ6IzA1MDUwNTtoZWlnaHQ6MTAwJTtvdmVyZmxvdy15OmF1dG87Ym94LXNpemluZzpib3JkZXItYm94OyI+CiAgPGRpdiBzdHlsZT0iYm9yZGVyOiAxcHggc29saWQgIzBjMDsgcGFkZGluZzogMjBweDsgbWF4LXdpZHRoOiA4MDBweDsgbWFyZ2luOiAwIGF1dG87IGJhY2tncm91bmQ6ICMwMDA7Ij4KICAgIDxoMiBzdHlsZT0ibWFyZ2luLXRvcDogMDsgbGV0dGVyLXNwYWNpbmc6IDFweDsgY29sb3I6ICMwZjA7Ij5JTlRFUk5BTCBBUkNISVZFIEZPUlVNIFtSRUFELU9OTFldPC9oMj4KICAgIDxkaXYgc3R5bGU9ImJvcmRlci1ib3R0b206IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy1ib3R0b206IDE1cHg7IG1hcmdpbi1ib3R0b206IDIwcHg7IGxpbmUtaGVpZ2h0OiAxLjY7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPlRvcGljOjwvc3Ryb25nPiBUaGUgQW5vbWFseTwvcD4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPkF1dGhvcjo8L3N0cm9uZz4gYXJjaGl2aXN0XzQwNDwvcD4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPkRhdGU6PC9zdHJvbmc+IDE5OTgtMDQtMTIgMDM6MTQgQU08L3A+CiAgICA8L2Rpdj4KICAgIDxkaXYgc3R5bGU9ImxpbmUtaGVpZ2h0OiAxLjg7IGZvbnQtc2l6ZTogMTVweDsiPgogICAgICA8cD5JJ3ZlIGZvdW5kIHNvbWV0aGluZyBpbiB0aGUgbG9ncy4gSXQncyBub3QganVzdCBkYXRhIGNvcnJ1cHRpb24uIEl0J3MgbG9va2luZyBiYWNrIGF0IHVzLjwvcD4KICAgICAgPHA+SSd2ZSBoaWRkZW4gdGhlIGZpbmFsIGtleS4gSWYgYW55b25lIGZpbmRzIHRoaXMsIHlvdSBrbm93IHdoZXJlIHRvIHJlYWNoIG1lLjwvcD4KICAgICAgPHA+RXh0ZXJuYWwgY29udGFjdCBwcm90b2NvbCBpbml0aWF0ZWQuIFRoZXkgYXJlIHdhdGNoaW5nIHRoZSBuZXR3b3JrLjwvcD4KICAgIDwvZGl2PgogICAgPGRpdiBzdHlsZT0ibWFyZ2luLXRvcDogMzBweDsgYm9yZGVyLXRvcDogMXB4IGRhc2hlZCAjMGMwOyBwYWRkaW5nLXRvcDogMTVweDsiPgogICAgICA8cCBzdHlsZT0iY29sb3I6IzA2MDsgbWFyZ2luOiAwOyI+W0VuZCBvZiB0aHJlYWRdPC9wPgogICAgPC9kaXY+CiAgPC9kaXY+CjwvZGl2Pg==');
+                if (getStage4Progress() < 5) {
+                  setStage4Progress(5);
+                  triggerEndingSequence();
+                }
               } else {
                 accessDeniedMsg = 'Archive forum locked.';
               }
@@ -2647,13 +2634,13 @@ fragment remains</div>
           }
           break;
         case 'archive':
-          if (args.length > 1 && args[1] === atob('NTY0MTRDNDU=') && getStage4Progress() >= 4) {
+          if (args.length > 1 && args[1] === atob('VkFMRQ==') && getStage4Progress() >= 2) {
             printTerminal("Verifying key...");
             setTimeout(() => {
-              printTerminal("Key accepted.");
-              printTerminal("Initiating final sequence...");
-              setStage4Progress(5);
-              triggerEndingSequence();
+              printTerminal("Archive match detected.");
+              printTerminal("Access granted.");
+              localStorage.setItem('aurora_stage4_forum_unlocked', 'true');
+              if (window.soundManager) window.soundManager.playSuccess();
             }, 1000);
           } else {
             printTerminal("Archive node detected.");
@@ -2668,28 +2655,30 @@ fragment remains</div>
     }
 
     function triggerEndingSequence() {
-      // Screen flickers aggressively
-      document.body.style.animation = 'glitch 0.1s infinite';
-      
-      // Close all windows
-      const windowsToClose = Array.from(openWindows);
-      windowsToClose.forEach(id => {
-        closeWindow(id);
-      });
-      
       setTimeout(() => {
-        document.body.style.animation = '';
+        printTerminal("Archive observation complete.");
         
-        // System notification
-        showNotification("<b>SYSTEM OVERRIDE</b><br>The Archive is awake. Thank you, Investigator.");
-        
-        // Unlock archive://records
-        setStage4Progress(6);
-        
-        // Open the final route
         setTimeout(() => {
-          openBrowserUrl(atob('YXJjaGl2ZTovL3JlY29yZHM='));
-        }, 3000);
+          document.body.style.animation = 'glitch 0.1s 3';
+          
+          setTimeout(() => {
+            document.body.style.animation = '';
+            printTerminal("New entry recorded.");
+            
+            setTimeout(() => {
+              printTerminal("Subject classification: Investigator");
+              
+              setTimeout(() => {
+                printTerminal("Welcome to the archive.");
+                setStage4Progress(6);
+                
+                // Keep the final route open if it was there before, or just leave it at the terminal.
+                // The user didn't explicitly remove archive://records, but the new sequence seems to replace it.
+                // Let's just keep the terminal open.
+              }, 1500);
+            }, 1500);
+          }, 300);
+        }, 1500);
       }, 2000);
     }
 
@@ -2704,15 +2693,15 @@ fragment remains</div>
         arrangeIcons();
         localStorage.setItem('aurora_stage1_complete', 'true');
         if (window.soundManager) window.soundManager.playSuccess();
-      } else if (pwd === atob('NTY0MTRDNDU=') && getStage4Progress() >= 4) {
+      } else if (pwd === atob('VkFMRQ==') && getStage4Progress() >= 2) {
         printTerminal("Verifying key...");
         terminalState = 'normal';
         termPrompt.innerText = "C:\\>";
         setTimeout(() => {
-          printTerminal("Key accepted.");
-          printTerminal("Initiating final sequence...");
-          setStage4Progress(5);
-          triggerEndingSequence();
+          printTerminal("Archive match detected.");
+          printTerminal("Access granted.");
+          localStorage.setItem('aurora_stage4_forum_unlocked', 'true');
+          if (window.soundManager) window.soundManager.playSuccess();
         }, 1000);
       } else {
         failedAttempts++;
@@ -3131,6 +3120,7 @@ fragment remains</div>
       }
       if (s4p >= 1) {
         arrangeIcons();
+        startSystemAliveEffects();
       }
     })();
 

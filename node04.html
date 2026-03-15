@@ -25,26 +25,80 @@ window.onload = function() {
 </script>
 <meta charset="UTF-8">
 <style>
-  body { background: #000; color: #0f0; font-family: 'VT323', monospace; margin: 0; padding: 0; overflow: hidden; }
-  @keyframes glitch {
-    0% { transform: translate(0) }
-    20% { transform: translate(-2px, 2px) }
-    40% { transform: translate(-2px, -2px) }
-    60% { transform: translate(2px, 2px) }
-    80% { transform: translate(2px, -2px) }
-    100% { transform: translate(0) }
+  body { 
+    background: #050505; 
+    color: #0f0; 
+    font-family: 'VT323', monospace; 
+    margin: 0; 
+    padding: 0; 
+    overflow: hidden; 
   }
+  
+  /* Subtle CRT scanlines */
+  body::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    z-index: 2;
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+  }
+
+  /* Slight flicker */
+  @keyframes flicker {
+    0% { opacity: 0.95; }
+    5% { opacity: 0.85; }
+    10% { opacity: 0.95; }
+    15% { opacity: 1; }
+    50% { opacity: 0.95; }
+    55% { opacity: 0.9; }
+    60% { opacity: 1; }
+    100% { opacity: 0.95; }
+  }
+
+  /* Occasional horizontal glitch lines */
+  @keyframes h-glitch {
+    0% { clip-path: inset(10% 0 80% 0); transform: translateX(-2px); }
+    5% { clip-path: inset(40% 0 10% 0); transform: translateX(2px); }
+    10% { clip-path: inset(80% 0 5% 0); transform: translateX(-1px); }
+    15% { clip-path: inset(0 0 0 0); transform: translateX(0); }
+    100% { clip-path: inset(0 0 0 0); transform: translateX(0); }
+  }
+
+  .corrupted-container {
+    animation: flicker 4s infinite;
+    position: relative;
+  }
+
   .corrupted {
-    animation: glitch 0.3s infinite;
-    color: #f00;
-    text-shadow: 2px 0 #0f0, -2px 0 #00f;
+    color: #e00;
+    text-shadow: 1px 0 #0f0, -1px 0 #00f;
+    position: relative;
+  }
+
+  .corrupted::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    color: #e00;
+    background: #050505;
+    animation: h-glitch 3s infinite linear alternate-reverse;
+    text-shadow: -1px 0 red;
   }
 </style>
 </head>
 <body>
-  <div style="padding: 4rem 2rem; text-align: center;">
-    <h2 class="corrupted" style="font-size: 2.5rem; letter-spacing: 0.1em;">ARCHIVE NODE 04</h2>
-    <p class="corrupted" style="font-size: 1.5rem;">Memory corruption detected.</p>
+  <div class="corrupted-container" style="padding: 4rem 2rem; text-align: center;">
+    <h2 class="corrupted" data-text="ARCHIVE NODE 04" style="font-size: 2.5rem; letter-spacing: 0.1em;">ARCHIVE NODE 04</h2>
+    <p class="corrupted" data-text="Memory corruption detected." style="font-size: 1.5rem;">Memory corruption detected.</p>
   </div>
 </body>
 </html>
