@@ -7,15 +7,14 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
     .observer-log-content {
-      background: #050505;
-      color: #0f0;
+      background: #0f0f0f;
+      color: #9cff9c;
       font-family: 'VT323', monospace, 'Courier New';
       font-size: 16px;
-      line-height: 1.5;
-      padding: 20px;
+      line-height: 1.6;
+      padding: 24px;
       box-sizing: border-box;
       overflow-y: auto;
-      height: 100%;
       position: relative;
     }
     .observer-log-content::before {
@@ -26,27 +25,36 @@
       left: 0;
       bottom: 0;
       right: 0;
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      background: linear-gradient(rgba(0, 255, 0, 0.02) 50%, rgba(0, 0, 0, 0.05) 50%);
       z-index: 2;
-      background-size: 100% 2px, 3px 100%;
+      background-size: 100% 4px;
       pointer-events: none;
+      opacity: 0.04;
     }
 
     .vale-journal-content {
-      background: #f4ecd8;
+      background: #fdfbf7;
+      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
       color: #2c2c2c;
       font-family: 'Georgia', 'Times New Roman', serif;
-      font-size: 16px;
-      line-height: 1.8;
-      padding: 30px 40px;
+      font-size: 18px;
+      line-height: 1.7;
+      padding: 40px;
       box-sizing: border-box;
       overflow-y: auto;
-      height: 100%;
-      box-shadow: inset 0 0 50px rgba(0,0,0,0.1);
-      text-align: center;
+      box-shadow: inset 0 0 50px rgba(0,0,0,0.05);
+      text-align: left;
+      max-width: 600px;
+      margin: 14px auto;
+      width: calc(100% - 28px);
+    }
+    .vale-journal-content::first-line {
+      font-size: 22px;
+      font-weight: bold;
+      font-family: sans-serif;
     }
     .vale-journal-content p {
-      margin-bottom: 1em;
+      margin-bottom: 1.7em;
     }
 
     :root {
@@ -401,6 +409,7 @@
       opacity: 0;
       pointer-events: none;
       padding: 2px;
+      box-sizing: border-box;
     }
 
     .window.open {
@@ -485,22 +494,27 @@
     }
 
     .window-content {
-      padding: 10px;
+      padding: 20px;
       flex-grow: 1;
       overflow: auto;
       background: #fff;
-      margin: 0;
+      margin: 14px;
+      width: calc(100% - 28px);
       border-top: 2px solid var(--window-border-dark);
       border-left: 2px solid var(--window-border-dark);
       border-bottom: 2px solid var(--window-border-light);
       border-right: 2px solid var(--window-border-light);
-      font-size: 0.9rem;
+      font-size: 16px;
+      line-height: 1.6;
       white-space: pre-wrap;
+      box-sizing: border-box;
     }
 
     .window-content.explorer {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      column-gap: 40px;
+      row-gap: 30px;
       align-content: flex-start;
       position: relative;
     }
@@ -528,11 +542,15 @@
       background: #000;
       color: #0f0;
       font-family: 'VT323', monospace;
+      font-size: 16px;
+      line-height: 1.5;
       white-space: pre-wrap;
+      word-wrap: break-word;
       text-shadow: 0 0 5px rgba(0, 255, 0, 0.8), 0 0 2px rgba(0, 255, 0, 0.5);
       position: relative;
       overflow-y: auto;
-      background-image: linear-gradient(rgba(0, 255, 0, 0.03) 50%, rgba(0, 0, 0, 0.25) 50%);
+      overflow-x: hidden;
+      background-image: linear-gradient(rgba(0, 255, 0, 0.02) 50%, rgba(0, 0, 0, 0.04) 50%);
       background-size: 100% 4px;
       animation: crtFlicker 0.15s infinite;
     }
@@ -546,7 +564,7 @@
       border: none;
       color: #0f0;
       font-family: 'VT323', monospace;
-      font-size: 1.2rem;
+      font-size: 16px;
       flex-grow: 1;
       outline: none;
       text-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
@@ -621,11 +639,18 @@
       position: relative !important;
       top: auto !important;
       left: auto !important;
-      margin: 10px;
-      width: 100px;
-      height: 100px;
+      margin: 0;
+      width: 100%;
+      height: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 5px;
       border: 1px dotted transparent;
       border-radius: 2px;
+      padding: 5px;
+      text-align: center;
     }
 
     .window-content.explorer .icon:hover {
@@ -634,17 +659,20 @@
     }
 
     .window-content.explorer .icon-img {
-      width: 48px;
-      height: 48px;
+      width: 40px;
+      height: 40px;
       filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.2));
+      flex-shrink: 0;
     }
 
     .window-content.explorer .icon span {
       color: #000 !important;
       text-shadow: none !important;
       font-weight: 500;
-      margin-top: 5px;
-      padding: 2px 4px;
+      margin-top: 0;
+      padding: 0;
+      text-align: center;
+      word-break: break-word;
     }
   </style>
 </head>
@@ -843,7 +871,7 @@
           <span style="color:#000; background:transparent;">photo_fragment.png</span>
         </div>
       </div>
-      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">4 object(s)</div>
+      <div class="explorer-status">4 object(s)</div>
     </div>
 
     <!-- System Logs Folder -->
@@ -862,7 +890,7 @@
           <span style="color:#000; background:transparent;">memory_scan.log</span>
         </div>
       </div>
-      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">1 object(s)</div>
+      <div class="explorer-status">1 object(s)</div>
     </div>
 
     <!-- Memory Scan Log -->
@@ -897,7 +925,7 @@ NODE_03</div>
           <span style="color:#000; background:transparent;">stage2_note.txt</span>
         </div>
       </div>
-      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">1 object(s)</div>
+      <div class="explorer-status">1 object(s)</div>
     </div>
 
     <!-- Stage 4: Observer Folder -->
@@ -924,12 +952,12 @@ NODE_03</div>
           <span style="color:#000; background:transparent;">observer_log_03.sys</span>
         </div>
       </div>
-      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">3 object(s)</div>
+      <div class="explorer-status">3 object(s)</div>
     </div>
 
     <div class="window" id="win-observer-log-01" style="top: 150px; left: 250px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-observer-log-01')">
-        <div class="title-bar-text">observer_log_01.sys</div>
+        <div class="title-bar-text">SYSTEM OBSERVER LOG</div>
         <div class="title-bar-controls">
           <div class="control-btn" onclick="closeWindow('observer-log-01')">X</div>
         </div>
@@ -940,7 +968,7 @@ NODE_03</div>
 
     <div class="window" id="win-observer-log-02" style="top: 160px; left: 260px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-observer-log-02')">
-        <div class="title-bar-text">observer_log_02.sys</div>
+        <div class="title-bar-text">SYSTEM OBSERVER LOG</div>
         <div class="title-bar-controls">
           <div class="control-btn" onclick="closeWindow('observer-log-02')">X</div>
         </div>
@@ -951,7 +979,7 @@ NODE_03</div>
 
     <div class="window" id="win-observer-log-03" style="top: 170px; left: 270px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-observer-log-03')">
-        <div class="title-bar-text">observer_log_03.sys</div>
+        <div class="title-bar-text">SYSTEM OBSERVER LOG</div>
         <div class="title-bar-controls">
           <div class="control-btn" onclick="closeWindow('observer-log-03')">X</div>
         </div>
@@ -1004,7 +1032,7 @@ NODE_03</div>
           <span style="color:#000; background:transparent;">network_trace.sys</span>
         </div>
       </div>
-      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">8 object(s)</div>
+      <div class="explorer-status">8 object(s)</div>
     </div>
 
     <!-- Vale Journal Files -->
@@ -1551,13 +1579,39 @@ fragment remains</div>
       'network-trace': 'network_trace.sys'
     };
 
+    async function typewriterEffect(element, html) {
+      const currentRun = Date.now();
+      element.dataset.runId = currentRun;
+      element.innerHTML = '';
+      const lines = html.split('<br>');
+      for (let i = 0; i < lines.length; i++) {
+        if (element.dataset.runId != currentRun) return;
+        const line = lines[i];
+        if (line === '') {
+          element.appendChild(document.createElement('br'));
+          continue;
+        }
+        const span = document.createElement('span');
+        element.appendChild(span);
+        for (let j = 0; j < line.length; j++) {
+          if (element.dataset.runId != currentRun) return;
+          span.innerHTML += line[j];
+          await new Promise(r => setTimeout(r, 18));
+        }
+        if (i < lines.length - 1) {
+          element.appendChild(document.createElement('br'));
+          await new Promise(r => setTimeout(r, 200));
+        }
+      }
+    }
+
     function populateStage4Content(id) {
       if (id === 'observer-log-01') {
-        document.getElementById('content-observer-log-01').innerHTML = atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxMjozMTxicj5Ob2RlIGFjY2VzcyByZWNvcmRlZC48YnI+PGJyPlVzZXIgY2xhc3NpZmljYXRpb246IEludmVzdGlnYXRvcjxicj5QYXR0ZXJuIG1hdGNoOiBWQUxFPGJyPjxicj5Nb25pdG9yaW5nIGVzY2FsYXRpb24gZW5hYmxlZC48YnI+PGJyPkZyYWdtZW50OiBkZWNvZGVf');
+        typewriterEffect(document.getElementById('content-observer-log-01'), atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj7ilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIA8YnI+VGltZXN0YW1wOiAwNDoxMjozMTxicj5Ob2RlIGFjY2VzcyByZWNvcmRlZC48YnI+PGJyPlVzZXIgY2xhc3NpZmljYXRpb246IEludmVzdGlnYXRvcjxicj5QYXR0ZXJuIG1hdGNoOiBWQUxFPGJyPjxicj5Nb25pdG9yaW5nIGVzY2FsYXRpb24gZW5hYmxlZC48YnI+PGJyPkZyYWdtZW50OiBkZWNvZGVf'));
       } else if (id === 'observer-log-02') {
-        document.getElementById('content-observer-log-02').innerHTML = atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxNTowMjxicj5TdWJqZWN0IGJlaGF2aW9yIGFub21hbG91cy48YnI+PGJyPkZyYWdtZW50OiB2YWxlXw==');
+        typewriterEffect(document.getElementById('content-observer-log-02'), atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj7ilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIA8YnI+VGltZXN0YW1wOiAwNDoxNTowMjxicj5TdWJqZWN0IGJlaGF2aW9yIGFub21hbG91cy48YnI+PGJyPkZyYWdtZW50OiB2YWxlXw=='));
       } else if (id === 'observer-log-03') {
-        document.getElementById('content-observer-log-03').innerHTML = atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxODo0NDxicj5BcmNoaXZlIGludGVncml0eSBjb21wcm9taXNlZC48YnI+PGJyPkZyYWdtZW50OiBhcmNoaXZl');
+        typewriterEffect(document.getElementById('content-observer-log-03'), atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj7ilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIA8YnI+VGltZXN0YW1wOiAwNDoxODo0NDxicj5BcmNoaXZlIGludGVncml0eSBjb21wcm9taXNlZC48YnI+PGJyPkZyYWdtZW50OiBhcmNoaXZl'));
       } else if (id === 'journal-day01') {
         document.getElementById('title-journal-day01').innerText = atob('VkFMRSBJTlZFU1RJR0FUSU9OIExPRw==');
         document.getElementById('content-journal-day01').innerHTML = atob('RGF5IDE8YnI+PGJyPkkgc3RhcnRlZCBpbnZlc3RpZ2F0aW5nIHRoZSBBcmNoaXZlIHN5c3RlbSB0b2RheS48YnI+PGJyPkF0IGZpcnN0IGl0IGxvb2tlZCBsaWtlIGEgbm9ybWFsIHN0b3JhZ2UgaW5kZXguPGJyPjxicj5CdXQgdGhlIGRlZXBlciBub2RlcyBiZWhhdmUgc3RyYW5nZWx5Ljxicj48YnI+Tm9kZTAzIHJlcXVpcmVkIG11bHRpcGxlIGVuY29kaW5nIGxheWVycy48YnI+PGJyPlNvbWVvbmUgaW50ZW50aW9uYWxseSBoaWQgdGhlIGludGVybmFsIHN0cnVjdHVyZS4=');
