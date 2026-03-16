@@ -20,7 +20,7 @@ if (window === window.top) {
   body { 
     background: #050505; 
     color: #00ffcc; 
-    font-family: 'JetBrains Mono', monospace; 
+    font-family: 'VT323', monospace; 
     padding: 0; 
     margin: 0;
     height: 100vh;
@@ -28,6 +28,7 @@ if (window === window.top) {
     flex-direction: column;
     overflow: hidden;
     position: relative;
+    font-size: 1.2rem;
   }
 
   /* Scanlines effect */
@@ -51,6 +52,7 @@ if (window === window.top) {
     background: rgba(0, 10, 10, 0.8);
     backdrop-filter: blur(5px);
     z-index: 50;
+    font-family: 'VT323', monospace;
   }
 
   .status-tag {
@@ -103,8 +105,8 @@ if (window === window.top) {
   }
 
   .json-block {
-    font-size: 0.9rem;
-    line-height: 1.6;
+    font-size: 1.4rem;
+    line-height: 1.4;
     color: #00ffcc;
     text-shadow: 0 0 5px rgba(0, 255, 204, 0.5);
   }

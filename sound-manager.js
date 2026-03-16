@@ -82,15 +82,125 @@ class SoundManager {
     noise.start();
   }
 
-  playHover() {}
-  playWindowOpen() {}
-  playWindowClose() {}
-  playClick() {}
+  playHover() {
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, this.audioCtx.currentTime);
+    gain.gain.setValueAtTime(0, this.audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.02, this.audioCtx.currentTime + 0.05);
+    gain.gain.linearRampToValueAtTime(0, this.audioCtx.currentTime + 0.1);
+    osc.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    osc.start();
+    osc.stop(this.audioCtx.currentTime + 0.1);
+  }
+
+  playWindowOpen() {
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(200, this.audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(600, this.audioCtx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0, this.audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.1, this.audioCtx.currentTime + 0.05);
+    gain.gain.linearRampToValueAtTime(0, this.audioCtx.currentTime + 0.2);
+    osc.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    osc.start();
+    osc.stop(this.audioCtx.currentTime + 0.2);
+  }
+
+  playWindowClose() {
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, this.audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(200, this.audioCtx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0, this.audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.1, this.audioCtx.currentTime + 0.05);
+    gain.gain.linearRampToValueAtTime(0, this.audioCtx.currentTime + 0.2);
+    osc.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    osc.start();
+    osc.stop(this.audioCtx.currentTime + 0.2);
+  }
+
+  playClick() {
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(100, this.audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.05);
+    osc.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    osc.start();
+    osc.stop(this.audioCtx.currentTime + 0.05);
+  }
+
   playSystemError() { this.playError(); }
-  startComputerHum() {}
-  startFireCrackling() {}
-  stopFireCrackling() {}
-  playDissolve() {}
+
+  startComputerHum() {
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    if (this.humOsc) return;
+    this.humOsc = this.audioCtx.createOscillator();
+    this.humGain = this.audioCtx.createGain();
+    this.humOsc.type = 'sine';
+    this.humOsc.frequency.setValueAtTime(60, this.audioCtx.currentTime);
+    this.humGain.gain.setValueAtTime(0, this.audioCtx.currentTime);
+    this.humGain.gain.linearRampToValueAtTime(0.02, this.audioCtx.currentTime + 2);
+    this.humOsc.connect(this.humGain);
+    this.humGain.connect(this.audioCtx.destination);
+    this.humOsc.start();
+  }
+
+  startFireCrackling() {
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    if (this.fireInterval) return;
+    this.fireInterval = setInterval(() => {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(Math.random() * 100 + 50, this.audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.01, this.audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.02);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start();
+      osc.stop(this.audioCtx.currentTime + 0.02);
+    }, 100);
+  }
+
+  stopFireCrackling() {
+    if (this.fireInterval) {
+      clearInterval(this.fireInterval);
+      this.fireInterval = null;
+    }
+  }
+
+  playDissolve() {
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    const bufferSize = this.audioCtx.sampleRate * 0.5;
+    const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const noise = this.audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    const gain = this.audioCtx.createGain();
+    gain.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0, this.audioCtx.currentTime + 0.5);
+    noise.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    noise.start();
+  }
+
   startBlackFire() {
     if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
     if (this.blackFireOsc) return;
@@ -104,6 +214,27 @@ class SoundManager {
     this.blackFireGain.connect(this.audioCtx.destination);
     this.blackFireOsc.start();
   }
+
+  startAmbientDrone() {
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    if (this.droneOscs) return;
+    this.droneOscs = [];
+    const freqs = [110, 164.81, 220, 329.63];
+    this.droneGain = this.audioCtx.createGain();
+    this.droneGain.gain.setValueAtTime(0, this.audioCtx.currentTime);
+    this.droneGain.gain.linearRampToValueAtTime(0.05, this.audioCtx.currentTime + 3);
+    
+    freqs.forEach(f => {
+      const osc = this.audioCtx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, this.audioCtx.currentTime);
+      osc.connect(this.droneGain);
+      osc.start();
+      this.droneOscs.push(osc);
+    });
+    
+    this.droneGain.connect(this.audioCtx.destination);
+  }
 }
 
 window.soundManager = new SoundManager();
@@ -115,4 +246,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.soundManager) window.soundManager.playKeystroke();
     });
   });
+
+  // Handle missing stage4-ambient file by providing a procedural alternative
+  const stage4Ambient = document.getElementById('stage4-ambient');
+  if (stage4Ambient) {
+    const originalPlay = stage4Ambient.play.bind(stage4Ambient);
+    stage4Ambient.play = function() {
+      if (window.soundManager) {
+        window.soundManager.startAmbientDrone();
+        return Promise.resolve();
+      }
+      return originalPlay();
+    };
+  }
 });
