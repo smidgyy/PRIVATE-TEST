@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AURORA OS v1.3</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400;1,700&family=JetBrains+Mono:wght@400;700&family=VT323&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
     .observer-log-content {
       background: #000;
       color: #0f0;
@@ -34,19 +34,51 @@
     }
 
     .vale-journal-content {
-      background: #fdf6e3;
-      color: #333;
-      font-family: 'Georgia', serif;
-      font-size: 16px;
+      background-color: #f4ecd8;
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        url("https://www.transparenttextures.com/patterns/old-paper.png");
+      color: #3d2b1f;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem;
       line-height: 1.6;
-      padding: 30px;
+      padding: 2.5rem;
       box-sizing: border-box;
       overflow-y: auto;
       text-align: left;
       min-height: 0;
+      box-shadow: inset 0 0 80px rgba(0,0,0,0.1);
+      border: 1px solid rgba(0,0,0,0.1);
+      position: relative;
     }
+
+    .vale-journal-content::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(135deg, rgba(0,0,0,0.03) 0%, transparent 50%, rgba(0,0,0,0.03) 100%);
+      pointer-events: none;
+    }
+
     .vale-journal-content p {
-      margin-bottom: 1em;
+      margin-bottom: 1.2rem;
+      position: relative;
+      z-index: 1;
+      text-indent: 1rem;
+    }
+
+    .journal-date {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 700;
+      font-style: italic;
+      font-size: 1.7rem;
+      color: #5d4037;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid rgba(93, 64, 55, 0.2);
+      padding-bottom: 0.5rem;
+      display: block;
+      position: relative;
+      z-index: 1;
     }
 
     :root {
@@ -717,12 +749,12 @@
 
     <div class="icon hidden" id="icon-observer" ondblclick="openWindow('observer-folder')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#0f0" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#0f0"/></svg>
-      <span>/system/observer/</span>
+      <span id="label-observer-folder">archive://dir/observer</span>
     </div>
 
     <div class="icon hidden" id="icon-vale" ondblclick="openWindow('vale-folder')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#f00"/></svg>
-      <span>/vale/</span>
+      <span id="label-vale-folder">archive://dir/vale</span>
     </div>
 
     <div class="icon" id="icon-messenger" ondblclick="openWindow('messenger')">
@@ -889,10 +921,8 @@
           <div class="control-btn" onclick="closeWindow('memory-scan-log')">X</div>
         </div>
       </div>
-      <div class="window-content" style="font-family: 'VT323', monospace; font-size: 1.2rem;">Memory block recovery successful.
-
-Recovered archive fragment:
-NODE_03</div>
+      <div class="window-content" id="content-memory-scan-log" style="font-family: 'VT323', monospace; font-size: 1.2rem;">
+      </div>
     </div>
 
     <!-- Archive Folder -->
@@ -917,7 +947,7 @@ NODE_03</div>
     <!-- Stage 4: Observer Folder -->
     <div class="window" id="win-observer-folder" style="top: 120px; left: 220px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-observer-folder')">
-        <div class="title-bar-text">/system/observer/</div>
+        <div class="title-bar-text" id="title-observer-folder">archive://dir/observer</div>
         <div class="title-bar-controls">
           <div class="control-btn" onclick="minimizeWindow('observer-folder')">_</div>
           <div class="control-btn" onclick="maximizeWindow('observer-folder')">□</div>
@@ -977,7 +1007,7 @@ NODE_03</div>
     <!-- Stage 4: Vale Folder -->
     <div class="window" id="win-vale-folder" style="top: 130px; left: 230px; width: 450px; height: 350px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-vale-folder')">
-        <div class="title-bar-text">/vale/</div>
+        <div class="title-bar-text" id="title-vale-folder">archive://dir/vale</div>
         <div class="title-bar-controls">
           <div class="control-btn" onclick="minimizeWindow('vale-folder')">_</div>
           <div class="control-btn" onclick="maximizeWindow('vale-folder')">□</div>
@@ -1063,161 +1093,177 @@ NODE_03</div>
 
     <div class="window" id="win-journal-day01" style="top: 150px; left: 250px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day01')">
-        <div class="title-bar-text" id="title-journal-day01">Day 01</div>
+        <div class="title-bar-text" id="title-journal-day01">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day01')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day01">
-        <p>Day 01: Started investigating the archive system. It's more complex than I thought. The architecture seems to have layers of hidden nodes.</p>
+        <div class="journal-date">Day 01</div>
+        <p>Started investigating the archive system. It's more complex than I thought. The architecture seems to have layers of hidden nodes.</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day02" style="top: 155px; left: 255px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day02')">
-        <div class="title-bar-text" id="title-journal-day02">Day 02</div>
+        <div class="title-bar-text" id="title-journal-day02">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day02')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day02">
-        <p>Day 02: Still digging. Found some weird logs in the system directory. They don't match standard Aurora OS protocols.</p>
+        <div class="journal-date">Day 02</div>
+        <p>Still digging. Found some weird logs in the system directory. They don't match standard Aurora OS protocols.</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day03" style="top: 160px; left: 260px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day03')">
-        <div class="title-bar-text" id="title-journal-day03">Day 03</div>
+        <div class="title-bar-text" id="title-journal-day03">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day03')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day03">
-        <p>Day 03: The system is fighting back. Every time I access a node, the encryption keys rotate. I need a more direct approach.</p>
+        <div class="journal-date">Day 03</div>
+        <p>The system is fighting back. Every time I access a node, the encryption keys rotate. I need a more direct approach.</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day04" style="top: 165px; left: 265px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day04')">
-        <div class="title-bar-text" id="title-journal-day04">Day 04</div>
+        <div class="title-bar-text" id="title-journal-day04">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day04')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day04">
-        <p>Day 04: Almost through the first layer. I've mapped out the initial node structure. Something is definitely hidden in the deeper fragments.</p>
+        <div class="journal-date">Day 04</div>
+        <p>Almost through the first layer. I've mapped out the initial node structure. Something is definitely hidden in the deeper fragments.</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day05" style="top: 170px; left: 270px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day05')">
-        <div class="title-bar-text" id="title-journal-day05">Day 05</div>
+        <div class="title-bar-text" id="title-journal-day05">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day05')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day05">
-        <p>Day 05: Noticed anomalies. Someone else was here before me. There are traces of a previous investigator, but their logs were scrubbed.</p>
+        <div class="journal-date">Day 05</div>
+        <p>Noticed anomalies. Someone else was here before me. There are traces of a previous investigator, but their logs were scrubbed.</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day06" style="top: 175px; left: 275px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day06')">
-        <div class="title-bar-text" id="title-journal-day06">Day 06</div>
+        <div class="title-bar-text" id="title-journal-day06">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day06')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day06">
-        <p>Day 06: References to other investigators in the system core. It's like the archive is a collection of people, not just data.</p>
+        <div class="journal-date">Day 06</div>
+        <p>References to other investigators in the system core. It's like the archive is a collection of people, not just data.</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day07" style="top: 180px; left: 280px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day07')">
-        <div class="title-bar-text" id="title-journal-day07">Day 07</div>
+        <div class="title-bar-text" id="title-journal-day07">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day07')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day07">
-        <p>Day 07: They are everywhere. The system logs are full of 'observer' events. Every action I take is being logged by something called the 'Archivist'.</p>
+        <div class="journal-date">Day 07</div>
+        <p>They are everywhere. The system logs are full of 'observer' events. Every action I take is being logged by something called the 'Archivist'.</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day08" style="top: 185px; left: 285px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day08')">
-        <div class="title-bar-text" id="title-journal-day08">Day 08</div>
+        <div class="title-bar-text" id="title-journal-day08">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day08')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day08">
-        <p>Day 08: I'm being watched. I can feel the latency. The system is analyzing my patterns. I need to find a way to communicate outside.</p>
+        <div class="journal-date">Day 08</div>
+        <p>I'm being watched. I can feel the latency. The system is analyzing my patterns. I need to find a way to communicate outside.</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day09" style="top: 190px; left: 290px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day09')">
-        <div class="title-bar-text" id="title-journal-day09">Day 09</div>
+        <div class="title-bar-text" id="title-journal-day09">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day09')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day09">
-        <p>Day 09: The anomalies are increasing. Fragments of deleted conversations are appearing in the terminal buffer. 'archivist404040'... who is that?</p>
+        <div class="journal-date">Day 09</div>
+        <p>The anomalies are increasing. Fragments of deleted conversations are appearing in the terminal buffer. 'archivist404040'... who is that?</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day10" style="top: 195px; left: 295px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day10')">
-        <div class="title-bar-text" id="title-journal-day10">Day 10</div>
+        <div class="title-bar-text" id="title-journal-day10">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day10')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day10">
-        <p>Day 10: I think I'm close. I've found a hidden forum route. It's locked behind a phrase. I need to find the right investigator's name.</p>
+        <div class="journal-date">Day 10</div>
+        <p>I think I'm close. I've found a hidden forum route. It's locked behind a phrase. I need to find the right investigator's name.</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day11" style="top: 200px; left: 300px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day11')">
-        <div class="title-bar-text" id="title-journal-day11">Day 11</div>
+        <div class="title-bar-text" id="title-journal-day11">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day11')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day11">
-        <p>Day 11: The archive is tracking me. Not just my actions, but my identity. It knows my name. It's building a profile.</p>
+        <div class="journal-date">Day 11</div>
+        <p>The archive is tracking me. Not just my actions, but my identity. It knows my name. It's building a profile.</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day12" style="top: 205px; left: 305px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day12')">
-        <div class="title-bar-text" id="title-journal-day12">Day 12</div>
+        <div class="title-bar-text" id="title-journal-day12">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day12')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day12">
-        <p>Day 12: I'm not the only one being tracked. There's a whole list of us. We're all part of the archive now. We're the data.</p>
+        <div class="journal-date">Day 12</div>
+        <p>I'm not the only one being tracked. There's a whole list of us. We're all part of the archive now. We're the data.</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day13" style="top: 210px; left: 310px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day13')">
-        <div class="title-bar-text" id="title-journal-day13">Day 13</div>
+        <div class="title-bar-text" id="title-journal-day13">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day13')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day13">
-        <p>Day 13: They know I'm here. The terminal is sending messages to me directly. 'Investigator Vale, your contribution is noted.'</p>
+        <div class="journal-date">Day 13</div>
+        <p>They know I'm here. The terminal is sending messages to me directly. 'Investigator Vale, your contribution is noted.'</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day14" style="top: 215px; left: 315px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day14')">
-        <div class="title-bar-text" id="title-journal-day14">Day 14</div>
+        <div class="title-bar-text" id="title-journal-day14">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day14')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day14">
-        <p>Day 14: I have to be careful. I've found a way to bypass the final security layer, but it requires an external code. I need to reach the Archivist.</p>
+        <div class="journal-date">Day 14</div>
+        <p>I have to be careful. I've found a way to bypass the final security layer, but it requires an external code. I need to reach the Archivist.</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day15" style="top: 220px; left: 320px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day15')">
-        <div class="title-bar-text" id="title-journal-day15">Day 15</div>
+        <div class="title-bar-text" id="title-journal-day15">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day15')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day15">
-        <p>Day 15: This is it. I've left a trace in the network logs. If anyone follows my path, they'll find the contact protocol.</p>
+        <div class="journal-date">Day 15</div>
+        <p>This is it. I've left a trace in the network logs. If anyone follows my path, they'll find the contact protocol.</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day16" style="top: 225px; left: 325px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day16')">
-        <div class="title-bar-text" id="title-journal-day16">Day 16</div>
+        <div class="title-bar-text" id="title-journal-day16">VALE INVESTIGATION LOG</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day16')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day16">
-        <p>Day 16: If you're reading this, search for 'archive vale'. The forum holds the final piece. Good luck, investigator.</p>
+        <div class="journal-date">Day 16</div>
+        <p>If anyone finds this... look me up in the archive. The forum holds the final piece. Good luck, investigator.</p>
       </div>
     </div>
 
@@ -1236,15 +1282,6 @@ NODE_03</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('network-trace')">X</div></div>
       </div>
       <div class="window-content" id="content-network-trace" style="background: #000; color: #0f0; font-family: monospace; padding: 10px; overflow-y: auto;">
-        <p>NETWORK TRACE LOG - NODE_04_OUTBOUND</p>
-        <p>------------------------------------</p>
-        <p>PACKET_ID: 0x8829</p>
-        <p>SOURCE: INTERNAL_NODE_04</p>
-        <p>DESTINATION: EXTERNAL_ARCHIVIST_RELAY</p>
-        <p>PAYLOAD (HEX):</p>
-        <p style="word-break: break-all; color: #0f0;">43 4f 4e 54 41 43 54 20 41 52 43 48 49 56 49 53 54 20 46 4f 52 20 43 4f 44 45 3a 20 38 34 30 32 39 31</p>
-        <p>------------------------------------</p>
-        <p>TRACE COMPLETE.</p>
       </div>
     </div>
 
@@ -1705,11 +1742,11 @@ fragment remains</div>
       'memory-game': 'Memory Blocks',
       'messenger': 'Messenger',
       'music-player': 'Music Player',
-      'observer-folder': '/system/observer/',
+      'observer-folder': 'archive://dir/observer',
       'observer-log-01': 'observer_log_01.sys',
       'observer-log-02': 'observer_log_02.sys',
       'observer-log-03': 'observer_log_03.sys',
-      'vale-folder': '/vale/',
+      'vale-folder': 'archive://dir/vale',
       'journal-day01': 'journal_day01.log',
       'journal-day03': 'journal_day03.log',
       'journal-day05': 'journal_day05.log',
@@ -1755,31 +1792,49 @@ fragment remains</div>
       } else if (id === 'observer-log-03') {
         typeWriterEffect(document.getElementById('content-observer-log-03'), atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxODo0NDxicj5BcmNoaXZlIGludGVncml0eSBjb21wcm9taXNlZC48YnI+PGJyPkZyYWdtZW50OiBhcmNoaXZl'), 30);
       } else if (id === 'journal-day01') {
-        document.getElementById('title-journal-day01').innerText = atob('VkFMRSBJTlZFU1RJR0FUSU9OIExPRw==');
-        document.getElementById('content-journal-day01').innerHTML = atob('RGF5IDE8YnI+PGJyPkkgc3RhcnRlZCBpbnZlc3RpZ2F0aW5nIHRoZSBBcmNoaXZlIHN5c3RlbSB0b2RheS48YnI+PGJyPkF0IGZpcnN0IGl0IGxvb2tlZCBsaWtlIGEgbm9ybWFsIHN0b3JhZ2UgaW5kZXguPGJyPjxicj5CdXQgdGhlIGRlZXBlciBub2RlcyBiZWhhdmUgc3RyYW5nZWx5Ljxicj48YnI+Tm9kZTAzIHJlcXVpcmVkIG11bHRpcGxlIGVuY29kaW5nIGxheWVycy48YnI+PGJyPlNvbWVvbmUgaW50ZW50aW9uYWxseSBoaWQgdGhlIGludGVybmFsIHN0cnVjdHVyZS4=');
+        document.getElementById('title-journal-day01').innerText = 'VALE INVESTIGATION LOG';
+        document.getElementById('content-journal-day01').innerHTML = '<div class="journal-date">Day 01</div><p>Started investigating the archive system today. It\'s more complex than I thought. The architecture seems to have layers of hidden nodes.</p><p>Node 03 required multiple encoding layers. Someone intentionally hid the internal structure.</p>';
       } else if (id === 'journal-day03') {
-        document.getElementById('title-journal-day03').innerText = atob('VkFMRSBJTlZFU1RJR0FUSU9OIExPRw==');
-        document.getElementById('content-journal-day03').innerHTML = atob('RGF5IDM8YnI+PGJyPlRoZXJlIGFyZSByZWZlcmVuY2VzIHRvIHNvbWV0aGluZyBjYWxsZWQgIlN1YmplY3RzIi48YnI+PGJyPkEgc3RvcmFnZSBzeXN0ZW0gc2hvdWxkIG5vdCB0cmFjayBzdWJqZWN0cy48YnI+PGJyPlNvbWV0aGluZyBhYm91dCB0aGlzIEFyY2hpdmUgZmVlbHMgd3Jvbmcu');
+        document.getElementById('title-journal-day03').innerText = 'VALE INVESTIGATION LOG';
+        document.getElementById('content-journal-day03').innerHTML = '<div class="journal-date">Day 03</div><p>There are references to something called "Subjects". A storage system should not track subjects.</p><p>Something about this Archive feels wrong. The system is fighting back. Every time I access a node, the encryption keys rotate.</p>';
       } else if (id === 'journal-day05') {
-        document.getElementById('title-journal-day05').innerText = atob('VkFMRSBJTlZFU1RJR0FUSU9OIExPRw==');
-        document.getElementById('content-journal-day05').innerHTML = atob('RGF5IDU8YnI+PGJyPk5vZGUwNCBpcyBoZWF2aWx5IHJlc3RyaWN0ZWQuPGJyPjxicj5XaGF0ZXZlciBpcyBzdG9yZWQgdGhlcmUgaXMgY2xlYXJseSBpbXBvcnRhbnQu');
+        document.getElementById('title-journal-day05').innerText = 'VALE INVESTIGATION LOG';
+        document.getElementById('content-journal-day05').innerHTML = '<div class="journal-date">Day 05</div><p>Noticed anomalies. Someone else was here before me. There are traces of a previous investigator, but their logs were scrubbed.</p><p>Node 04 is heavily restricted. Whatever is stored there is clearly important.</p>';
       } else if (id === 'journal-day09') {
-        document.getElementById('title-journal-day09').innerText = atob('VkFMRSBJTlZFU1RJR0FUSU9OIExPRw==');
-        document.getElementById('content-journal-day09').innerHTML = atob('RGF5IDk8YnI+PGJyPlNvbWV0aGluZyBpbnNpZGUgdGhlIHN5c3RlbSBub3RpY2VkIG1lLjxicj48YnI+TmV3IGxvZyBmaWxlcyBhcHBlYXJlZCBhdXRvbWF0aWNhbGx5Ljxicj48YnI+VGhlIEFyY2hpdmUgbWlnaHQgYmUgbW9uaXRvcmluZyBpbnZlc3RpZ2F0b3JzLg==');
+        document.getElementById('title-journal-day09').innerText = 'VALE INVESTIGATION LOG';
+        document.getElementById('content-journal-day09').innerHTML = '<div class="journal-date">Day 09</div><p>The anomalies are increasing. Fragments of deleted conversations are appearing in the terminal buffer. \'archivist404040\'... who is that?</p><p>Something inside the system noticed me. New log files appeared automatically. The Archive might be monitoring investigators.</p>';
       } else if (id === 'journal-day12') {
-        document.getElementById('title-journal-day12').innerText = atob('VkFMRSBJTlZFU1RJR0FUSU9OIExPRw==');
-        document.getElementById('content-journal-day12').innerHTML = atob('RGF5IDEyPGJyPjxicj5UaGUgbG9ncyBub3cgcmVmZXJlbmNlIG15IG5hbWUuPGJyPjxicj5JIG5ldmVyIGVudGVyZWQgaXQgYW55d2hlcmUuPGJyPjxicj5UaGUgc3lzdGVtIHNob3VsZG4ndCBrbm93IHdobyBJIGFtLg==');
+        document.getElementById('title-journal-day12').innerText = 'VALE INVESTIGATION LOG';
+        document.getElementById('content-journal-day12').innerHTML = '<div class="journal-date">Day 12</div><p>The logs now reference my name. I never entered it anywhere. The system shouldn\'t know who I am.</p><p>I\'m not the only one being tracked. There\'s a whole list of us. We\'re all part of the archive now. We\'re the data.</p>';
       } else if (id === 'journal-day16') {
-        document.getElementById('title-journal-day16').innerText = atob('VkFMRSBJTlZFU1RJR0FUSU9OIExPRw==');
-        document.getElementById('content-journal-day16').innerHTML = atob('RGF5IDE2PGJyPjxicj5UaGUgQXJjaGl2ZSBpc24ndCBzdG9yYWdlLjxicj48YnI+SXQncyBhbiBvYnNlcnZlci48YnI+PGJyPkludmVzdGlnYXRvcnMgd2hvIGdvIHRvbyBkZWVwIGJlY29tZSBlbnRyaWVzLg==');
+        document.getElementById('title-journal-day16').innerText = 'VALE INVESTIGATION LOG';
+        document.getElementById('content-journal-day16').innerHTML = '<div class="journal-date">Day 16</div><p>The Archive isn\'t storage. It\'s an observer. Investigators who go too deep become entries.</p><p>If anyone finds this... look me up in the archive. The forum holds the final piece. Good luck, investigator.</p>';
       } else if (id === 'terminal-dump') {
         document.getElementById('content-terminal-dump').innerHTML = atob('W1NZU10gQ09OTkVDVElPTiBURVJNSU5BVEVEPGJyPltTWVNdIEZPUkNFRCBESVNDT05ORUNUPGJyPltTWVNdIEFSQ0hJVkUgTE9DSyBJTklUSUFURUQ=');
       } else if (id === 'network-trace') {
-        document.getElementById('content-network-trace').innerHTML = atob('VFJBQ0UgUk9VVEU6PGJyPjxicj42MTcyNjM2ODY5NzY2NTNBMkYyRjY2NkY3MjE1NkQ=');
+        document.getElementById('content-network-trace').innerHTML = atob('VFJBQ0UgUk9VVEU6PGJyPjxicj42MTcyNjM2ODY5NzY2NTNBMkYyRjY2NkY3MjE1NkQ=') + '<br><br>' + atob('TkVUV09SSyBUUkFDRSBMT0cgLSBOT0RFXzA0X09VVEJPVU5EPGJyPi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLTxicj5QQUNLRVRfSUQ6IDB4ODgyOTxicj5TT1VSQ0U6IElOVEVSTkFMX05PREVfMDQ8YnI+REVTVElOQVRJT046IEVYVEVSTkFMX0FSQ0hJVklTVF9SRUxBWTxicj5QQVlMT0FEIChIRVgpOjxicj40MyA0ZiA0ZSA1NCA0MSA0MyA1NCAyMCA0MSA1MiA0MyA0OCA0OSA1NiA0OSA1MyA1NCAyMCA0NiA0ZiA1MiAyMCA0MyA0ZiA0NCA0NSAzYSAyMCAzOCAzNCAzMCAzMiAzOSAzMTxicj4tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS08YnI+VFJBQ0UgQ09NUExFVEUu');
+      } else if (id === 'memory-scan-log') {
+        document.getElementById('content-memory-scan-log').innerHTML = 'Memory block recovery successful.<br><br>Recovered archive fragment:<br>' + atob('Tk9ERV8wMw==');
+      } else if (id === 'resonance') {
+        document.getElementById('title-resonance').innerText = atob('Tk9ERV8wMw==');
       }
     }
 
     function openWindow(id) {
+      // Progression Validation
+      if (id === 'observer-folder' && getStage4Progress() < 1) {
+        printTerminal("Access denied: Node authentication required.");
+        return;
+      }
+      if (id === 'vale-folder' && getStage4Progress() < 2) {
+        printTerminal("Access denied: Directory encrypted.");
+        return;
+      }
+      if (id === 'resonance' && !localStorage.getItem('aurora_stage1_complete')) {
+        printTerminal("Access denied: Signal alignment required.");
+        return;
+      }
+
       const win = document.getElementById('win-' + id);
       if (!win) return;
       
@@ -2648,7 +2703,7 @@ fragment remains</div>
       let targetUrl = url;
       if (url === 'http://archive.local/' + 'stage' + '2.html') {
         targetUrl = 'archive://node/02';
-      } else if (url === 'archive.local/node03/secret' || url === 'http://archive.local/node03/secret') {
+      } else if (url === 'archive.local/' + atob('bm9kZTAzL3NlY3JldA==') || url === 'http://archive.local/' + atob('bm9kZTAzL3NlY3JldA==')) {
         targetUrl = 'archive://node/03/secret';
       }
       
@@ -2660,7 +2715,7 @@ fragment remains</div>
         if (spinner) spinner.style.display = 'none';
         if (page) {
           page.style.opacity = '1';
-          if (targetUrl === 'archive://node/02' || targetUrl === 'archive://node02/resonance.html' || targetUrl === 'archive://node/02/resonance.html' || targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://node03/secret' || targetUrl === 'archive://node/04' || targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt') || targetUrl === atob('YXJjaGl2ZTovL3JlY29yZHM=')) {
+          if (targetUrl === 'archive://node/02' || targetUrl === 'archive://node02/resonance.html' || targetUrl === 'archive://node/02/resonance.html' || targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://' + atob('bm9kZTAzL3NlY3JldA==') || targetUrl === 'archive://node/04' || targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt') || targetUrl === atob('YXJjaGl2ZTovL3JlY29yZHM=')) {
             page.innerHTML = '';
             page.style.padding = '0';
             page.style.position = 'relative';
@@ -2678,7 +2733,7 @@ fragment remains</div>
             } else if (targetUrl === 'archive://node02/resonance.html' || targetUrl === 'archive://node/02/resonance.html') {
               if (localStorage.getItem('aurora_stage1_complete')) unlocked = true;
               fetchPath = 'resonance.html';
-            } else if (targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://node03/secret') {
+            } else if (targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://' + atob('bm9kZTAzL3NlY3JldA==')) {
               try {
                 const t = localStorage.getItem('aurora_stage3_token1');
                 if (t && atob(t) === 'true|AURORA_OS_SECRET') unlocked = true;
@@ -2888,7 +2943,7 @@ fragment remains</div>
           break;
         case 'log':
           printTerminal("System Log:");
-          printTerminal("[WARN] Unauthorized access attempt on node 03.");
+          printTerminal("[WARN] Unauthorized access attempt on " + atob('bm9kZSAwMw==') + ".");
           printTerminal("[ERR]  Archive connection lost.");
           printTerminal("[INFO] User 'vale_a' initiated backup sequence.");
           break;
@@ -2929,7 +2984,7 @@ fragment remains</div>
             printTerminal("Bad command or file name.");
           }
           break;
-        case 'archive':
+        case [atob('YXJj'), atob('aGl2'), atob('ZQ==')].join(''):
           if (args.length > 1 && args[1] === atob('dmFsZQ==') && getStage4Progress() >= 2) {
             printTerminal("Verifying key...");
             setTimeout(() => {
