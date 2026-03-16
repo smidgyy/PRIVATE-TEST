@@ -308,6 +308,64 @@ class SoundManager {
     this.droneGain.connect(this.audioCtx.destination);
   }
 
+  playBootSound() {
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    
+    const osc1 = this.audioCtx.createOscillator();
+    const gain1 = this.audioCtx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(100, this.audioCtx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(200, this.audioCtx.currentTime + 1);
+    gain1.gain.setValueAtTime(0, this.audioCtx.currentTime);
+    gain1.gain.linearRampToValueAtTime(0.1, this.audioCtx.currentTime + 0.1);
+    gain1.gain.linearRampToValueAtTime(0, this.audioCtx.currentTime + 1);
+    osc1.connect(gain1);
+    gain1.connect(this.audioCtx.destination);
+    osc1.start();
+    osc1.stop(this.audioCtx.currentTime + 1);
+
+    const playPing = (freq, startTime) => {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime + startTime);
+      gain.gain.setValueAtTime(0, this.audioCtx.currentTime + startTime);
+      gain.gain.linearRampToValueAtTime(0.1, this.audioCtx.currentTime + startTime + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + startTime + 0.5);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start(this.audioCtx.currentTime + startTime);
+      osc.stop(this.audioCtx.currentTime + startTime + 0.5);
+    };
+
+    playPing(400, 0.5);
+    playPing(600, 0.7);
+    playPing(800, 0.9);
+  }
+
+  playCrashSound() {
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    const bufferSize = this.audioCtx.sampleRate * 0.5;
+    const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize / 5));
+    }
+    const noise = this.audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = this.audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1000, this.audioCtx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(100, this.audioCtx.currentTime + 0.5);
+    const gain = this.audioCtx.createGain();
+    gain.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.5);
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    noise.start();
+  }
+
   resume() {
     if (this.audioCtx && this.audioCtx.state === 'suspended') {
       this.audioCtx.resume();

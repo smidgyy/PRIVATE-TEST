@@ -1664,8 +1664,9 @@ fragment remains</div>
     }
 
     function playBootSound() {
-      const bootAudio = new Audio('sounds/boot.wav');
-      bootAudio.play().catch(e => console.error("Audio play failed:", e));
+      if (window.soundManager) {
+        window.soundManager.playBootSound();
+      }
     }
 
     document.getElementById('boot-start-btn').addEventListener('click', () => {
@@ -2514,11 +2515,11 @@ fragment remains</div>
 
     // --- Browser ---
     function triggerCrash() {
-      if (window.soundManager) window.soundManager.playError();
+      if (window.soundManager) {
+        window.soundManager.playError();
+        window.soundManager.playCrashSound();
+      }
       document.body.classList.add('glitching');
-      
-      const crashAudio = new Audio('sounds/crash.wav');
-      crashAudio.play().catch(e => console.error("Audio play failed:", e));
 
       setTimeout(() => {
         document.body.classList.remove('glitching');
