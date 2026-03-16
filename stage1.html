@@ -909,7 +909,7 @@ NODE_03</div>
           <div class="control-btn" onclick="closeWindow('observer-folder')">X</div>
         </div>
       </div>
-      <div class="window-content explorer" style="padding: 20px; padding-bottom: 25px; gap: 20px;">
+      <div class="window-content explorer" style="padding: 20px; padding-bottom: 25px; gap: 20px; display: flex; flex-wrap: wrap;">
         <div class="icon" style="position: relative; top: 0; left: 0; height: 120px;" ondblclick="openWindow('observer-log-01')" title="Type: System Log">
           <svg class="icon-img" style="margin-bottom: 10px;" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
           <span style="color:#000; background:transparent; margin-top: 10px;">observer_log_01.sys</span>
@@ -969,7 +969,7 @@ NODE_03</div>
           <div class="control-btn" onclick="closeWindow('vale-folder')">X</div>
         </div>
       </div>
-      <div class="window-content explorer" style="padding-bottom: 25px;">
+      <div class="window-content explorer" style="padding-bottom: 25px; display: flex; flex-wrap: wrap;">
         <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('journal-day01')">
           <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
           <span style="color:#000; background:transparent;">journal_day01.log</span>
@@ -2595,7 +2595,7 @@ fragment remains</div>
         if (spinner) spinner.style.display = 'none';
         if (page) {
           page.style.opacity = '1';
-          if (targetUrl === 'archive://node/02' || targetUrl === 'archive://node02/resonance.html' || targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://node03/secret' || targetUrl === 'archive://node/04' || targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt') || targetUrl === atob('YXJjaGl2ZTovL3JlY29yZHM=')) {
+          if (targetUrl === 'archive://node/02' || targetUrl === 'archive://node02/resonance.html' || targetUrl === 'archive://node/02/resonance.html' || targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://node03/secret' || targetUrl === 'archive://node/04' || targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt') || targetUrl === atob('YXJjaGl2ZTovL3JlY29yZHM=')) {
             page.innerHTML = '';
             page.style.padding = '0';
             page.style.position = 'relative';
@@ -2610,7 +2610,7 @@ fragment remains</div>
             if (targetUrl === 'archive://node/02') {
               if (localStorage.getItem('aurora_stage1_complete')) unlocked = true;
               fetchPath = 'stage' + '2.html';
-            } else if (targetUrl === 'archive://node02/resonance.html') {
+            } else if (targetUrl === 'archive://node02/resonance.html' || targetUrl === 'archive://node/02/resonance.html') {
               if (localStorage.getItem('aurora_stage1_complete')) unlocked = true;
               fetchPath = 'resonance.html';
             } else if (targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://node03/secret') {
