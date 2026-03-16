@@ -1409,9 +1409,9 @@ fragment remains</div>
         </div>
         <div style="display: flex; justify-content: space-between; font-family: 'VT323', monospace; font-size: 18px; margin-top: 5px; color: #0f0; text-shadow: 0 0 5px #0f0;">
           <span id="audio-time-current">00:00</span>
-          <span id="audio-time-total">00:16</span>
+          <span id="audio-time-total">00:30</span>
         </div>
-        <input type="range" id="audio-progress-slider" min="0" max="16.3" step="0.1" value="0" style="width: 100%; margin: 5px 0; pointer-events: none; accent-color: #0f0;">
+        <input type="range" id="audio-progress-slider" min="0" max="30.0" step="0.1" value="0" style="width: 100%; margin: 5px 0; pointer-events: auto; accent-color: #0f0;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <button id="play-audio-btn" onclick="toggleAudioLog()" style="background: #c0c0c0; color: #000; border: 2px outset #fff; padding: 4px 12px; font-weight: bold; cursor: pointer; box-shadow: 1px 1px 2px rgba(0,0,0,0.5);">PLAY</button>
           <div style="display: flex; align-items: center;">
@@ -2267,7 +2267,7 @@ fragment remains</div>
     let visualizerInterval;
     let progressInterval;
     let audioCurrentTime = 0;
-    const audioTotalTime = 16.3; // seconds
+    const audioTotalTime = 30.0; // seconds
     let audioStartTime = 0;
     let masterGain = null;
 
@@ -2287,8 +2287,10 @@ fragment remains</div>
       const symbolSpace = dotDuration;
       const letterSpace = dotDuration * 3;
       
-      const morseDict = { 'C': '-.-.', 'R': '.-.', 'O': '---', 'W': '.--', 'N': '-.' };
-      const text = "CROWN";
+      const morseDict = { 
+        'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.', 'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..', 'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.', 'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-', 'Y': '-.--', 'Z': '--..' 
+      };
+      const text = "THE ARCHIVE REMEMBERS";
       
       let time = 1.0;
       const freq = 750;
