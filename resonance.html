@@ -179,7 +179,7 @@ if (window === window.top) {
 
   <script src="/sound-manager.js"></script>
   <script>
-    // Audio and Visualizer Logic
+    // Visualizer Logic
     const NUM_BARS = 128;
     const visualizer = document.getElementById('visualizer');
     const bars = [];
@@ -191,48 +191,8 @@ if (window === window.top) {
       bars.push(bar);
     }
 
-    let audioCtx;
-    let droneOsc;
-    let droneGain;
-    let initialized = false;
-
-    function initAudio() {
-      if (initialized) return;
-      initialized = true;
-      
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      audioCtx = (window.soundManager && window.soundManager.audioCtx) || new AudioContext();
-      
-      droneOsc = audioCtx.createOscillator();
-      droneGain = audioCtx.createGain();
-      
-      droneOsc.type = 'sine';
-      droneOsc.frequency.value = 432; 
-      
-      droneGain.gain.value = 0;
-      droneGain.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 2);
-      
-      droneOsc.connect(droneGain);
-      droneGain.connect(audioCtx.destination);
-      
-      droneOsc.start();
-      
-      const lfo = audioCtx.createOscillator();
-      const lfoGain = audioCtx.createGain();
-      lfo.type = 'sine';
-      lfo.frequency.value = 0.2;
-      lfoGain.gain.value = 3;
-      lfo.connect(lfoGain);
-      lfoGain.connect(droneOsc.frequency);
-      lfo.start();
-
-      animateVisualizer();
-    }
-
     function animateVisualizer() {
-      if (!initialized) return;
-      
-      const time = audioCtx.currentTime;
+      const time = Date.now() / 1000;
       bars.forEach((bar, i) => {
         const height = 5 + Math.abs(Math.sin(time * 1.5 + i * 0.1)) * 60 + Math.random() * 5;
         bar.style.height = height + '%';
@@ -242,8 +202,7 @@ if (window === window.top) {
       requestAnimationFrame(animateVisualizer);
     }
 
-    document.body.addEventListener('click', initAudio, { once: true });
-    document.body.addEventListener('keydown', initAudio, { once: true });
+    animateVisualizer();
   </script>
 </body>
 </html>

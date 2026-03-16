@@ -291,21 +291,41 @@ class SoundManager {
     if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
     if (this.droneOscs) return;
     this.droneOscs = [];
-    const freqs = [110, 164.81, 220, 329.63];
+    // Softer, more ethereal frequencies (E minor 9th feel)
+    const freqs = [164.81, 246.94, 329.63, 493.88, 659.25];
+    
     this.droneGain = this.audioCtx.createGain();
     this.droneGain.gain.setValueAtTime(0, this.audioCtx.currentTime);
-    this.droneGain.gain.linearRampToValueAtTime(0.05, this.audioCtx.currentTime + 3);
+    this.droneGain.gain.linearRampToValueAtTime(0.03, this.audioCtx.currentTime + 5); // Softer volume, slower ramp
     
-    freqs.forEach(f => {
+    const filter = this.audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(800, this.audioCtx.currentTime);
+    filter.Q.value = 1;
+
+    freqs.forEach((f, i) => {
       const osc = this.audioCtx.createOscillator();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(f, this.audioCtx.currentTime);
+      
+      // Add subtle movement
+      const lfo = this.audioCtx.createOscillator();
+      const lfoGain = this.audioCtx.createGain();
+      lfo.type = 'sine';
+      lfo.frequency.value = 0.1 + (i * 0.05);
+      lfoGain.gain.value = 2;
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc.frequency);
+      lfo.start();
+      
       osc.connect(this.droneGain);
       osc.start();
       this.droneOscs.push(osc);
+      this.droneOscs.push(lfo); // Track LFOs for cleanup if needed
     });
     
-    this.droneGain.connect(this.audioCtx.destination);
+    this.droneGain.connect(filter);
+    filter.connect(this.audioCtx.destination);
   }
 
   playBootSound() {
