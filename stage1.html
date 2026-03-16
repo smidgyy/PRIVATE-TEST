@@ -7,16 +7,17 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
     .observer-log-content {
-      background: #050505;
+      background: #000;
       color: #0f0;
       font-family: 'VT323', monospace, 'Courier New';
-      font-size: 16px;
-      line-height: 1.5;
-      padding: 20px;
+      font-size: 18px;
+      line-height: 1.6;
+      padding: 25px;
       box-sizing: border-box;
       overflow-y: auto;
       height: 100%;
       position: relative;
+      text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
     }
     .observer-log-content::before {
       content: " ";
@@ -26,9 +27,9 @@
       left: 0;
       bottom: 0;
       right: 0;
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      background: linear-gradient(rgba(0, 255, 0, 0.02) 50%, rgba(0, 0, 0, 0.2) 50%);
       z-index: 2;
-      background-size: 100% 2px, 3px 100%;
+      background-size: 100% 4px;
       pointer-events: none;
     }
 
@@ -629,11 +630,16 @@
       position: relative !important;
       top: auto !important;
       left: auto !important;
-      margin: 10px;
-      width: 100px;
-      height: 100px;
+      margin: 15px;
+      width: 120px;
+      height: 120px;
       border: 1px dotted transparent;
       border-radius: 2px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
     }
 
     .window-content.explorer .icon:hover {
@@ -919,17 +925,17 @@ NODE_03</div>
         </div>
       </div>
       <div class="window-content explorer">
-        <div class="icon" style="position: relative; top: 0; left: 0; height: 120px;" ondblclick="openWindow('observer-log-01')" title="Type: System Log">
-          <svg class="icon-img" style="margin-bottom: 10px;" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
-          <span style="color:#000; background:transparent; margin-top: 10px;">observer_log_01.sys</span>
+        <div class="icon" ondblclick="openWindow('observer-log-01')" title="Type: System Log">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">observer_log_01.sys</span>
         </div>
-        <div class="icon" style="position: relative; top: 0; left: 0; height: 120px;" ondblclick="openWindow('observer-log-02')" title="Type: System Log">
-          <svg class="icon-img" style="margin-bottom: 10px;" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
-          <span style="color:#000; background:transparent; margin-top: 10px;">observer_log_02.sys</span>
+        <div class="icon" ondblclick="openWindow('observer-log-02')" title="Type: System Log">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">observer_log_02.sys</span>
         </div>
-        <div class="icon" style="position: relative; top: 0; left: 0; height: 120px;" ondblclick="openWindow('observer-log-03')" title="Type: System Log">
-          <svg class="icon-img" style="margin-bottom: 10px;" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
-          <span style="color:#000; background:transparent; margin-top: 10px;">observer_log_03.sys</span>
+        <div class="icon" ondblclick="openWindow('observer-log-03')" title="Type: System Log">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">observer_log_03.sys</span>
         </div>
       </div>
       <div class="explorer-status">3 object(s)</div>
