@@ -159,8 +159,8 @@
     }
 
     .icon {
-      width: 80px;
-      height: 90px;
+      width: 100px;
+      height: 100px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -196,6 +196,10 @@
       font-size: 0.8rem;
       text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
       border: 1px dotted transparent;
+      max-width: 100%;
+      word-wrap: break-word;
+      display: block;
+      line-height: 1.2;
     }
 
     .icon.selected span {
@@ -1644,8 +1648,8 @@ fragment remains</div>
       const icons = Array.from(document.querySelectorAll('#desktop > .icon:not(.hidden)'));
       let startX = 10;
       let startY = 10;
-      const iconWidth = 90;
-      const iconHeight = 100;
+      const iconWidth = 110;
+      const iconHeight = 110;
       
       icons.forEach(icon => {
         icon.style.left = startX + 'px';
@@ -3364,14 +3368,13 @@ fragment remains</div>
             const icon = document.createElement('div');
             icon.className = 'icon';
             icon.id = 'icon-system-logs';
-            icon.style.top = '20px';
-            icon.style.left = '220px';
             icon.ondblclick = () => openWindow('system-logs');
             icon.addEventListener('mousedown', (e) => {
               dragElement(e, icon);
             });
             icon.innerHTML = `<svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#ffcc00" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#ffcc00"/></svg><span>System Logs</span>`;
             desk.appendChild(icon);
+            arrangeIcons();
           }
         }
       } else {
