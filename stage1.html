@@ -1531,7 +1531,7 @@ fragment remains</div>
     <!-- Music Player -->
     <div class="window" id="win-music-player" style="width: 300px; height: 250px;">
       <audio id="local-audio-player" style="display: none;"></audio>
-      <audio id="stage4-ambient" src="stage4_ambience.mp3" loop style="display: none;"></audio>
+      <audio id="stage4-ambient" loop style="display: none;"></audio>
       <div class="title-bar">
         <div class="title-bar-text">WinAmp Classic</div>
         <div class="title-bar-controls">
@@ -1595,7 +1595,7 @@ fragment remains</div>
 
   </div>
 
-  <script src="sound-manager.js"></script>
+  <script src="/sound-manager.js"></script>
   <script>
     function arrangeIcons() {
       const icons = Array.from(document.querySelectorAll('#desktop > .icon:not(.hidden)'));
