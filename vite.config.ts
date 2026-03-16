@@ -33,6 +33,7 @@ export default defineConfig(({mode}) => {
           node04_index: path.resolve(__dirname, 'node04/index.html'),
           article: path.resolve(__dirname, 'article.html'),
           resonance: path.resolve(__dirname, 'resonance.html'),
+          archive_index: path.resolve(__dirname, 'archive/index.html'),
         },
       },
     },
