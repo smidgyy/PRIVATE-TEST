@@ -1,42 +1,85 @@
 class SoundManager {
   constructor() {
-    this.sounds = {
-      glitch: new Audio('sounds/glitch.wav'),
-      typing: new Audio('sounds/typing.wav'),
-      notification: new Audio('sounds/notification.wav'),
-      warning: new Audio('sounds/warning.wav'),
-      unlock: new Audio('sounds/unlock.wav')
-    };
-    
-    // Preload sounds
-    Object.values(this.sounds).forEach(audio => {
-      audio.load();
-    });
+    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
 
   playKeystroke() {
-    this.sounds.typing.currentTime = 0;
-    this.sounds.typing.play().catch(e => console.error("Audio play failed:", e));
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(150 + Math.random() * 50, this.audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(50, this.audioCtx.currentTime + 0.05);
+    gain.gain.setValueAtTime(0.05, this.audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.05);
+    osc.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    osc.start();
+    osc.stop(this.audioCtx.currentTime + 0.05);
   }
 
   playError() {
-    this.sounds.warning.currentTime = 0;
-    this.sounds.warning.play().catch(e => console.error("Audio play failed:", e));
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, this.audioCtx.currentTime);
+    osc.frequency.linearRampToValueAtTime(100, this.audioCtx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.2);
+    osc.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    osc.start();
+    osc.stop(this.audioCtx.currentTime + 0.2);
   }
 
   playSuccess() {
-    this.sounds.unlock.currentTime = 0;
-    this.sounds.unlock.play().catch(e => console.error("Audio play failed:", e));
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, this.audioCtx.currentTime);
+    osc.frequency.setValueAtTime(600, this.audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0, this.audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.1, this.audioCtx.currentTime + 0.05);
+    gain.gain.linearRampToValueAtTime(0, this.audioCtx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    osc.start();
+    osc.stop(this.audioCtx.currentTime + 0.3);
   }
 
   playPing() {
-    this.sounds.notification.currentTime = 0;
-    this.sounds.notification.play().catch(e => console.error("Audio play failed:", e));
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
+    gain.gain.setValueAtTime(0, this.audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.1, this.audioCtx.currentTime + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.5);
+    osc.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    osc.start();
+    osc.stop(this.audioCtx.currentTime + 0.5);
   }
 
   playGlitch() {
-    this.sounds.glitch.currentTime = 0;
-    this.sounds.glitch.play().catch(e => console.error("Audio play failed:", e));
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    const bufferSize = this.audioCtx.sampleRate * 0.2;
+    const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const noise = this.audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    const gain = this.audioCtx.createGain();
+    gain.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.2);
+    noise.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    noise.start();
   }
 
   playHover() {}
@@ -48,7 +91,19 @@ class SoundManager {
   startFireCrackling() {}
   stopFireCrackling() {}
   playDissolve() {}
-  startBlackFire() {}
+  startBlackFire() {
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    if (this.blackFireOsc) return;
+    this.blackFireOsc = this.audioCtx.createOscillator();
+    this.blackFireGain = this.audioCtx.createGain();
+    this.blackFireOsc.type = 'sine';
+    this.blackFireOsc.frequency.setValueAtTime(50, this.audioCtx.currentTime);
+    this.blackFireGain.gain.setValueAtTime(0, this.audioCtx.currentTime);
+    this.blackFireGain.gain.linearRampToValueAtTime(0.2, this.audioCtx.currentTime + 5);
+    this.blackFireOsc.connect(this.blackFireGain);
+    this.blackFireGain.connect(this.audioCtx.destination);
+    this.blackFireOsc.start();
+  }
 }
 
 window.soundManager = new SoundManager();

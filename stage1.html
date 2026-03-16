@@ -33,17 +33,16 @@
     }
 
     .vale-journal-content {
-      background: #f4ecd8;
-      color: #2c2c2c;
-      font-family: 'Georgia', 'Times New Roman', serif;
+      background: #fdf6e3;
+      color: #333;
+      font-family: 'Georgia', serif;
       font-size: 16px;
-      line-height: 1.8;
-      padding: 30px 40px;
+      line-height: 1.6;
+      padding: 30px;
       box-sizing: border-box;
       overflow-y: auto;
-      height: 100%;
-      box-shadow: inset 0 0 50px rgba(0,0,0,0.1);
-      text-align: center;
+      text-align: left;
+      min-height: 0;
     }
     .vale-journal-content p {
       margin-bottom: 1em;
@@ -910,18 +909,18 @@ NODE_03</div>
           <div class="control-btn" onclick="closeWindow('observer-folder')">X</div>
         </div>
       </div>
-      <div class="window-content explorer" style="padding-bottom: 25px;">
-        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('observer-log-01')" title="Type: System Log">
-          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
-          <span style="color:#000; background:transparent;">observer_log_01.sys</span>
+      <div class="window-content explorer" style="padding: 20px; padding-bottom: 25px; gap: 20px;">
+        <div class="icon" style="position: relative; top: 0; left: 0; height: 120px;" ondblclick="openWindow('observer-log-01')" title="Type: System Log">
+          <svg class="icon-img" style="margin-bottom: 10px;" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent; margin-top: 10px;">observer_log_01.sys</span>
         </div>
-        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('observer-log-02')" title="Type: System Log">
-          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
-          <span style="color:#000; background:transparent;">observer_log_02.sys</span>
+        <div class="icon" style="position: relative; top: 0; left: 0; height: 120px;" ondblclick="openWindow('observer-log-02')" title="Type: System Log">
+          <svg class="icon-img" style="margin-bottom: 10px;" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent; margin-top: 10px;">observer_log_02.sys</span>
         </div>
-        <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('observer-log-03')" title="Type: System Log">
-          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
-          <span style="color:#000; background:transparent;">observer_log_03.sys</span>
+        <div class="icon" style="position: relative; top: 0; left: 0; height: 120px;" ondblclick="openWindow('observer-log-03')" title="Type: System Log">
+          <svg class="icon-img" style="margin-bottom: 10px;" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent; margin-top: 10px;">observer_log_03.sys</span>
         </div>
       </div>
       <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">3 object(s)</div>
@@ -1007,58 +1006,163 @@ NODE_03</div>
       <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">8 object(s)</div>
     </div>
 
-    <!-- Vale Journal Files -->
     <div class="window" id="win-journal-day01" style="top: 150px; left: 250px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day01')">
-        <div class="title-bar-text" id="title-journal-day01"></div>
+        <div class="title-bar-text" id="title-journal-day01">Day 01</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day01')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day01">
+        <p>Day 01: Started investigating the archive system. It's more complex than I thought.</p>
+      </div>
+    </div>
+
+    <div class="window" id="win-journal-day02" style="top: 155px; left: 255px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day02')">
+        <div class="title-bar-text" id="title-journal-day02">Day 02</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day02')">X</div></div>
+      </div>
+      <div class="window-content vale-journal-content" id="content-journal-day02">
+        <p>Day 02: Still digging. Found some weird logs.</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day03" style="top: 160px; left: 260px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day03')">
-        <div class="title-bar-text" id="title-journal-day03"></div>
+        <div class="title-bar-text" id="title-journal-day03">Day 03</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day03')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day03">
+        <p>Day 03: The system is fighting back.</p>
+      </div>
+    </div>
+
+    <div class="window" id="win-journal-day04" style="top: 165px; left: 265px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day04')">
+        <div class="title-bar-text" id="title-journal-day04">Day 04</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day04')">X</div></div>
+      </div>
+      <div class="window-content vale-journal-content" id="content-journal-day04">
+        <p>Day 04: Almost through the first layer.</p>
       </div>
     </div>
 
     <div class="window" id="win-journal-day05" style="top: 170px; left: 270px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day05')">
-        <div class="title-bar-text" id="title-journal-day05"></div>
+        <div class="title-bar-text" id="title-journal-day05">Day 05</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day05')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day05">
+        <p>Day 05: Noticed anomalies. Someone else was here.</p>
       </div>
     </div>
 
-    <div class="window" id="win-journal-day09" style="top: 180px; left: 280px; width: 400px; height: 300px;">
+    <div class="window" id="win-journal-day06" style="top: 175px; left: 275px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day06')">
+        <div class="title-bar-text" id="title-journal-day06">Day 06</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day06')">X</div></div>
+      </div>
+      <div class="window-content vale-journal-content" id="content-journal-day06">
+        <p>Day 06: References to other investigators.</p>
+      </div>
+    </div>
+
+    <div class="window" id="win-journal-day07" style="top: 180px; left: 280px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day07')">
+        <div class="title-bar-text" id="title-journal-day07">Day 07</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day07')">X</div></div>
+      </div>
+      <div class="window-content vale-journal-content" id="content-journal-day07">
+        <p>Day 07: They are everywhere.</p>
+      </div>
+    </div>
+
+    <div class="window" id="win-journal-day08" style="top: 185px; left: 285px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day08')">
+        <div class="title-bar-text" id="title-journal-day08">Day 08</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day08')">X</div></div>
+      </div>
+      <div class="window-content vale-journal-content" id="content-journal-day08">
+        <p>Day 08: I'm being watched.</p>
+      </div>
+    </div>
+
+    <div class="window" id="win-journal-day09" style="top: 190px; left: 290px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day09')">
-        <div class="title-bar-text" id="title-journal-day09"></div>
+        <div class="title-bar-text" id="title-journal-day09">Day 09</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day09')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day09">
+        <p>Day 09: The anomalies are increasing.</p>
       </div>
     </div>
 
-    <div class="window" id="win-journal-day12" style="top: 190px; left: 290px; width: 400px; height: 300px;">
+    <div class="window" id="win-journal-day10" style="top: 195px; left: 295px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day10')">
+        <div class="title-bar-text" id="title-journal-day10">Day 10</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day10')">X</div></div>
+      </div>
+      <div class="window-content vale-journal-content" id="content-journal-day10">
+        <p>Day 10: I think I'm close.</p>
+      </div>
+    </div>
+
+    <div class="window" id="win-journal-day11" style="top: 200px; left: 300px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day11')">
+        <div class="title-bar-text" id="title-journal-day11">Day 11</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day11')">X</div></div>
+      </div>
+      <div class="window-content vale-journal-content" id="content-journal-day11">
+        <p>Day 11: The archive is tracking me.</p>
+      </div>
+    </div>
+
+    <div class="window" id="win-journal-day12" style="top: 205px; left: 305px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day12')">
-        <div class="title-bar-text" id="title-journal-day12"></div>
+        <div class="title-bar-text" id="title-journal-day12">Day 12</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day12')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day12">
+        <p>Day 12: I'm not the only one being tracked.</p>
       </div>
     </div>
 
-    <div class="window" id="win-journal-day16" style="top: 200px; left: 300px; width: 400px; height: 300px;">
+    <div class="window" id="win-journal-day13" style="top: 210px; left: 310px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day13')">
+        <div class="title-bar-text" id="title-journal-day13">Day 13</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day13')">X</div></div>
+      </div>
+      <div class="window-content vale-journal-content" id="content-journal-day13">
+        <p>Day 13: They know I'm here.</p>
+      </div>
+    </div>
+
+    <div class="window" id="win-journal-day14" style="top: 215px; left: 315px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day14')">
+        <div class="title-bar-text" id="title-journal-day14">Day 14</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day14')">X</div></div>
+      </div>
+      <div class="window-content vale-journal-content" id="content-journal-day14">
+        <p>Day 14: I have to be careful.</p>
+      </div>
+    </div>
+
+    <div class="window" id="win-journal-day15" style="top: 220px; left: 320px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day15')">
+        <div class="title-bar-text" id="title-journal-day15">Day 15</div>
+        <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day15')">X</div></div>
+      </div>
+      <div class="window-content vale-journal-content" id="content-journal-day15">
+        <p>Day 15: This is it.</p>
+      </div>
+    </div>
+
+    <div class="window" id="win-journal-day16" style="top: 225px; left: 325px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day16')">
-        <div class="title-bar-text" id="title-journal-day16"></div>
+        <div class="title-bar-text" id="title-journal-day16">Day 16</div>
         <div class="title-bar-controls"><div class="control-btn" onclick="closeWindow('journal-day16')">X</div></div>
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day16">
+        <p>Day 16: If you're reading this, search for 'archive vale'.</p>
       </div>
     </div>
 
@@ -1282,7 +1386,6 @@ fragment remains</div>
 
     <!-- Audio Player -->
     <div class="window" id="win-audio-log" style="width: 350px; height: 180px;">
-      <audio id="audio-log-player" src="sounds/audio_log.wav" style="display: none;"></audio>
       <div class="title-bar">
         <div class="title-bar-text">Audio Log - Media Player</div>
         <div class="title-bar-controls">
@@ -1552,13 +1655,40 @@ fragment remains</div>
       'network-trace': 'network_trace.sys'
     };
 
+    function typeWriterEffect(element, htmlContent, speed) {
+      element.innerHTML = '';
+      let i = 0;
+      let currentHTML = '';
+      
+      function typeChar() {
+        if (i < htmlContent.length) {
+          if (htmlContent.charAt(i) === '<') {
+            let tagEnd = htmlContent.indexOf('>', i);
+            if (tagEnd !== -1) {
+              currentHTML += htmlContent.substring(i, tagEnd + 1);
+              i = tagEnd + 1;
+            } else {
+              currentHTML += htmlContent.charAt(i);
+              i++;
+            }
+          } else {
+            currentHTML += htmlContent.charAt(i);
+            i++;
+          }
+          element.innerHTML = currentHTML;
+          setTimeout(typeChar, speed);
+        }
+      }
+      typeChar();
+    }
+
     function populateStage4Content(id) {
       if (id === 'observer-log-01') {
-        document.getElementById('content-observer-log-01').innerHTML = atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxMjozMTxicj5Ob2RlIGFjY2VzcyByZWNvcmRlZC48YnI+PGJyPlVzZXIgY2xhc3NpZmljYXRpb246IEludmVzdGlnYXRvcjxicj5QYXR0ZXJuIG1hdGNoOiBWQUxFPGJyPjxicj5Nb25pdG9yaW5nIGVzY2FsYXRpb24gZW5hYmxlZC48YnI+PGJyPkZyYWdtZW50OiBkZWNvZGVf');
+        typeWriterEffect(document.getElementById('content-observer-log-01'), atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxMjozMTxicj5Ob2RlIGFjY2VzcyByZWNvcmRlZC48YnI+PGJyPlVzZXIgY2xhc3NpZmljYXRpb246IEludmVzdGlnYXRvcjxicj5QYXR0ZXJuIG1hdGNoOiBWQUxFPGJyPjxicj5Nb25pdG9yaW5nIGVzY2FsYXRpb24gZW5hYmxlZC48YnI+PGJyPkZyYWdtZW50OiBkZWNvZGVf'), 30);
       } else if (id === 'observer-log-02') {
-        document.getElementById('content-observer-log-02').innerHTML = atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxNTowMjxicj5TdWJqZWN0IGJlaGF2aW9yIGFub21hbG91cy48YnI+PGJyPkZyYWdtZW50OiB2YWxlXw==');
+        typeWriterEffect(document.getElementById('content-observer-log-02'), atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxNTowMjxicj5TdWJqZWN0IGJlaGF2aW9yIGFub21hbG91cy48YnI+PGJyPkZyYWdtZW50OiB2YWxlXw=='), 30);
       } else if (id === 'observer-log-03') {
-        document.getElementById('content-observer-log-03').innerHTML = atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxODo0NDxicj5BcmNoaXZlIGludGVncml0eSBjb21wcm9taXNlZC48YnI+PGJyPkZyYWdtZW50OiBhcmNoaXZl');
+        typeWriterEffect(document.getElementById('content-observer-log-03'), atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxODo0NDxicj5BcmNoaXZlIGludGVncml0eSBjb21wcm9taXNlZC48YnI+PGJyPkZyYWdtZW50OiBhcmNoaXZl'), 30);
       } else if (id === 'journal-day01') {
         document.getElementById('title-journal-day01').innerText = atob('VkFMRSBJTlZFU1RJR0FUSU9OIExPRw==');
         document.getElementById('content-journal-day01').innerHTML = atob('RGF5IDE8YnI+PGJyPkkgc3RhcnRlZCBpbnZlc3RpZ2F0aW5nIHRoZSBBcmNoaXZlIHN5c3RlbSB0b2RheS48YnI+PGJyPkF0IGZpcnN0IGl0IGxvb2tlZCBsaWtlIGEgbm9ybWFsIHN0b3JhZ2UgaW5kZXguPGJyPjxicj5CdXQgdGhlIGRlZXBlciBub2RlcyBiZWhhdmUgc3RyYW5nZWx5Ljxicj48YnI+Tm9kZTAzIHJlcXVpcmVkIG11bHRpcGxlIGVuY29kaW5nIGxheWVycy48YnI+PGJyPlNvbWVvbmUgaW50ZW50aW9uYWxseSBoaWQgdGhlIGludGVybmFsIHN0cnVjdHVyZS4=');
@@ -2131,14 +2261,69 @@ fragment remains</div>
     const bars = document.querySelectorAll('.bar');
     
     let audioContext;
+    let audioBuffer = null;
+    let audioSource = null;
     let isPlaying = false;
     let visualizerInterval;
     let progressInterval;
     let audioCurrentTime = 0;
     const audioTotalTime = 16.3; // seconds
-    let osc, gain, noiseSource;
     let audioStartTime = 0;
-    let pausedTime = 0;
+    let masterGain = null;
+
+    async function initAudioBuffer() {
+      if (audioBuffer) return;
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = audioContext.createGain();
+      masterGain.connect(audioContext.destination);
+      
+      const sampleRate = audioContext.sampleRate;
+      const numSamples = Math.floor(sampleRate * audioTotalTime);
+      audioBuffer = audioContext.createBuffer(1, numSamples, sampleRate);
+      const data = audioBuffer.getChannelData(0);
+      
+      const dotDuration = 0.15;
+      const dashDuration = dotDuration * 3;
+      const symbolSpace = dotDuration;
+      const letterSpace = dotDuration * 3;
+      
+      const morseDict = { 'C': '-.-.', 'R': '.-.', 'O': '---', 'W': '.--', 'N': '-.' };
+      const text = "CROWN";
+      
+      let time = 1.0;
+      const freq = 750;
+      
+      // Background noise
+      for (let i = 0; i < numSamples; i++) {
+        data[i] = (Math.random() * 2 - 1) * 0.05;
+      }
+      
+      // Morse code
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const code = morseDict[char];
+        if (code) {
+          for (let k = 0; k < code.length; k++) {
+            const symbol = code[k];
+            const symDuration = symbol === '.' ? dotDuration : dashDuration;
+            
+            const startSample = Math.floor(time * sampleRate);
+            const endSample = Math.floor((time + symDuration) * sampleRate);
+            
+            for (let j = startSample; j < endSample; j++) {
+              if (j >= numSamples) break;
+              const t = j / sampleRate;
+              let env = 1;
+              if (j - startSample < 441) env = (j - startSample) / 441;
+              else if (endSample - j < 441) env = (endSample - j) / 441;
+              data[j] += Math.sin(2 * Math.PI * freq * t) * 0.5 * env;
+            }
+            time += symDuration + symbolSpace;
+          }
+          time += letterSpace - symbolSpace;
+        }
+      }
+    }
 
     function formatTime(seconds) {
       const m = Math.floor(seconds / 60);
@@ -2161,61 +2346,80 @@ fragment remains</div>
       clearInterval(visualizerInterval);
       clearInterval(progressInterval);
       bars.forEach(bar => bar.style.height = '2px');
-      const audioLogPlayer = document.getElementById('audio-log-player');
-      if (audioLogPlayer) {
-        audioLogPlayer.pause();
+      
+      if (audioSource) {
+        audioSource.onended = null;
+        audioSource.stop();
+        audioSource.disconnect();
+        audioSource = null;
+      }
+      if (audioContext) {
+        audioCurrentTime = audioContext.currentTime - audioStartTime;
       }
     }
 
     async function playAudioLog() {
       if (isPlaying) return;
+      
+      await initAudioBuffer();
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+      
       isPlaying = true;
       playBtn.innerText = "PAUSE";
       
-      // Stop music if playing
       if (typeof pauseMusic === 'function') pauseMusic();
       
-      // Start visualizer
       visualizerInterval = setInterval(() => {
         bars.forEach(bar => {
           bar.style.height = (2 + Math.random() * 40) + 'px';
         });
       }, 100);
 
-      const audioLogPlayer = document.getElementById('audio-log-player');
-      if (audioLogPlayer) {
-        audioLogPlayer.volume = audioVolume.value / 100;
-        audioLogPlayer.currentTime = audioCurrentTime;
-        audioLogPlayer.play().catch(e => console.error("Audio play failed:", e));
-
-        audioLogPlayer.onended = () => {
+      audioSource = audioContext.createBufferSource();
+      audioSource.buffer = audioBuffer;
+      audioSource.connect(masterGain);
+      
+      masterGain.gain.value = audioVolume.value / 100;
+      
+      if (audioCurrentTime >= audioTotalTime) {
+        audioCurrentTime = 0;
+      }
+      
+      audioSource.start(0, audioCurrentTime);
+      audioStartTime = audioContext.currentTime - audioCurrentTime;
+      
+      audioSource.onended = () => {
+        if (audioContext.currentTime - audioStartTime >= audioTotalTime - 0.1) {
           pauseAudioLog();
           audioCurrentTime = 0;
           audioProgressSlider.value = 0;
           audioTimeCurrent.innerText = "00:00";
-        };
+        }
+      };
 
-        const updateVolume = () => {
-          audioLogPlayer.volume = audioVolume.value / 100;
-        };
-        audioVolume.addEventListener('input', updateVolume);
+      const updateVolume = () => {
+        if (masterGain) masterGain.gain.value = audioVolume.value / 100;
+      };
+      audioVolume.addEventListener('input', updateVolume);
 
-        progressInterval = setInterval(() => {
-          if (isPlaying) {
-            audioCurrentTime = audioLogPlayer.currentTime;
-            audioProgressSlider.value = audioCurrentTime;
-            audioTimeCurrent.innerText = formatTime(Math.floor(audioCurrentTime));
-          }
-        }, 100);
-      }
+      progressInterval = setInterval(() => {
+        if (isPlaying && audioContext) {
+          audioCurrentTime = audioContext.currentTime - audioStartTime;
+          if (audioCurrentTime > audioTotalTime) audioCurrentTime = audioTotalTime;
+          audioProgressSlider.value = audioCurrentTime;
+          audioTimeCurrent.innerText = formatTime(Math.floor(audioCurrentTime));
+        }
+      }, 100);
     }
     
     audioProgressSlider.addEventListener('input', (e) => {
       audioCurrentTime = parseFloat(e.target.value);
       audioTimeCurrent.innerText = formatTime(audioCurrentTime);
-      const audioLogPlayer = document.getElementById('audio-log-player');
-      if (audioLogPlayer) {
-        audioLogPlayer.currentTime = audioCurrentTime;
+      if (isPlaying) {
+        pauseAudioLog();
+        playAudioLog();
       }
     });
 
@@ -2389,7 +2593,7 @@ fragment remains</div>
         if (spinner) spinner.style.display = 'none';
         if (page) {
           page.style.opacity = '1';
-          if (targetUrl === 'archive://node/02' || targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://node/04' || targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt') || targetUrl === atob('YXJjaGl2ZTovL3JlY29yZHM=')) {
+          if (targetUrl === 'archive://node/02' || targetUrl === 'archive://node02/resonance.html' || targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://node03/secret' || targetUrl === 'archive://node/04' || targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt') || targetUrl === atob('YXJjaGl2ZTovL3JlY29yZHM=')) {
             page.innerHTML = '';
             page.style.padding = '0';
             page.style.position = 'relative';
@@ -2404,7 +2608,10 @@ fragment remains</div>
             if (targetUrl === 'archive://node/02') {
               if (localStorage.getItem('aurora_stage1_complete')) unlocked = true;
               fetchPath = 'stage' + '2.html';
-            } else if (targetUrl === 'archive://node/03/secret') {
+            } else if (targetUrl === 'archive://node02/resonance.html') {
+              if (localStorage.getItem('aurora_stage1_complete')) unlocked = true;
+              fetchPath = 'resonance.html';
+            } else if (targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://node03/secret') {
               try {
                 const t = localStorage.getItem('aurora_stage3_token1');
                 if (t && atob(t) === 'true|AURORA_OS_SECRET') unlocked = true;
@@ -2420,7 +2627,7 @@ fragment remains</div>
               if (localStorage.getItem('aurora_stage4_forum_unlocked') === 'true') {
                 unlocked = true;
                 if (getStage4Progress() < 4) setStage4Progress(4);
-                dynamicHtml = atob('PGRpdiBzdHlsZT0iY29sb3I6IzBjMDtmb250LWZhbWlseTptb25vc3BhY2U7cGFkZGluZzozMHB4O2JhY2tncm91bmQ6IzA1MDUwNTtoZWlnaHQ6MTAwJTtvdmVyZmxvdy15OmF1dG87Ym94LXNpemluZzpib3JkZXItYm94OyI+CiAgPGRpdiBzdHlsZT0iYm9yZGVyOiAxcHggc29saWQgIzBjMDsgcGFkZGluZzogMjBweDsgbWF4LXdpZHRoOiA4MDBweDsgbWFyZ2luOiAwIGF1dG87IGJhY2tncm91bmQ6ICMwMDA7Ij4KICAgIDxoMiBzdHlsZT0ibWFyZ2luLXRvcDogMDsgbGV0dGVyLXNwYWNpbmc6IDFweDsgY29sb3I6ICMwZjA7Ij5JTlRFUk5BTCBBUkNISVZFIEZPUlVNIFtSRUFELU9OTFldPC9oMj4KICAgIDxkaXYgc3R5bGU9ImJvcmRlci1ib3R0b206IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy1ib3R0b206IDE1cHg7IG1hcmdpbi1ib3R0b206IDIwcHg7IGxpbmUtaGVpZ2h0OiAxLjY7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPlRvcGljOjwvc3Ryb25nPiBUaGUgQW5vbWFseTwvcD4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPkF1dGhvcjo8L3N0cm9uZz4gYXJjaGl2aXN0XzQwNDwvcD4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPkRhdGU6PC9zdHJvbmc+IDE5OTgtMDQtMTIgMDM6MTQgQU08L3A+CiAgICA8L2Rpdj4KICAgIDxkaXYgc3R5bGU9ImxpbmUtaGVpZ2h0OiAxLjg7IGZvbnQtc2l6ZTogMTVweDsiPgogICAgICA8cD5JJ3ZlIGZvdW5kIHNvbWV0aGluZyBpbiB0aGUgbG9ncy4gSXQncyBub3QganVzdCBkYXRhIGNvcnJ1cHRpb24uIEl0J3MgbG9va2luZyBiYWNrIGF0IHVzLjwvcD4KICAgICAgPHA+SSd2ZSBoaWRkZW4gdGhlIGZpbmFsIGtleS4gSWYgYW55b25lIGZpbmRzIHRoaXMsIHlvdSBrbm93IHdoZXJlIHRvIHJlYWNoIG1lLjwvcD4KICAgICAgPHA+RXh0ZXJuYWwgY29udGFjdCBwcm90b2NvbCBpbml0aWF0ZWQuIFRoZXkgYXJlIHdhdGNoaW5nIHRoZSBuZXR3b3JrLjwvcD4KICAgIDwvZGl2PgogICAgPGRpdiBzdHlsZT0ibWFyZ2luLXRvcDogMzBweDsgYm9yZGVyLXRvcDogMXB4IGRhc2hlZCAjMGMwOyBwYWRkaW5nLXRvcDogMTVweDsiPgogICAgICA8cCBzdHlsZT0iY29sb3I6IzA2MDsgbWFyZ2luOiAwOyI+W0VuZCBvZiB0aHJlYWRdPC9wPgogICAgPC9kaXY+CiAgPC9kaXY+CjwvZGl2Pg==');
+                dynamicHtml = atob('PGRpdiBzdHlsZT0iY29sb3I6IzBjMDtmb250LWZhbWlseTptb25vc3BhY2U7cGFkZGluZzozMHB4O2JhY2tncm91bmQ6IzA1MDUwNTtoZWlnaHQ6MTAwJTtvdmVyZmxvdy15OmF1dG87Ym94LXNpemluZzpib3JkZXItYm94OyI+CiAgPGRpdiBzdHlsZT0iYm9yZGVyOiAxcHggc29saWQgIzBjMDsgcGFkZGluZzogMjBweDsgbWF4LXdpZHRoOiA4MDBweDsgbWFyZ2luOiAwIGF1dG87IGJhY2tncm91bmQ6ICMwMDA7Ij4KICAgIDxoMiBzdHlsZT0ibWFyZ2luLXRvcDogMDsgbGV0dGVyLXNwYWNpbmc6IDFweDsgY29sb3I6ICMwZjA7Ij5JTlRFUk5BTCBBUkNISVZFIEZPUlVNIFtSRUFELU9OTFldPC9oMj4KICAgIDxkaXYgc3R5bGU9ImJvcmRlci1ib3R0b206IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy1ib3R0b206IDE1cHg7IG1hcmdpbi1ib3R0b206IDIwcHg7IGxpbmUtaGVpZ2h0OiAxLjY7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPlRvcGljOjwvc3Ryb25nPiBUaGUgQW5vbWFseTwvcD4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPkF1dGhvcjo8L3N0cm9uZz4gYXJjaGl2aXN0NDA0MDQwPC9wPgogICAgICA8cCBzdHlsZT0ibWFyZ2luOiA1cHggMDsiPjxzdHJvbmc+RGF0ZTo8L3N0cm9uZz4gMTk5OC0wNC0xMiAwMzoxNCBBTTwvcD4KICAgIDwvZGl2PgogICAgPGRpdiBzdHlsZT0ibGluZS1oZWlnaHQ6IDEuODsgZm9udC1zaXplOiAxNXB4OyI+CiAgICAgIDxwPkkndmUgZm91bmQgc29tZXRoaW5nIGluIHRoZSBsb2dzLiBJdCdzIG5vdCBqdXN0IGRhdGEgY29ycnVwdGlvbi4gSXQncyBsb29raW5nIGJhY2sgYXQgdXMuPC9wPgogICAgICA8cD5JJ3ZlIGhpZGRlbiB0aGUgZmluYWwga2V5LiBJZiBhbnlvbmUgZmluZHMgdGhpcywgeW91IGtub3cgd2hlcmUgdG8gcmVhY2ggbWUuPC9wPgogICAgICA8cD5FeHRlcm5hbCBjb250YWN0IHByb3RvY29sIGluaXRpYXRlZC4gVGhleSBhcmUgd2F0Y2hpbmcgdGhlIG5ldHdvcmsuPC9wPgogICAgPC9kaXY+CiAgICA8ZGl2IHN0eWxlPSJtYXJnaW4tdG9wOiAzMHB4OyBib3JkZXItdG9wOiAxcHggZGFzaGVkICMwYzA7IHBhZGRpbmctdG9wOiAxNXB4OyI+CiAgICAgIDxwIHN0eWxlPSJjb2xvcjojMDYwOyBtYXJnaW46IDA7Ij5bRW5kIG9mIHRocmVhZF08L3A+CiAgICA8L2Rpdj4KICA8L2Rpdj4KPC9kaXY+');
                 if (getStage4Progress() < 5) {
                   setStage4Progress(5);
                   triggerEndingSequence();
@@ -2456,6 +2663,12 @@ fragment remains</div>
                 fetch(fetchPath)
                   .then(res => res.text())
                   .then(html => {
+                    const baseTag = '<base href="' + window.location.href + '">';
+                    if (html.includes('<head>')) {
+                      html = html.replace('<head>', '<head>' + baseTag);
+                    } else {
+                      html = baseTag + html;
+                    }
                     iframe.srcdoc = html;
                   })
                   .catch(err => {
@@ -2618,7 +2831,7 @@ fragment remains</div>
             printTerminal("Usage: decrypt <filename>");
           }
           break;
-        case atob('ZGVjb2RlX3ZhbGVfYXJjaGl2ZQ=='):
+        case [atob('ZGVj'), atob('b2Rl'), atob('X3Zh'), atob('bGVf'), atob('YXJj'), atob('aGl2'), atob('ZQ==')].join(''):
           if (getStage4Progress() >= 1) {
             printTerminal("Decoding archive...");
             setTimeout(() => {
@@ -2634,7 +2847,7 @@ fragment remains</div>
           }
           break;
         case 'archive':
-          if (args.length > 1 && args[1] === atob('VkFMRQ==') && getStage4Progress() >= 2) {
+          if (args.length > 1 && args[1] === atob('dmFsZQ==') && getStage4Progress() >= 2) {
             printTerminal("Verifying key...");
             setTimeout(() => {
               printTerminal("Archive match detected.");
@@ -3395,6 +3608,21 @@ fragment remains</div>
         }
       });
     }
+
+    // Unlock audio after first user interaction
+    const unlockAudio = async () => {
+      if (typeof initAudioBuffer === 'function') {
+        await initAudioBuffer();
+        if (audioContext && audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
+      }
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('keydown', unlockAudio);
+    };
+    document.addEventListener('click', unlockAudio);
+    document.addEventListener('keydown', unlockAudio);
+
   </script>
 </body>
 </html>
