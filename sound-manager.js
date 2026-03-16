@@ -201,6 +201,78 @@ class SoundManager {
     noise.start();
   }
 
+  playBlowSound() {
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    const bufferSize = this.audioCtx.sampleRate * 1.0;
+    const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const noise = this.audioCtx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = this.audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(300, this.audioCtx.currentTime);
+    filter.frequency.linearRampToValueAtTime(50, this.audioCtx.currentTime + 0.8);
+
+    const gain = this.audioCtx.createGain();
+    gain.gain.setValueAtTime(0, this.audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.4, this.audioCtx.currentTime + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.8);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.audioCtx.destination);
+
+    noise.start();
+    noise.stop(this.audioCtx.currentTime + 1.0);
+  }
+
+  playFlintSound() {
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    const osc = this.audioCtx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(4000, this.audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(8000, this.audioCtx.currentTime + 0.05);
+    
+    const gain = this.audioCtx.createGain();
+    gain.gain.setValueAtTime(0, this.audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.3, this.audioCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.1);
+    
+    osc.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    
+    osc.start();
+    osc.stop(this.audioCtx.currentTime + 0.1);
+    
+    const bufferSize = this.audioCtx.sampleRate * 0.1;
+    const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const noise = this.audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    
+    const noiseFilter = this.audioCtx.createBiquadFilter();
+    noiseFilter.type = 'highpass';
+    noiseFilter.frequency.value = 5000;
+    
+    const noiseGain = this.audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.5, this.audioCtx.currentTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.1);
+    
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(this.audioCtx.destination);
+    
+    noise.start();
+    noise.stop(this.audioCtx.currentTime + 0.1);
+  }
+
   startBlackFire() {
     if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
     if (this.blackFireOsc) return;
@@ -235,11 +307,24 @@ class SoundManager {
     
     this.droneGain.connect(this.audioCtx.destination);
   }
+
+  resume() {
+    if (this.audioCtx && this.audioCtx.state === 'suspended') {
+      this.audioCtx.resume();
+    }
+  }
 }
 
 window.soundManager = new SoundManager();
 
 document.addEventListener('DOMContentLoaded', () => {
+  const resumeAudio = () => {
+    if (window.soundManager) window.soundManager.resume();
+  };
+  document.addEventListener('click', resumeAudio, { once: true });
+  document.addEventListener('keydown', resumeAudio, { once: true });
+  document.addEventListener('touchstart', resumeAudio, { once: true });
+
   const inputs = document.querySelectorAll('input[type="text"]');
   inputs.forEach(input => {
     input.addEventListener('input', () => {

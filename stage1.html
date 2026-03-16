@@ -2709,6 +2709,7 @@ fragment remains</div>
               if (window.soundManager) window.soundManager.playError();
             } else {
               const iframe = document.createElement('iframe');
+              iframe.allow = "autoplay";
               iframe.style.border = 'none';
               iframe.style.position = 'absolute';
               iframe.style.top = '0';
@@ -3686,6 +3687,11 @@ fragment remains</div>
 
     // Unlock audio after first user interaction
     const unlockAudio = async () => {
+      if (window.soundManager && window.soundManager.audioCtx) {
+        if (window.soundManager.audioCtx.state === 'suspended') {
+          await window.soundManager.audioCtx.resume();
+        }
+      }
       if (typeof initAudioBuffer === 'function') {
         await initAudioBuffer();
         if (audioContext && audioContext.state === 'suspended') {
