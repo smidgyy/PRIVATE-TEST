@@ -502,6 +502,15 @@
       flex-wrap: wrap;
       align-content: flex-start;
       position: relative;
+      overflow-y: auto;
+    }
+
+    .explorer .icon {
+      position: relative !important;
+      top: auto !important;
+      left: auto !important;
+      margin: 10px;
+      flex-shrink: 0;
     }
 
     .explorer-status {
@@ -842,7 +851,7 @@
           <span style="color:#000; background:transparent;">photo_fragment.png</span>
         </div>
       </div>
-      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">4 object(s)</div>
+      <div class="explorer-status">4 object(s)</div>
     </div>
 
     <!-- System Logs Folder -->
@@ -855,13 +864,13 @@
           <div class="control-btn" onclick="closeWindow('system-logs')">X</div>
         </div>
       </div>
-      <div class="window-content explorer" style="padding-bottom: 25px;">
+      <div class="window-content explorer">
         <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('memory-scan-log')" title="Type: System Log&#10;Size: 0.1 KB&#10;Modified: Just now">
           <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
           <span style="color:#000; background:transparent;">memory_scan.log</span>
         </div>
       </div>
-      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">1 object(s)</div>
+      <div class="explorer-status">1 object(s)</div>
     </div>
 
     <!-- Memory Scan Log -->
@@ -890,13 +899,13 @@ NODE_03</div>
           <div class="control-btn" onclick="closeWindow('archive-folder')">X</div>
         </div>
       </div>
-      <div class="window-content explorer" style="padding-bottom: 25px;">
+      <div class="window-content explorer">
         <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('stage2-note')" title="Type: Text Document&#10;Size: 42 bytes&#10;Modified: 1998-04-12">
           <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
           <span style="color:#000; background:transparent;">stage2_note.txt</span>
         </div>
       </div>
-      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">1 object(s)</div>
+      <div class="explorer-status">1 object(s)</div>
     </div>
 
     <!-- Stage 4: Observer Folder -->
@@ -909,7 +918,7 @@ NODE_03</div>
           <div class="control-btn" onclick="closeWindow('observer-folder')">X</div>
         </div>
       </div>
-      <div class="window-content explorer" style="padding: 20px; padding-bottom: 45px; gap: 20px; display: flex; flex-wrap: wrap;">
+      <div class="window-content explorer">
         <div class="icon" style="position: relative; top: 0; left: 0; height: 120px;" ondblclick="openWindow('observer-log-01')" title="Type: System Log">
           <svg class="icon-img" style="margin-bottom: 10px;" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
           <span style="color:#000; background:transparent; margin-top: 10px;">observer_log_01.sys</span>
@@ -923,7 +932,7 @@ NODE_03</div>
           <span style="color:#000; background:transparent; margin-top: 10px;">observer_log_03.sys</span>
         </div>
       </div>
-      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">3 object(s)</div>
+      <div class="explorer-status">3 object(s)</div>
     </div>
 
     <div class="window" id="win-observer-log-01" style="top: 150px; left: 250px; width: 400px; height: 300px;">
@@ -969,7 +978,7 @@ NODE_03</div>
           <div class="control-btn" onclick="closeWindow('vale-folder')">X</div>
         </div>
       </div>
-      <div class="window-content explorer" style="padding-bottom: 45px; display: flex; flex-wrap: wrap;">
+      <div class="window-content explorer">
         <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('journal-day01')">
           <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
           <span style="color:#000; background:transparent;">journal_day01.log</span>
@@ -1003,7 +1012,7 @@ NODE_03</div>
           <span style="color:#000; background:transparent;">network_trace.sys</span>
         </div>
       </div>
-      <div class="explorer-status" style="position: absolute; bottom: 0; left: 0; right: 0;">8 object(s)</div>
+      <div class="explorer-status">8 object(s)</div>
     </div>
 
     <div class="window" id="win-journal-day01" style="top: 150px; left: 250px; width: 400px; height: 300px;">
