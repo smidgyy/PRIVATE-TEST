@@ -1,15 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script type="module" src="/main.ts"></script>
 <script>
 if (window === window.top) {
   window.location.href = 'stage1.html';
 } else {
-  if (!localStorage.getItem('aurora_stage1_complete')) {
-    document.documentElement.innerHTML = '<body style="background:#000;color:#f00;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;margin:0;"><div><h1>ACCESS DENIED</h1><p>Node authentication required.</p></div></body>';
-    setTimeout(function(){ window.top.location.href = 'stage1.html'; }, 3000);
-    throw new Error('Access Denied');
-  }
+  document.addEventListener('DOMContentLoaded', () => {
+    const checkAccess = async () => {
+      let retries = 0;
+      while (!window.firebaseAuth?.currentUser && retries < 20) {
+        await new Promise(r => setTimeout(r, 100));
+        retries++;
+      }
+      
+      const userId = window.firebaseAuth?.currentUser?.uid || 'anonymous';
+      try {
+        const res = await fetch('/api/validateCommand', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'check_access', target: 'resonance', userId })
+        });
+        const data = await res.json();
+        if (data.status !== 'success') {
+          document.documentElement.innerHTML = '<body style="background:#000;color:#f00;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;margin:0;"><div><h1>ACCESS DENIED</h1><p>Node authentication required.</p></div></body>';
+          setTimeout(function(){ window.top.location.href = 'stage1.html'; }, 3000);
+        } else {
+          document.getElementById('content').style.display = 'flex';
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    checkAccess();
+  });
 }
 </script>
 <meta charset="UTF-8">
@@ -29,6 +53,7 @@ if (window === window.top) {
     overflow: hidden;
     position: relative;
   }
+  #content { display: none; flex-direction: column; width: 100%; height: 100%; }
 
   /* Scanlines effect */
   body::before {
@@ -151,6 +176,7 @@ if (window === window.top) {
 </style>
 </head>
 <body>
+<div id="content">
   <header>
     <div style="font-weight: bold; letter-spacing: 2px;">AURORA // NODE_02</div>
     <div class="status-tag">Signal Aligned</div>
@@ -204,5 +230,6 @@ if (window === window.top) {
 
     animateVisualizer();
   </script>
+</div>
 </body>
 </html>

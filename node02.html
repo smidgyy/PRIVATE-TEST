@@ -1,12 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script type="module" src="/main.ts"></script>
 <script>
-if (!localStorage.getItem('aurora_stage1_complete')) {
-  document.documentElement.innerHTML = '<body style="background:#000;color:#f00;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;margin:0;"><div><h1>ARCHIVE ACCESS DENIED</h1><p>Node authentication required.</p></div></body>';
-  setTimeout(function(){ window.top.location.href = 'stage1.html'; }, 3000);
-  throw new Error('Access Denied');
-}
+document.addEventListener('DOMContentLoaded', () => {
+  const checkAccess = async () => {
+    let retries = 0;
+    while (!window.firebaseAuth?.currentUser && retries < 20) {
+      await new Promise(r => setTimeout(r, 100));
+      retries++;
+    }
+    
+    const userId = window.firebaseAuth?.currentUser?.uid || 'anonymous';
+    try {
+      const res = await fetch('/api/validateCommand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'get_progression', userId })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        if (data.stage2_phase2_complete) {
+          localStorage.setItem('stage1_phase', '3');
+          phase = '3';
+        } else if (data.stage2_phase1_complete) {
+          localStorage.setItem('stage1_phase', '2');
+          phase = '2';
+        }
+        initPhase();
+      }
+      
+      const resAccess = await fetch('/api/validateCommand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'check_access', target: 'node02', userId })
+      });
+      const dataAccess = await resAccess.json();
+      if (dataAccess.status !== 'success') {
+        document.documentElement.innerHTML = '<body style="background:#000;color:#f00;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;margin:0;"><div><h1>ARCHIVE ACCESS DENIED</h1><p>Node authentication required.</p></div></body>';
+        setTimeout(function(){ window.top.location.href = 'stage1.html'; }, 3000);
+      } else {
+        document.getElementById('content').style.display = 'flex';
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  checkAccess();
+});
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,6 +59,7 @@ if (!localStorage.getItem('aurora_stage1_complete')) {
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; background: #000; color: #d4d0c8; font-family: 'Pixelify Sans', sans-serif; overflow: hidden; }
 body { display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 1s ease, color 1s ease; }
+#content { display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; }
 
 .title { font-size: clamp(1.2rem, 4vh, 1.6rem); letter-spacing: 0.04em; margin-bottom: 1.5rem; opacity: 0; animation: fadeIn 2s ease forwards; }
 .subtitle { font-size: clamp(0.7rem, 2vh, 0.8rem); color: #666; letter-spacing: 0.06em; margin-bottom: 2.5rem; opacity: 0; animation: fadeIn 2s ease 2s forwards; text-align: center; }
@@ -120,6 +162,7 @@ body.light-mode .hidden-clue { display: block; opacity: 1; }
 </style>
 </head>
 <body>
+<div id="content">
 
 <div id="glow-overlay"></div>
 
@@ -403,13 +446,20 @@ function startBlackFire() {
       
       localStorage.setItem('aurora_stage3_token1', btoa('true|AURORA_OS_SECRET'));
       
-      setTimeout(() => {
-        if (window.parent && typeof window.parent.openBrowserUrl === 'function') {
-          window.parent.openBrowserUrl('archive://node/03/secret');
-        } else {
-          window.location.href = 'node03/secret.html';
-        }
-      }, 1000);
+      const userId = window.firebaseAuth?.currentUser?.uid || 'anonymous';
+      fetch('/api/validateCommand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'unlock_node03_secret', userId })
+      }).then(() => {
+        setTimeout(() => {
+          if (window.parent && typeof window.parent.openBrowserUrl === 'function') {
+            window.parent.openBrowserUrl('archive://node/03/secret');
+          } else {
+            window.location.href = 'node03/secret.html';
+          }
+        }, 1000);
+      });
     }
   }, 33);
 }
@@ -448,69 +498,77 @@ async function dissolveAndRespond() {
   await new Promise(r => setTimeout(r, totalDissolveTime));
   charLayer.style.opacity = '0';
 
-  const h = await hashInput(text);
-  let msg = "Incorrect. The truth eludes you.";
-  let success = false;
-
-  if (phase === '1' && h === '76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22') {
-    msg = "The earth opens. Seek the marginalia.";
-    success = true;
-    if (window.soundManager) window.soundManager.playSuccess();
-    localStorage.setItem('stage1_phase', '2');
-    setTimeout(() => { window.location.href = 'article.html'; }, 3000);
-  } 
-  else if (phase === '2' && h === 'ba6f8ed6d0d150b2a2ab2bebe99540f8c00cafb0ebdbf71a6f0b768c45425ca7') {
-    msg = "The flame is extinguished.";
-    success = true;
-    if (window.soundManager) {
-      window.soundManager.playSuccess();
-      window.soundManager.stopFireCrackling();
-    }
-    phase = '3';
-    localStorage.setItem('stage1_phase', '3');
+  const userId = window.firebaseAuth?.currentUser?.uid || 'anonymous';
+  
+  try {
+    const res = await fetch('/api/validateCommand', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input: text, userId, type: 'node02_answer', step: phase })
+    });
+    const data = await res.json();
     
-    // Extinguish the flame immediately
-    document.body.classList.remove('phase-2');
-    document.body.classList.add('phase-3');
-    playBlowSound();
-    
-    // Smooth fade out of text after reading it
-    setTimeout(() => {
-      title.style.transition = 'opacity 1.5s ease';
-      subtitle.style.transition = 'opacity 1.5s ease';
-      response.style.transition = 'opacity 1.5s ease';
-      title.style.opacity = '0';
-      subtitle.style.opacity = '0';
-      response.style.opacity = '0';
-    }, 2000);
+    let msg = data.message || "Incorrect. The truth eludes you.";
+    let success = data.status === 'success';
 
-    setTimeout(() => { startPhase3(true); }, 4500);
-  }
-  else if (phase === '3' && h === '90b7b8654171c04a5e5de1eae884cfd86952739d50d09d9bb7680763e31faee8') {
-    msg = String.fromCharCode(71, 82, 69, 69, 68);
-    success = true;
-    if (window.soundManager) window.soundManager.playSuccess();
-    setTimeout(() => {
-      if (window.soundManager) window.soundManager.startBlackFire();
-      startBlackFire();
-    }, 5000);
-  }
+    if (success) {
+      msg = data.msg;
+      if (data.action === 'phase1_success') {
+        if (window.soundManager) window.soundManager.playSuccess();
+        localStorage.setItem('stage1_phase', '2');
+        setTimeout(() => { window.location.href = 'article.html'; }, 3000);
+      } else if (data.action === 'phase2_success') {
+        if (window.soundManager) {
+          window.soundManager.playSuccess();
+          window.soundManager.stopFireCrackling();
+        }
+        phase = '3';
+        localStorage.setItem('stage1_phase', '3');
+        
+        // Extinguish the flame immediately
+        document.body.classList.remove('phase-2');
+        document.body.classList.add('phase-3');
+        playBlowSound();
+        
+        // Smooth fade out of text after reading it
+        setTimeout(() => {
+          title.style.transition = 'opacity 1.5s ease';
+          subtitle.style.transition = 'opacity 1.5s ease';
+          response.style.transition = 'opacity 1.5s ease';
+          title.style.opacity = '0';
+          subtitle.style.opacity = '0';
+          response.style.opacity = '0';
+        }, 2000);
 
-  if (!success && window.soundManager) window.soundManager.playError();
-
-  response.textContent = msg;
-  response.style.opacity = '1';
-
-  setTimeout(() => {
-    charLayer.remove();
-    if (!success) {
-      response.style.opacity = '0';
-      input.value = '';
-      input.classList.remove('hidden');
-      input.focus();
+        setTimeout(() => { startPhase3(true); }, 4500);
+      } else if (data.action === 'phase3_success') {
+        if (window.soundManager) window.soundManager.playSuccess();
+        setTimeout(() => {
+          if (window.soundManager) window.soundManager.startBlackFire();
+          startBlackFire();
+        }, 5000);
+      }
     }
+
+    if (!success && window.soundManager) window.soundManager.playError();
+
+    response.textContent = msg;
+    response.style.opacity = '1';
+
+    setTimeout(() => {
+      charLayer.remove();
+      if (!success) {
+        response.style.opacity = '0';
+        input.value = '';
+        input.classList.remove('hidden');
+        input.focus();
+      }
+      busy = false;
+    }, 3000);
+  } catch (err) {
+    console.error(err);
     busy = false;
-  }, 3000);
+  }
 }
 
 input.addEventListener('keydown', (e) => {
@@ -654,5 +712,6 @@ document.addEventListener('click', () => {
 </script>
 <button onclick="let a = localStorage.getItem('aurora_stage1_complete'); localStorage.clear(); if(a) localStorage.setItem('aurora_stage1_complete', a); window.location.reload();" style="position: fixed; bottom: 10px; right: 10px; font-size: 10px; color: #666; background: transparent; border: 1px solid #666; padding: 4px; cursor: pointer; z-index: 9999;">[DEV] Reset Progress</button>
 <script src="/sound-manager.js?v=2"></script>
+</div>
 </body>
 </html>

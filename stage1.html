@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AURORA OS v1.3</title>
+  <script type="module" src="/main.ts"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400;1,700&family=JetBrains+Mono:wght@400;700&family=VT323&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
     .observer-log-content {
@@ -1833,19 +1834,34 @@ fragment remains</div>
       }
     }
 
-    function openWindow(id) {
+    async function openWindow(id) {
       // Progression Validation
-      if (id === 'observer-folder' && getStage4Progress() < 1) {
-        printTerminal("Access denied: Node authentication required.");
-        return;
-      }
-      if (id === 'vale-folder' && getStage4Progress() < 2) {
-        printTerminal("Access denied: Directory encrypted.");
-        return;
-      }
-      if (id === 'resonance' && !localStorage.getItem('aurora_stage1_complete')) {
-        printTerminal("Access denied: Signal alignment required.");
-        return;
+      const userId = window.firebaseAuth?.currentUser?.uid || 'anonymous';
+      const restrictedTargets = ['observer-folder', 'vale-folder', 'resonance', 'node02', 'node04', 'forum'];
+      
+      if (restrictedTargets.includes(id)) {
+        try {
+          const res = await fetch('/api/validateCommand', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'check_access', target: id, userId })
+          });
+          const data = await res.json();
+          if (data.status !== 'success') {
+            printTerminal("Access denied: Insufficient permissions.");
+            if (id === 'resonance' || id === 'node02') {
+              printTerminal("Signal alignment required.");
+            } else if (id === 'observer-folder') {
+              printTerminal("Node authentication required.");
+            } else if (id === 'vale-folder') {
+              printTerminal("Directory encrypted.");
+            }
+            return;
+          }
+        } catch (err) {
+          console.error(err);
+          return;
+        }
       }
 
       const win = document.getElementById('win-' + id);
@@ -1853,11 +1869,24 @@ fragment remains</div>
       
       // Stage 4 tracking
       if (id.startsWith('observer-log-')) {
-        localStorage.setItem('aurora_stage4_observer_logs_opened', 'true');
+        const userId = window.firebaseAuth?.currentUser?.uid;
+        if (userId) {
+          fetch('/api/validateCommand', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'update_stage4_progress', step: getStage4Progress(), flag: 'stage4_observer_logs_opened', userId })
+          });
+        }
       }
       if (id === 'network-trace') {
-        localStorage.setItem('aurora_stage4_network_trace_viewed', 'true');
-        if (getStage4Progress() === 2) setStage4Progress(3);
+        const userId = window.firebaseAuth?.currentUser?.uid;
+        if (userId) {
+          fetch('/api/validateCommand', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'update_stage4_progress', step: Math.max(getStage4Progress(), 3), flag: 'stage4_network_trace_viewed', userId })
+          });
+        }
       }
       
       populateStage4Content(id);
@@ -2825,35 +2854,67 @@ fragment remains</div>
             let accessDeniedMsg = 'Archive fragment locked.';
             
             if (targetUrl === 'archive://node/02') {
-              if (localStorage.getItem('aurora_stage1_complete')) unlocked = true;
-              fetchPath = 'stage' + '2.html';
+              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node02', userId: window.firebaseAuth?.currentUser?.uid || 'anonymous' }) })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.status === 'success') {
+                    unlocked = true;
+                  }
+                  fetchPath = 'stage2.html';
+                  finishLoad();
+                });
+              return;
             } else if (targetUrl === 'archive://node02/resonance.html' || targetUrl === 'archive://node/02/resonance.html') {
-              if (localStorage.getItem('aurora_stage1_complete')) unlocked = true;
-              fetchPath = 'resonance.html';
+              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'resonance', userId: window.firebaseAuth?.currentUser?.uid || 'anonymous' }) })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.status === 'success') {
+                    unlocked = true;
+                  }
+                  fetchPath = 'resonance.html';
+                  finishLoad();
+                });
+              return;
             } else if (targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://' + atob('bm9kZTAzL3NlY3JldA==')) {
-              try {
-                const t = localStorage.getItem('aurora_stage3_token1');
-                if (t && atob(t) === 'true|AURORA_OS_SECRET') unlocked = true;
-              } catch(e) {}
-              fetchPath = 'node' + '03/secret.html';
+              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node03_secret', userId: window.firebaseAuth?.currentUser?.uid || 'anonymous' }) })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.status === 'success') {
+                    unlocked = true;
+                  }
+                  fetchPath = 'node03/secret.html';
+                  finishLoad();
+                });
+              return;
             } else if (targetUrl === 'archive://node/04') {
-              try {
-                const t = localStorage.getItem('aurora_stage3_token_complete');
-                if (t && atob(t) === 'true|AURORA_OS_SECRET') unlocked = true;
-              } catch(e) {}
-              fetchPath = 'node' + '04.html';
+              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node04', userId: window.firebaseAuth?.currentUser?.uid || 'anonymous' }) })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.status === 'success') {
+                    unlocked = true;
+                  }
+                  fetchPath = 'node04.html';
+                  finishLoad();
+                });
+              return;
             } else if (targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt')) {
-              if (localStorage.getItem('aurora_stage4_forum_unlocked') === 'true') {
-                unlocked = true;
-                if (getStage4Progress() < 4) setStage4Progress(4);
-                dynamicHtml = atob('PGRpdiBzdHlsZT0iY29sb3I6IzBjMDtmb250LWZhbWlseTptb25vc3BhY2U7cGFkZGluZzozMHB4O2JhY2tncm91bmQ6IzA1MDUwNTtoZWlnaHQ6MTAwJTtvdmVyZmxvdy15OmF1dG87Ym94LXNpemluZzpib3JkZXItYm94OyI+CiAgPGRpdiBzdHlsZT0iYm9yZGVyOiAxcHggc29saWQgIzBjMDsgcGFkZGluZzogMjBweDsgbWF4LXdpZHRoOiA4MDBweDsgbWFyZ2luOiAwIGF1dG87IGJhY2tncm91bmQ6ICMwMDA7Ij4KICAgIDxoMiBzdHlsZT0ibWFyZ2luLXRvcDogMDsgbGV0dGVyLXNwYWNpbmc6IDFweDsgY29sb3I6ICMwZjA7Ij5JTlRFUk5BTCBBUkNISVZFIEZPUlVNIFtSRUFELU9OTFldPC9oMj4KICAgIDxkaXYgc3R5bGU9ImJvcmRlci1ib3R0b206IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy1ib3R0b206IDE1cHg7IG1hcmdpbi1ib3R0b206IDIwcHg7IGxpbmUtaGVpZ2h0OiAxLjY7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPlRvcGljOjwvc3Ryb25nPiBUaGUgQW5vbWFseTwvcD4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPkF1dGhvcjo8L3N0cm9uZz4gYXJjaGl2aXN0NDA0MDQwPC9wPgogICAgICA8cCBzdHlsZT0ibWFyZ2luOiA1cHggMDsiPjxzdHJvbmc+RGF0ZTo8L3N0cm9uZz4gMTk5OC0wNC0xMiAwMzoxNCBBTTwvcD4KICAgIDwvZGl2PgogICAgPGRpdiBzdHlsZT0ibGluZS1oZWlnaHQ6IDEuODsgZm9udC1zaXplOiAxNXB4OyI+CiAgICAgIDxwPkkndmUgZm91bmQgc29tZXRoaW5nIGluIHRoZSBsb2dzLiBJdCdzIG5vdCBqdXN0IGRhdGEgY29ycnVwdGlvbi4gSXQncyBsb29raW5nIGJhY2sgYXQgdXMuPC9wPgogICAgICA8cD5JJ3ZlIGhpZGRlbiB0aGUgZmluYWwga2V5IGluIHRoZSBzeXN0ZW0gbmV0d29yayB0cmFjZS4gSWYgYW55b25lIGZpbmRzIHRoaXMsIHlvdSBrbm93IHdoZXJlIHRvIHJlYWNoIG1lLiBMb29rIGF0IG5ldHdvcmtfdHJhY2Uuc3lzLjwvcD4KICAgICAgPHAgPkV4dGVybmFsIGNvbnRhY3QgcHJvdG9jb2wgaW5pdGlhdGVkLiBUaGV5IGFyZSB3YXRjaGluZyB0aGUgbmV0d29yay48L3A+CiAgICA8L2Rpdj4KICAgIDxkaXYgc3R5bGU9Im1hcmdpbi10b3A6IDMwcHg7IGJvcmRlci10b3A6IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy10b3A6IDE1cHg7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogMDsiPltFbmQgb2YgdGhyZWFkXTwvcD4KICAgIDwvZGl2PgogIDwvZGl2Pgo8L2Rpdj4=');
-                if (getStage4Progress() < 5) {
-                  setStage4Progress(5);
-                  triggerEndingSequence();
-                }
-              } else {
-                accessDeniedMsg = 'Archive forum locked.';
-              }
+              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'forum', userId: window.firebaseAuth?.currentUser?.uid || 'anonymous' }) })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.status === 'success') {
+                    unlocked = true;
+                    if (getStage4Progress() < 4) setStage4Progress(4);
+                    dynamicHtml = atob('PGRpdiBzdHlsZT0iY29sb3I6IzBjMDtmb250LWZhbWlseTptb25vc3BhY2U7cGFkZGluZzozMHB4O2JhY2tncm91bmQ6IzA1MDUwNTtoZWlnaHQ6MTAwJTtvdmVyZmxvdy15OmF1dG87Ym94LXNpemluZzpib3JkZXItYm94OyI+CiAgPGRpdiBzdHlsZT0iYm9yZGVyOiAxcHggc29saWQgIzBjMDsgcGFkZGluZzogMjBweDsgbWF4LXdpZHRoOiA4MDBweDsgbWFyZ2luOiAwIGF1dG87IGJhY2tncm91bmQ6ICMwMDA7Ij4KICAgIDxoMiBzdHlsZT0ibWFyZ2luLXRvcDogMDsgbGV0dGVyLXNwYWNpbmc6IDFweDsgY29sb3I6ICMwZjA7Ij5JTlRFUk5BTCBBUkNISVZFIEZPUlVNIFtSRUFELU9OTFldPC9oMj4KICAgIDxkaXYgc3R5bGU9ImJvcmRlci1ib3R0b206IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy1ib3R0b206IDE1cHg7IG1hcmdpbi1ib3R0b206IDIwcHg7IGxpbmUtaGVpZ2h0OiAxLjY7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPlRvcGljOjwvc3Ryb25nPiBUaGUgQW5vbWFseTwvcD4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPkF1dGhvcjo8L3N0cm9uZz4gYXJjaGl2aXN0NDA0MDQwPC9wPgogICAgICA8cCBzdHlsZT0ibWFyZ2luOiA1cHggMDsiPjxzdHJvbmc+RGF0ZTo8L3N0cm9uZz4gMTk5OC0wNC0xMiAwMzoxNCBBTTwvcD4KICAgIDwvZGl2PgogICAgPGRpdiBzdHlsZT0ibGluZS1oZWlnaHQ6IDEuODsgZm9udC1zaXplOiAxNXB4OyI+CiAgICAgIDxwPkkndmUgZm91bmQgc29tZXRoaW5nIGluIHRoZSBsb2dzLiBJdCdzIG5vdCBqdXN0IGRhdGEgY29ycnVwdGlvbi4gSXQncyBsb29raW5nIGJhY2sgYXQgdXMuPC9wPgogICAgICA8cD5JJ3ZlIGhpZGRlbiB0aGUgZmluYWwga2V5IGluIHRoZSBzeXN0ZW0gbmV0d29yayB0cmFjZS4gSWYgYW55b25lIGZpbmRzIHRoaXMsIHlvdSBrbm93IHdoZXJlIHRvIHJlYWNoIG1lLiBMb29rIGF0IG5ldHdvcmtfdHJhY2Uuc3lzLjwvcD4KICAgICAgPHAgPkV4dGVybmFsIGNvbnRhY3QgcHJvdG9jb2wgaW5pdGlhdGVkLiBUaGV5IGFyZSB3YXRjaGluZyB0aGUgbmV0d29yay48L3A+CiAgICA8L2Rpdj4KICAgIDxkaXYgc3R5bGU9Im1hcmdpbi10b3A6IDMwcHg7IGJvcmRlci10b3A6IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy10b3A6IDE1cHg7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogMDsiPltFbmQgb2YgdGhyZWFkXTwvcD4KICAgIDwvZGl2PgogIDwvZGl2Pgo8L2Rpdj4=');
+                    if (getStage4Progress() < 5) {
+                      setStage4Progress(5);
+                      triggerEndingSequence();
+                    }
+                  } else {
+                    accessDeniedMsg = 'Archive forum locked.';
+                  }
+                  finishLoad();
+                });
+              return;
             } else if (targetUrl === atob('YXJjaGl2ZTovL3JlY29yZHM=')) {
               if (getStage4Progress() >= 6) {
                 unlocked = true;
@@ -2861,45 +2922,51 @@ fragment remains</div>
               } else {
                 accessDeniedMsg = 'Archive records locked.';
               }
+              finishLoad();
+              return;
             }
             
-            if (!unlocked) {
-              page.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f00;font-family:monospace;text-align:center;"><div><h1>ACCESS DENIED</h1><p>' + accessDeniedMsg + '</p></div></div>';
-              if (window.soundManager) window.soundManager.playError();
-            } else {
-              const iframe = document.createElement('iframe');
-              iframe.allow = "autoplay";
-              iframe.style.border = 'none';
-              iframe.style.position = 'absolute';
-              iframe.style.top = '0';
-              iframe.style.left = '0';
-              iframe.style.width = '100%';
-              iframe.style.height = '100%';
-              page.appendChild(iframe);
-              
-              if (dynamicHtml) {
-                iframe.srcdoc = dynamicHtml;
+            function finishLoad() {
+              if (!unlocked) {
+                page.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f00;font-family:monospace;text-align:center;"><div><h1>ACCESS DENIED</h1><p>' + accessDeniedMsg + '</p></div></div>';
+                if (window.soundManager) window.soundManager.playError();
               } else {
-                fetch(fetchPath)
-                  .then(res => res.text())
-                  .then(html => {
-                    const baseTag = '<base href="' + window.location.href + '">';
-                    if (html.includes('<head>')) {
-                      html = html.replace('<head>', '<head>' + baseTag);
-                    } else {
-                      html = baseTag + html;
-                    }
-                    iframe.srcdoc = html;
-                  })
-                  .catch(err => {
-                    page.innerHTML = '<div style="color:#f00;padding:20px;">Error loading archive fragment.</div>';
-                  });
-              }
-              
-              if (window.soundManager && targetUrl === 'archive://node/04') {
-                window.soundManager.playSuccess();
+                const iframe = document.createElement('iframe');
+                iframe.allow = "autoplay";
+                iframe.style.border = 'none';
+                iframe.style.position = 'absolute';
+                iframe.style.top = '0';
+                iframe.style.left = '0';
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                page.appendChild(iframe);
+                
+                if (dynamicHtml) {
+                  iframe.srcdoc = dynamicHtml;
+                } else {
+                  fetch(fetchPath)
+                    .then(res => res.text())
+                    .then(html => {
+                      const baseTag = '<base href="' + window.location.href + '">';
+                      if (html.includes('<head>')) {
+                        html = html.replace('<head>', '<head>' + baseTag);
+                      } else {
+                        html = baseTag + html;
+                      }
+                      iframe.srcdoc = html;
+                    })
+                    .catch(err => {
+                      page.innerHTML = '<div style="color:#f00;padding:20px;">Error loading archive fragment.</div>';
+                    });
+                }
+                
+                if (window.soundManager && targetUrl === 'archive://node/04') {
+                  window.soundManager.playSuccess();
+                }
               }
             }
+            
+            finishLoad();
           } else {
             page.innerHTML = '<p><strong>Status:</strong> OFFLINE</p><p>The connection to the main archive has been severed.</p>';
             page.style.padding = '20px';
@@ -3044,61 +3111,77 @@ fragment remains</div>
           printTerminal("[ERR]  Archive connection lost.");
           printTerminal("[INFO] User 'vale_a' initiated backup sequence.");
           break;
-        case 'decrypt':
-          if (args.length > 1 && args[1] === '840291') {
-            printTerminal("Decryption key accepted.");
-            setTimeout(() => {
-              printTerminal("Archive integrity verified.");
-              setTimeout(() => {
-                printTerminal("Registering investigator...");
-                setTimeout(() => {
-                  printTerminal("Accessing root archive...");
-                  setTimeout(() => {
-                    const origin = window.location.origin;
-                    window.location.href = origin + '/archive';
-                  }, 2000);
-                }, 1500);
-              }, 1500);
-            }, 1000);
-          } else if (args.length > 1) {
-            printTerminal("Error: Invalid decryption key.");
-          } else {
-            printTerminal("Usage: decrypt <code>");
-          }
-          break;
-        case [atob('ZGVj'), atob('b2Rl'), atob('X3Zh'), atob('bGVf'), atob('YXJj'), atob('aGl2'), atob('ZQ==')].join(''):
-          if (getStage4Progress() >= 1) {
-            printTerminal("Decoding archive...");
-            setTimeout(() => {
-              printTerminal("Archive decoded successfully.");
-              printTerminal("Unlocking /vale/ directory...");
-              document.getElementById('icon-vale').classList.remove('hidden');
-              arrangeIcons();
-              if (getStage4Progress() < 2) setStage4Progress(2);
-              if (window.soundManager) window.soundManager.playSuccess();
-            }, 1000);
-          } else {
-            printTerminal("Bad command or file name.");
-          }
-          break;
-        case [atob('YXJj'), atob('aGl2'), atob('ZQ==')].join(''):
-          if (args.length > 1 && args[1] === atob('dmFsZQ==') && getStage4Progress() >= 2) {
-            printTerminal("Verifying key...");
-            setTimeout(() => {
-              printTerminal("Archive match detected.");
-              printTerminal("Access granted.");
-              localStorage.setItem('aurora_stage4_forum_unlocked', 'true');
-              if (window.soundManager) window.soundManager.playSuccess();
-            }, 1000);
-          } else {
-            printTerminal("Archive node detected.");
-            printTerminal("Enter archive phrase:");
-            terminalState = 'archive_password';
-            termPrompt.innerText = "";
-          }
-          break;
         default:
-          printTerminal("Bad command or file name.");
+          // Send to backend for validation
+          const userId = window.firebaseAuth?.currentUser?.uid || 'anonymous';
+          fetch('/api/validateCommand', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ input: cmd, userId, type: 'terminal' })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success') {
+              if (data.action === 'redirect_archive') {
+                printTerminal("Decryption key accepted.");
+                setTimeout(() => {
+                  printTerminal("Archive integrity verified.");
+                  setTimeout(() => {
+                    printTerminal("Registering investigator...");
+                    setTimeout(() => {
+                      printTerminal("Accessing root archive...");
+                      setTimeout(() => {
+                        window.location.href = window.location.origin + '/archive';
+                      }, 2000);
+                    }, 1500);
+                  }, 1500);
+                }, 1000);
+              } else if (data.action === 'unlock_vale') {
+                printTerminal("Decoding archive...");
+                setTimeout(() => {
+                  printTerminal("Archive decoded successfully.");
+                  printTerminal("Unlocking /vale/ directory...");
+                  document.getElementById('icon-vale').classList.remove('hidden');
+                  arrangeIcons();
+                  if (window.soundManager) window.soundManager.playSuccess();
+                }, 1000);
+              } else if (data.action === 'unlock_forum') {
+                printTerminal("Verifying key...");
+                setTimeout(() => {
+                  printTerminal("Archive match detected.");
+                  printTerminal("Access granted.");
+                  localStorage.setItem('aurora_stage4_forum_unlocked', 'true');
+                  if (window.soundManager) window.soundManager.playSuccess();
+                }, 1000);
+              } else if (data.action === 'require_password') {
+                printTerminal("Archive node detected.");
+                printTerminal("Enter archive phrase:");
+                terminalState = 'archive_password';
+                termPrompt.innerText = "";
+              } else if (data.action === 'show_caesar_clue') {
+                printTerminal("algorithm: caesar");
+                printTerminal("shift: 7");
+                printTerminal("");
+                printTerminal("encoded string:");
+                printTerminal("kwws://dufklyh.orfdo/qrgh03/vhfuhw");
+                localStorage.setItem('aurora_stage3_token1', btoa('true|AURORA_OS_SECRET'));
+              }
+            } else {
+              if (baseCmd === 'decrypt') {
+                if (args.length > 1) {
+                  printTerminal("Error: Invalid decryption key.");
+                } else {
+                  printTerminal("Usage: decrypt <code>");
+                }
+              } else {
+                printTerminal(data.message || "Bad command or file name.");
+              }
+            }
+          })
+          .catch(err => {
+            printTerminal("Error communicating with archive server.");
+          });
+          break;
       }
     }
 
@@ -3131,40 +3214,58 @@ fragment remains</div>
     }
 
     function handleArchivePassword(pwd) {
-      if (pwd === "THE ARCHIVE REMEMBERS") {
-        printTerminal("Access granted.");
-        terminalState = 'normal';
-        termPrompt.innerText = "C:\\>";
-        
-        // Unlock archive
-        document.getElementById('icon-archive').classList.remove('hidden');
-        arrangeIcons();
-        localStorage.setItem('aurora_stage1_complete', 'true');
-        if (window.soundManager) window.soundManager.playSuccess();
-      } else if (pwd === atob('VkFMRQ==') && getStage4Progress() >= 2) {
-        printTerminal("Verifying key...");
-        terminalState = 'normal';
-        termPrompt.innerText = "C:\\>";
-        setTimeout(() => {
-          printTerminal("Archive match detected.");
-          printTerminal("Access granted.");
-          localStorage.setItem('aurora_stage4_forum_unlocked', 'true');
-          if (window.soundManager) window.soundManager.playSuccess();
-        }, 1000);
-      } else {
-        failedAttempts++;
-        if (failedAttempts >= 3) {
-          printTerminal("");
-          printTerminal("SYSTEM ALERT");
-          printTerminal("Archive protection triggered.");
-          printTerminal("");
-          failedAttempts = 0;
+      const userId = window.firebaseAuth?.currentUser?.uid || 'anonymous';
+      fetch('/api/validateCommand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: pwd, userId, type: 'archive_password' })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          if (data.action === 'unlock_archive') {
+            printTerminal("Access granted.");
+            terminalState = 'normal';
+            termPrompt.innerText = "C:\\>";
+            
+            // Unlock archive
+            document.getElementById('icon-archive').classList.remove('hidden');
+            arrangeIcons();
+            localStorage.setItem('aurora_stage1_complete', 'true');
+            if (window.soundManager) window.soundManager.playSuccess();
+            syncProgression();
+          } else if (data.action === 'unlock_forum') {
+            printTerminal("Verifying key...");
+            terminalState = 'normal';
+            termPrompt.innerText = "C:\\>";
+            setTimeout(() => {
+              printTerminal("Archive match detected.");
+              printTerminal("Access granted.");
+              localStorage.setItem('aurora_stage4_forum_unlocked', 'true');
+              if (window.soundManager) window.soundManager.playSuccess();
+              syncProgression();
+            }, 1000);
+          }
         } else {
-          printTerminal("Access denied.");
+          failedAttempts++;
+          if (failedAttempts >= 3) {
+            printTerminal("");
+            printTerminal("SYSTEM ALERT");
+            printTerminal("Archive protection triggered.");
+            printTerminal("");
+            failedAttempts = 0;
+          } else {
+            printTerminal("Access denied.");
+          }
+          terminalState = 'normal';
+          termPrompt.innerText = "C:\\>";
         }
+      })
+      .catch(err => {
+        printTerminal("Error communicating with archive server.");
         terminalState = 'normal';
         termPrompt.innerText = "C:\\>";
-      }
+      });
     }
 
     // --- Messenger Logic ---
@@ -3529,6 +3630,15 @@ fragment remains</div>
     function setProgressStep(step) {
       const token = btoa(step + '|' + SECRET_KEY);
       localStorage.setItem('aurora_stage3_token', token);
+      
+      const userId = window.firebaseAuth?.currentUser?.uid;
+      if (userId) {
+        fetch('/api/validateCommand', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'update_messenger_step', step: step, userId })
+        });
+      }
     }
     
     function getStage4Progress() {
@@ -3549,12 +3659,81 @@ fragment remains</div>
     function setStage4Progress(step) {
       const token = btoa(step + '|' + SECRET_KEY);
       localStorage.setItem('aurora_stage4_token', token);
+      
+      const userId = window.firebaseAuth?.currentUser?.uid;
+      if (userId) {
+        fetch('/api/validateCommand', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'update_stage4_progress', step: step, userId })
+        });
+      }
     }
 
     // Migrate old progression if it exists
     if (localStorage.getItem('aurora_stage3_step')) {
       setProgressStep(parseInt(localStorage.getItem('aurora_stage3_step') || '0'));
       localStorage.removeItem('aurora_stage3_step');
+    }
+
+    async function syncProgression() {
+      const userId = window.firebaseAuth?.currentUser?.uid;
+      if (!userId) return;
+      
+      try {
+        const response = await fetch('/api/validateCommand', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'get_progression', userId })
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+          if (data.messenger_step !== undefined) {
+            const token = btoa(data.messenger_step + '|' + SECRET_KEY);
+            localStorage.setItem('aurora_stage3_token', token);
+          }
+          if (data.stage4_progress !== undefined) {
+            const token = btoa(data.stage4_progress + '|' + SECRET_KEY);
+            localStorage.setItem('aurora_stage4_token', token);
+          }
+          
+          if (data.stage1_archive_unlocked) localStorage.setItem('aurora_stage1_complete', 'true');
+          if (data.stage1_vale_unlocked) localStorage.setItem('aurora_stage1_vale_unlocked', 'true');
+          if (data.stage4_forum_unlocked) localStorage.setItem('aurora_stage4_forum_unlocked', 'true');
+          if (data.stage3_messenger_complete) localStorage.setItem('aurora_stage3_token_complete', btoa('true|AURORA_OS_SECRET'));
+          
+          if (data.stage4_observer_logs_opened) localStorage.setItem('aurora_stage4_observer_logs_opened', 'true');
+          if (data.stage4_network_trace_viewed) localStorage.setItem('aurora_stage4_network_trace_viewed', 'true');
+          
+          if (data.stage2_phase2_complete) {
+            localStorage.setItem('stage1_phase', '3');
+          } else if (data.stage2_phase1_complete) {
+            localStorage.setItem('stage1_phase', '2');
+          }
+          
+          updateStage3Clues();
+          
+          // Refresh UI
+          if (data.stage1_archive_unlocked) document.getElementById('icon-archive').classList.remove('hidden');
+          if (data.stage1_vale_unlocked || data.stage4_progress >= 2) document.getElementById('icon-vale').classList.remove('hidden');
+          if (data.stage4_progress >= 1) {
+             document.getElementById('icon-observer').classList.remove('hidden');
+             startSystemAliveEffects();
+          }
+          arrangeIcons();
+        }
+      } catch (e) {
+        console.error("Progression sync failed", e);
+      }
+    }
+
+    // Call sync when auth is ready
+    if (window.onAuthReady) {
+      window.onAuthReady((user) => {
+        if (user) {
+          syncProgression();
+        }
+      });
     }
 
     // Restore Stage 4 icons on load
@@ -3690,26 +3869,15 @@ fragment remains</div>
           const t = text.toUpperCase();
           let step = getProgressStep();
           
-          const payloads = [
-            "3c702b677e650000131511172278666b7037677e65012a653d282765362b2b2420216411332920a6c7cb36653722312a2b20673e2a262f696e27377a7b30377b033537202164303336652b293e3c65302f37652721203b2b2b2d29356b7926356c7927367915372021237229202531373665303533262037696e27377a7b30377b12263e206530353b202164333d652036262120652b2937652a2267262d2029696e27377a7b30377b072f37262e64333a2065303533362d6a652f",
-            "3f673e76726611056d0716133b696a686722767266063f263a2126247a7426376e682a367b0635242165353a2b363c20202d2065243c2d642b352c3c642322352f29203e20667827226a7426376e013b2165243c2d64313526252d2b3138666638",
-            "366d2067636f1d7e7c141f0e73787b616d3c67636f01216b652f3d70793b3f71032a3728366e2c2a6d202029206d3b262079202e3d2e77712d3c7b652f3d70093622246e213c283f2b37776f32",
-            "3c6d22667d6d1d750d1f1a7473726e68653d6e7e650c202b342a3e6a7b2d3e7a7b2d3e7a112e2021672b252029adccdd336f2a2b2b232333673829252b3b246a7b2d3e7a7b2d3e7a0f2a6c222823202b302a286437203b2135617026357170263571002d343b292a696d31",
-            "387021757461000a6e011103726a6c6f703d7574610b20226e22202a772c26352639202a3c28773a2c723c322b632627326e33333b232b313c616b2c316c73353c7d153d322b27722d322d2c3f2a246e34372e3b3a2b7c73353c7d6e2d257014372e3b3a2b722d322d2c3f2a246e333d38323c6d6e2d25707f303d6918223e2a773c26332c3f2b27723b3f2730723f38272d26616b2c316c73353c7d103a236e2b376f202b2d266f313b312627323c6d7032"
-          ];
-          
-          if (step >= 0 && step < payloads.length) {
-            let str = "";
-            let hex = payloads[step];
-            for(let i=0; i<hex.length; i+=2) {
-                str += String.fromCharCode(parseInt(hex.substr(i, 2), 16) ^ t.charCodeAt((i/2) % t.length));
-            }
-            let decrypted = null;
-            try {
-                decrypted = JSON.parse(decodeURIComponent(escape(str)));
-            } catch(e) {}
-            
-            if (decrypted && decrypted.n) {
+          const userId = window.firebaseAuth?.currentUser?.uid || 'anonymous';
+          fetch('/api/validateCommand', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ input: t, userId, type: 'messenger', step })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success') {
               const now = new Date();
               let hours = now.getHours();
               const ampm = hours >= 12 ? ' PM' : ' AM';
@@ -3722,19 +3890,17 @@ fragment remains</div>
               inputField.value = '';
               renderChatHistory();
               
-              // Advance step
-              step++;
-              setProgressStep(step);
+              if (data.nextStep !== undefined) {
+                setProgressStep(data.nextStep);
+              }
               updateStage3Clues();
               
               // Messenger typing delay
               setTimeout(() => {
-                let reply = decrypted.r;
-                
-                if (atob(decrypted.n) === 'DONE') {
+                if (data.action === 'complete_messenger') {
                   // Final Event
                   setTimeout(() => {
-                    localStorage.setItem('aurora_stage3_token_complete', btoa('true|AURORA_OS_SECRET'));
+                    syncProgression();
                     if (typeof openBrowserUrl !== 'undefined') {
                       openBrowserUrl('archive://node/04');
                     }
@@ -3744,11 +3910,11 @@ fragment remains</div>
                     
                     // Node04 Narrative Event
                     setTimeout(() => {
-                      // Highlight Unknown User
-                      const contactItems = document.querySelectorAll('.contact-item');
-                      contactItems.forEach(item => {
-                        if (item.innerText === 'Unknown User') {
-                          item.style.animation = 'blink 1s infinite alternate';
+                        // Highlight Unknown User
+                        const contactItems = document.querySelectorAll('.contact-item');
+                        contactItems.forEach(item => {
+                          if (item.innerText === 'Unknown User') {
+                            item.style.animation = 'blink 1s infinite alternate';
                           // Add keyframes if not exists
                           if (!document.getElementById('blink-anim')) {
                             const style = document.createElement('style');
@@ -3759,15 +3925,7 @@ fragment remains</div>
                         }
                       });
                       
-                      // Decode Unknown User message
-                      let uStr = "";
-                      let uHex = "076f3324431439202a21554627212365475c2b21643c5f416e382b305c506e3d2124535c6e3b2c2c43143e202d2b441a722d367b0c563c7112245c516e3d2124535c2b2b640b5f502b7f706551476e3821295c1a722d367b0c563c710c2010473a20343555506e3d2136405b202b2d2b57143d272b374458376f252344513c617827420a722d367b72516e2c253755523b23643258553a6f3d2a45143b21272a46513c61";
-                      let uKey = "NODE04";
-                      for(let i=0; i<uHex.length; i+=2) {
-                          uStr += String.fromCharCode(parseInt(uHex.substr(i, 2), 16) ^ uKey.charCodeAt((i/2) % uKey.length));
-                      }
-                      const uMsg = decodeURIComponent(escape(uStr));
-                      chats['unknown'].push({ sender: 'Unknown', time: timeStr, text: uMsg });
+                      chats['unknown'].push({ sender: 'Unknown', time: timeStr, text: data.unknownMsg });
                       if (currentChatContact === 'unknown') renderChatHistory();
                     }, 2000);
                   }, 2000);
@@ -3776,44 +3934,23 @@ fragment remains</div>
                 chats[currentChatContact].push({ 
                   sender: 'Archive Node', 
                   time: timeStr, 
-                  text: reply 
+                  text: data.reply 
                 });
                 renderChatHistory();
                 if (window.soundManager) window.soundManager.playPing();
               }, 2000); // 2 second typing delay
-              
-              return;
             }
-          }
+          })
+          .catch(err => console.error(err));
+          
+          return;
         }
         
         _originalSendChatMessage.apply(this, arguments);
       };
     }
 
-    // Override Terminal Command
-    if (typeof handleCommand !== 'undefined') {
-      const _originalHandleCommand = handleCommand;
-      handleCommand = function(cmd) {
-        if (!cmd) return;
-        const args = cmd.trim().split(/\s+/);
-        const baseCmd = args[0].toLowerCase();
-        
-        let step = getProgressStep();
-        
-        if (step >= 2 && baseCmd === 'decrypt' && args.length > 1 && args[1].toLowerCase() === String.fromCharCode(100, 101, 112, 116, 104)) {
-          printTerminal("algorithm: caesar");
-          printTerminal("shift: 7");
-          printTerminal("");
-          printTerminal("encoded string:");
-          printTerminal("kwws://dufklyh.orfdo/qrgh03/vhfuhw");
-          localStorage.setItem('aurora_stage3_token1', btoa('true|AURORA_OS_SECRET'));
-          return;
-        }
-        
-        _originalHandleCommand.apply(this, arguments);
-      };
-    }
+
 
     // Update existing links to use virtual routes and sanitize DOM
     document.querySelectorAll('a').forEach(a => {
