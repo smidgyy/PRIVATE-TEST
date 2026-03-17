@@ -98,6 +98,31 @@ class SoundManager {
     osc.stop(this.audioCtx.currentTime + 0.5);
   }
 
+  playNotification() {
+    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    
+    const playBeep = (startTime) => {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(880, this.audioCtx.currentTime + startTime); // A5
+      
+      gain.gain.setValueAtTime(0, this.audioCtx.currentTime + startTime);
+      gain.gain.linearRampToValueAtTime(0.05, this.audioCtx.currentTime + startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + startTime + 0.15);
+      
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      
+      osc.start(this.audioCtx.currentTime + startTime);
+      osc.stop(this.audioCtx.currentTime + startTime + 0.15);
+    };
+    
+    playBeep(0);
+    playBeep(0.2);
+  }
+
   playGlitch() {
     if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
     const bufferSize = this.audioCtx.sampleRate * 0.2;

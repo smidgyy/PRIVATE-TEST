@@ -2432,6 +2432,10 @@ fragment remains</div>
       notif.innerHTML = `<svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2"><path d="M16 4l12 24H4L16 4z"/><path d="M16 12v8M16 24v2"/></svg> <span>${msg}</span>`;
       container.appendChild(notif);
       
+      if (window.soundManager) {
+        window.soundManager.playNotification();
+      }
+      
       setTimeout(() => {
         notif.style.opacity = '0';
         setTimeout(() => notif.remove(), 300);
@@ -2462,6 +2466,7 @@ fragment remains</div>
     const audioTotalTime = 30.0; // seconds
     let audioStartTime = 0;
     let masterGain = null;
+    let isDraggingAudioSlider = false;
 
     function updateAudioLogVolume() {
       const currentMasterVol = window.soundManager ? window.soundManager.getVolume() : 1;
@@ -2603,7 +2608,7 @@ fragment remains</div>
       };
 
       progressInterval = setInterval(() => {
-        if (isPlaying && audioContext) {
+        if (isPlaying && audioContext && !isDraggingAudioSlider) {
           audioCurrentTime = audioContext.currentTime - audioStartTime;
           if (audioCurrentTime > audioTotalTime) audioCurrentTime = audioTotalTime;
           audioProgressSlider.value = audioCurrentTime;
@@ -2612,13 +2617,29 @@ fragment remains</div>
       }, 100);
     }
     
+    audioProgressSlider.addEventListener('mousedown', () => isDraggingAudioSlider = true);
+    audioProgressSlider.addEventListener('touchstart', () => isDraggingAudioSlider = true);
+
+    const handleSliderRelease = (e) => {
+      if (isDraggingAudioSlider) {
+        isDraggingAudioSlider = false;
+        const newTime = parseFloat(audioProgressSlider.value);
+        if (isPlaying) {
+          pauseAudioLog();
+          audioCurrentTime = newTime;
+          playAudioLog();
+        } else {
+          audioCurrentTime = newTime;
+        }
+      }
+    };
+
+    audioProgressSlider.addEventListener('mouseup', handleSliderRelease);
+    audioProgressSlider.addEventListener('touchend', handleSliderRelease);
+
     audioProgressSlider.addEventListener('input', (e) => {
       audioCurrentTime = parseFloat(e.target.value);
       audioTimeCurrent.innerText = formatTime(audioCurrentTime);
-      if (isPlaying) {
-        pauseAudioLog();
-        playAudioLog();
-      }
     });
 
 
