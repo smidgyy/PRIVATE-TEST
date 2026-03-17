@@ -1651,7 +1651,7 @@ fragment remains</div>
 
   </div>
 
-  <script src="/sound-manager.js"></script>
+  <script src="/sound-manager.js?v=2"></script>
   <script>
     function arrangeIcons() {
       const icons = Array.from(document.querySelectorAll('#desktop > .icon:not(.hidden)'));
@@ -2469,7 +2469,7 @@ fragment remains</div>
     let isDraggingAudioSlider = false;
 
     function updateAudioLogVolume() {
-      const currentMasterVol = window.soundManager ? window.soundManager.getVolume() : 1;
+      const currentMasterVol = (window.soundManager && typeof window.soundManager.getVolume === 'function') ? window.soundManager.getVolume() : 1;
       if (masterGain) masterGain.gain.value = (audioVolume.value / 100) * currentMasterVol;
     }
     
@@ -2588,7 +2588,7 @@ fragment remains</div>
       audioSource.buffer = audioBuffer;
       audioSource.connect(masterGain);
       
-      const masterVol = window.soundManager ? window.soundManager.getVolume() : 1;
+      const masterVol = (window.soundManager && typeof window.soundManager.getVolume === 'function') ? window.soundManager.getVolume() : 1;
       masterGain.gain.value = (audioVolume.value / 100) * masterVol;
       
       if (audioCurrentTime >= audioTotalTime) {
@@ -3294,7 +3294,7 @@ fragment remains</div>
     // Initialize audio player
     audioPlayer.src = playlist[0].src;
     audioPlayer.dataset.originalVolume = 0.3;
-    audioPlayer.volume = 0.3 * (window.soundManager ? window.soundManager.getVolume() : 1);
+    audioPlayer.volume = 0.3 * ((window.soundManager && typeof window.soundManager.getVolume === 'function') ? window.soundManager.getVolume() : 1);
 
     audioPlayer.addEventListener('ended', nextTrack);
 
@@ -3381,7 +3381,7 @@ fragment remains</div>
 
     function updateMusicVolume() {
       const vol = document.getElementById('music-volume').value;
-      const masterVol = window.soundManager ? window.soundManager.getVolume() : 1;
+      const masterVol = (window.soundManager && typeof window.soundManager.getVolume === 'function') ? window.soundManager.getVolume() : 1;
       audioPlayer.dataset.originalVolume = vol / 100;
       audioPlayer.volume = (vol / 100) * masterVol;
     }
