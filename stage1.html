@@ -835,7 +835,16 @@
       </div>
       <div class="taskbar-right">
         <button onclick="localStorage.clear(); sessionStorage.clear(); window.location.reload();" style="background: #ff4444; color: white; border: 1px solid #000; padding: 2px 5px; margin-right: 10px; cursor: pointer; font-size: 10px; font-weight: bold; box-shadow: 1px 1px 0 #fff inset, -1px -1px 0 #888 inset;" title="Reset all progress">DEV RESET</button>
-        <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="#000" stroke-width="2" style="margin-right: 5px;"><path d="M12 20h8v8h-8zM12 4h8v12h-8z"/></svg>
+        <div style="position: relative; display: inline-block; margin-right: 5px;">
+          <svg id="volume-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor: pointer;" onclick="toggleVolumeSlider(event)">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <div id="volume-slider-container" style="display: none; position: absolute; bottom: 25px; left: -40px; background: #c0c0c0; border: 2px outset #fff; padding: 10px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); z-index: 10000; width: 100px;">
+            <div style="font-size: 10px; margin-bottom: 5px; text-align: center; font-weight: bold;">Volume</div>
+            <input type="range" id="master-volume-slider" min="0" max="1" step="0.01" value="1" style="width: 100%; accent-color: #000;">
+          </div>
+        </div>
         <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="#000" stroke-width="2" style="margin-right: 5px;"><path d="M4 16h8l4-8 4 16 4-8h8"/></svg>
         <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="#000" stroke-width="2" style="margin-right: 10px;"><path d="M16 4v12l8 4"/></svg>
         <span id="taskbar-clock">1:38 AM</span>
@@ -2269,6 +2278,11 @@ fragment remains</div>
       if (contextMenu.style.display === 'block' && !contextMenu.contains(e.target)) {
         closeContextMenu();
       }
+      const volContainer = document.getElementById('volume-slider-container');
+      const volIcon = document.getElementById('volume-icon');
+      if (typeof closeVolumeSlider === 'function' && volContainer && volContainer.style.display === 'block' && !volContainer.contains(e.target) && e.target !== volIcon && (!volIcon || !volIcon.contains(e.target))) {
+        closeVolumeSlider();
+      }
     });
 
     function toggleStartMenu(e) {
@@ -2279,6 +2293,7 @@ fragment remains</div>
         startMenu.style.display = 'flex';
         startBtn.classList.add('active');
         closeContextMenu();
+        closeVolumeSlider();
       }
     }
 
@@ -2286,6 +2301,59 @@ fragment remains</div>
       startMenu.style.display = 'none';
       startBtn.classList.remove('active');
     }
+
+    // --- Volume Control ---
+    const volumeSliderContainer = document.getElementById('volume-slider-container');
+    const masterVolumeSlider = document.getElementById('master-volume-slider');
+    const volumeIcon = document.getElementById('volume-icon');
+
+    function toggleVolumeSlider(e) {
+      e.stopPropagation();
+      if (volumeSliderContainer.style.display === 'block') {
+        closeVolumeSlider();
+      } else {
+        volumeSliderContainer.style.display = 'block';
+        closeStartMenu();
+        closeContextMenu();
+      }
+    }
+
+    function closeVolumeSlider() {
+      if (volumeSliderContainer) {
+        volumeSliderContainer.style.display = 'none';
+      }
+    }
+
+    if (masterVolumeSlider) {
+      // Initialize slider value from localStorage if available
+      const savedVolume = localStorage.getItem('aurora_master_volume');
+      if (savedVolume !== null) {
+        masterVolumeSlider.value = savedVolume;
+      }
+      
+      const updateVolumeIcon = (vol) => {
+        if (vol === 0) {
+          volumeIcon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>';
+        } else if (vol < 0.5) {
+          volumeIcon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>';
+        } else {
+          volumeIcon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>';
+        }
+      };
+
+      // Set initial icon state
+      updateVolumeIcon(parseFloat(masterVolumeSlider.value));
+      
+      masterVolumeSlider.addEventListener('input', (e) => {
+        const vol = parseFloat(e.target.value);
+        if (window.soundManager) {
+          window.soundManager.setVolume(vol);
+        }
+        updateVolumeIcon(vol);
+      });
+    }
+
+
 
     // --- Clock ---
     const clockEl = document.getElementById('taskbar-clock');
@@ -2394,6 +2462,14 @@ fragment remains</div>
     const audioTotalTime = 30.0; // seconds
     let audioStartTime = 0;
     let masterGain = null;
+
+    function updateAudioLogVolume() {
+      const currentMasterVol = window.soundManager ? window.soundManager.getVolume() : 1;
+      if (masterGain) masterGain.gain.value = (audioVolume.value / 100) * currentMasterVol;
+    }
+    
+    audioVolume.addEventListener('input', updateAudioLogVolume);
+    window.addEventListener('masterVolumeChanged', updateAudioLogVolume);
 
     async function initAudioBuffer() {
       if (audioBuffer) return;
@@ -2507,7 +2583,8 @@ fragment remains</div>
       audioSource.buffer = audioBuffer;
       audioSource.connect(masterGain);
       
-      masterGain.gain.value = audioVolume.value / 100;
+      const masterVol = window.soundManager ? window.soundManager.getVolume() : 1;
+      masterGain.gain.value = (audioVolume.value / 100) * masterVol;
       
       if (audioCurrentTime >= audioTotalTime) {
         audioCurrentTime = 0;
@@ -2524,11 +2601,6 @@ fragment remains</div>
           audioTimeCurrent.innerText = "00:00";
         }
       };
-
-      const updateVolume = () => {
-        if (masterGain) masterGain.gain.value = audioVolume.value / 100;
-      };
-      audioVolume.addEventListener('input', updateVolume);
 
       progressInterval = setInterval(() => {
         if (isPlaying && audioContext) {
@@ -3200,7 +3272,8 @@ fragment remains</div>
 
     // Initialize audio player
     audioPlayer.src = playlist[0].src;
-    audioPlayer.volume = 0.3;
+    audioPlayer.dataset.originalVolume = 0.3;
+    audioPlayer.volume = 0.3 * (window.soundManager ? window.soundManager.getVolume() : 1);
 
     audioPlayer.addEventListener('ended', nextTrack);
 
@@ -3287,7 +3360,9 @@ fragment remains</div>
 
     function updateMusicVolume() {
       const vol = document.getElementById('music-volume').value;
-      audioPlayer.volume = vol / 100;
+      const masterVol = window.soundManager ? window.soundManager.getVolume() : 1;
+      audioPlayer.dataset.originalVolume = vol / 100;
+      audioPlayer.volume = (vol / 100) * masterVol;
     }
     
     document.getElementById('music-volume').addEventListener('input', updateMusicVolume);
