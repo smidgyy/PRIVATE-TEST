@@ -41,6 +41,33 @@ async function getDb() {
     if (getApps().length === 0) {
       let serviceAccount: any = null;
 
+      // Fallback: Manual .env parsing if process.env is missing it (sometimes dotenv fails in certain Node environments)
+      if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+        try {
+          const envPath = path.join(process.cwd(), '.env');
+          if (fs.existsSync(envPath)) {
+            console.log(">>> [DB] process.env missing key, attempting manual .env read...");
+            const content = fs.readFileSync(envPath, 'utf8');
+            const lines = content.split('\n');
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed.startsWith('FIREBASE_SERVICE_ACCOUNT=')) {
+                let val = trimmed.substring('FIREBASE_SERVICE_ACCOUNT='.length).trim();
+                // Strip quotes if present
+                if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith('"') && val.endsWith('"'))) {
+                  val = val.substring(1, val.length - 1);
+                }
+                process.env.FIREBASE_SERVICE_ACCOUNT = val;
+                console.log(">>> [DB] Manually recovered FIREBASE_SERVICE_ACCOUNT from .env file");
+                break;
+              }
+            }
+          }
+        } catch (e: any) {
+          console.error(">>> [DB] Manual .env recovery failed:", e.message);
+        }
+      }
+
       // Priority 1: Environment Variable (MOST SECURE)
       if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         console.log(">>> [DB] Loading service account from ENV...");
@@ -80,6 +107,17 @@ async function getDb() {
         }
       } 
       
+      // Priority 1.5: Fallback ENV name
+      if (!serviceAccount && process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+        console.log(">>> [DB] Loading service account from FIREBASE_SERVICE_ACCOUNT_JSON...");
+        try {
+          serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON.trim());
+          if (typeof serviceAccount === 'string') {
+            serviceAccount = JSON.parse(serviceAccount);
+          }
+        } catch (e) {}
+      }
+      
       // Priority 2: service-account.json file (BACKUP)
       if (!serviceAccount && fs.existsSync(serviceAccountPath)) {
         console.log(">>> [DB] Loading service account from FILE...");
@@ -94,8 +132,11 @@ async function getDb() {
         }
       }
 
-      if (!serviceAccount || typeof serviceAccount !== 'object') {
-        throw new Error(`Service account credentials are invalid (Type: ${typeof serviceAccount}).`);
+      if (!serviceAccount) {
+        throw new Error("Service account credentials not found. Ensure FIREBASE_SERVICE_ACCOUNT is set in your environment or provide service-account.json.");
+      }
+      if (typeof serviceAccount !== 'object') {
+        throw new Error(`Service account credentials must be an object, but got ${typeof serviceAccount}.`);
       }
 
       // CRITICAL: Aggressive Private Key Sanitization
@@ -199,7 +240,7 @@ async function startServer() {
       
       // Get service account info for diagnostics (safely)
       let clientEmail = "unknown";
-      let hasEnvVar = !!process.env.FIREBASE_SERVICE_ACCOUNT;
+      let hasEnvVar = !!process.env.FIREBASE_SERVICE_ACCOUNT || !!process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
       let keyHash = "none";
       let keyStart = "none";
       let rawFirstChars = "none";
@@ -222,11 +263,23 @@ async function startServer() {
       // Test if the key can actually sign data (verifies format)
       let keySignTest = "untested";
       try {
-        const sa = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-        const sign = crypto.createSign('SHA256');
-        sign.update('test');
-        sign.sign(sa.private_key.replace(/\\n/g, '\n'));
-        keySignTest = "success";
+        let sa: any = null;
+        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+          sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        } else if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+          sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+        } else if (fs.existsSync(serviceAccountPath)) {
+          sa = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+        }
+        
+        if (sa && sa.private_key) {
+          const sign = crypto.createSign('SHA256');
+          sign.update('test');
+          sign.sign(sa.private_key.replace(/\\n/g, '\n'));
+          keySignTest = "success";
+        } else {
+          keySignTest = "no private key found to test";
+        }
       } catch (e: any) {
         keySignTest = "failed: " + e.message;
       }
@@ -250,7 +303,9 @@ async function startServer() {
         settings: db._settings,
         env: {
           NODE_ENV: process.env.NODE_ENV,
-          PORT: process.env.PORT
+          PORT: process.env.PORT,
+          availableKeys: Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('KEY') && !k.includes('PASSWORD')),
+          hasEnvFile: fs.existsSync(path.join(process.cwd(), '.env'))
         }
       });
     } catch (err: any) {
@@ -266,33 +321,50 @@ async function startServer() {
         let sa: any = null;
         
         // Check ENV first
-        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-          source = "env";
-          let rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
-          rawFirstChars = JSON.stringify(rawEnv.substring(0, 20));
+        if (process.env.FIREBASE_SERVICE_ACCOUNT || fs.existsSync(path.join(process.cwd(), '.env'))) {
+          source = "env-or-file-fallback";
+          let rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT?.trim();
           
-          try {
-            // Try robust parsing
-            if (rawEnv.startsWith('\\"') && rawEnv.endsWith('\\"')) {
-              rawEnv = rawEnv.substring(2, rawEnv.length - 2).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-            }
+          if (!rawEnv && fs.existsSync(path.join(process.cwd(), '.env'))) {
+             const content = fs.readFileSync(path.join(process.cwd(), '.env'), 'utf8');
+             const lines = content.split('\n');
+             for (const line of lines) {
+               if (line.trim().startsWith('FIREBASE_SERVICE_ACCOUNT=')) {
+                 rawEnv = line.trim().substring('FIREBASE_SERVICE_ACCOUNT='.length).trim();
+                 if ((rawEnv.startsWith("'") && rawEnv.endsWith("'")) || (rawEnv.startsWith('"') && rawEnv.endsWith('"'))) {
+                   rawEnv = rawEnv.substring(1, rawEnv.length - 1);
+                 }
+                 break;
+               }
+             }
+          }
+
+          if (rawEnv) {
+            rawFirstChars = JSON.stringify(rawEnv.substring(0, 20));
             
-            sa = JSON.parse(rawEnv);
-            if (typeof sa === 'string') {
-              sa = JSON.parse(sa);
-              saType = "string-wrapped-object";
-            } else {
-              saType = "object";
-            }
-          } catch(e: any) {
-            keySignTest = "JSON Parse Error in ENV: " + e.message;
-            // Try aggressive unescape
             try {
-               const unescaped = rawEnv.replace(/\\"/g, '"').replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
-               sa = JSON.parse(unescaped);
-               saType = "aggressive-unescaped-object";
-               keySignTest = "Aggressive unescape worked";
-            } catch (e2) {}
+              // Try robust parsing
+              if (rawEnv.startsWith('\\"') && rawEnv.endsWith('\\"')) {
+                rawEnv = rawEnv.substring(2, rawEnv.length - 2).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+              }
+              
+              sa = JSON.parse(rawEnv);
+              if (typeof sa === 'string') {
+                sa = JSON.parse(sa);
+                saType = "string-wrapped-object";
+              } else {
+                saType = "object";
+              }
+            } catch(e: any) {
+              keySignTest = "JSON Parse Error in ENV: " + e.message;
+              // Try aggressive unescape
+              try {
+                 const unescaped = rawEnv.replace(/\\"/g, '"').replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
+                 sa = JSON.parse(unescaped);
+                 saType = "aggressive-unescaped-object";
+                 keySignTest = "Aggressive unescape worked";
+              } catch (e2) {}
+            }
           }
         } else {
           const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
@@ -340,7 +412,13 @@ async function startServer() {
         rawFirstChars: rawFirstChars,
         saType: saType,
         source: source,
-        hasEnvVar: !!process.env.FIREBASE_SERVICE_ACCOUNT,
+        hasEnvVar: !!process.env.FIREBASE_SERVICE_ACCOUNT || !!process.env.FIREBASE_SERVICE_ACCOUNT_JSON,
+        env: {
+          NODE_ENV: process.env.NODE_ENV,
+          PORT: process.env.PORT,
+          availableKeys: Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('KEY') && !k.includes('PASSWORD')),
+          hasEnvFile: fs.existsSync(path.join(process.cwd(), '.env'))
+        },
         message: err.message,
         details: err.stack,
         cwd: process.cwd(),
