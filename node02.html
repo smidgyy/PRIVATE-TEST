@@ -11,9 +11,10 @@ document.addEventListener('DOMContentLoaded', () => {
       retries++;
     }
     
-    const userId = window.firebaseAuth?.currentUser?.uid || 'anonymous';
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('userId') || window.firebaseAuth?.currentUser?.uid || 'anonymous';
     try {
-      const res = await fetch('/api/validateCommand', {
+      const res = await fetch('/api/validateCommand?userId=' + userId, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'get_progression', userId })
@@ -30,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initPhase();
       }
       
-      const resAccess = await fetch('/api/validateCommand', {
+      const resAccess = await fetch('/api/validateCommand?userId=' + userId, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'check_access', target: 'node02', userId })
@@ -446,8 +447,8 @@ function startBlackFire() {
       
       localStorage.setItem('aurora_stage3_token1', btoa('true|AURORA_OS_SECRET'));
       
-      const userId = window.firebaseAuth?.currentUser?.uid || 'anonymous';
-      fetch('/api/validateCommand', {
+      const userId = new URLSearchParams(window.location.search).get('userId') || window.firebaseAuth?.currentUser?.uid || 'anonymous';
+      fetch('/api/validateCommand?userId=' + userId, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'unlock_node03_secret', userId })
@@ -498,10 +499,10 @@ async function dissolveAndRespond() {
   await new Promise(r => setTimeout(r, totalDissolveTime));
   charLayer.style.opacity = '0';
 
-  const userId = window.firebaseAuth?.currentUser?.uid || 'anonymous';
+  const userId = new URLSearchParams(window.location.search).get('userId') || window.firebaseAuth?.currentUser?.uid || 'anonymous';
   
   try {
-    const res = await fetch('/api/validateCommand', {
+    const res = await fetch('/api/validateCommand?userId=' + userId, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ input: text, userId, type: 'node02_answer', step: phase })

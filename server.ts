@@ -429,7 +429,13 @@ async function startServer() {
 
   app.post("/api/validateCommand", async (req: any, res: any) => {
     try {
-    const { input, userId, type, step, SECRET_KEY } = req.body;
+    const { input, type, step, SECRET_KEY } = req.body;
+    const userId = req.body.userId || req.query.userId;
+    
+    if (!userId && SECRET_KEY !== 'RESILIENT_BOOT') {
+      return res.status(403).json({ error: "ACCESS DENIED: Missing userId" });
+    }
+    
     console.log(`>>> [API] Request: ${type} from user ${userId}. Input: "${input}"`);
     
     // Allow bypass if SECRET_KEY is provided, or if userId is present
@@ -672,7 +678,9 @@ async function startServer() {
 
   app.post("/api/sendMessage", async (req: any, res: any) => {
     try {
-      const { message, contact, userId } = req.body;
+      const { message, contact } = req.body;
+      const userId = req.body.userId || req.query.userId;
+      
       if (!message || !contact || !userId) {
         return res.status(400).json({ error: "Missing required fields" });
       }
@@ -690,19 +698,29 @@ async function startServer() {
       if (contact === 'unknown') {
         const unknownReplies = [
           "You weren't supposed to find this.",
-          "Stop. You don't understand what you're doing.",
           "It sees you now.",
           "Why are you still here?",
-          "You should have left when you had the chance."
+          "You should leave.",
+          "You don't understand what you've done.",
+          "Aurora is waking up.",
+          "The Architect left for a reason.",
+          "You're just another ghost in the machine.",
+          "The silence was better."
         ];
         reply = unknownReplies[Math.floor(Math.random() * unknownReplies.length)];
       } else if (contact === 'elias') {
-        const replies = [
+        const eliasReplies = [
           "Check the logs again.",
           "Something is missing.",
-          "I'm investigating the breach. Keep looking."
+          "The system isn't behaving normally.",
+          "This shouldn't be happening.",
+          "Look deeper.",
+          "The resonance is getting stronger.",
+          "Node 02 is the key.",
+          "Don't trust the archive.",
+          "They're watching us."
         ];
-        reply = replies[Math.floor(Math.random() * replies.length)];
+        reply = eliasReplies[Math.floor(Math.random() * eliasReplies.length)];
       } else if (contact === 'archive') {
         if (t === 'THE ARCHIVE REMEMBERS') {
           if (db) {
@@ -731,7 +749,10 @@ async function startServer() {
     }
   });
 
-  app.get("/stage2.html", async (req: any, res: any) => {
+  // Protected HTML routes
+  const protectedRoutes = ["/stage2.html", "/node02.html", "/resonance.html"];
+  
+  app.get(protectedRoutes, async (req: any, res: any) => {
     const userId = req.query.userId;
     if (!userId) {
       return res.status(403).send("ACCESS DENIED: Missing userId");
@@ -746,26 +767,55 @@ async function startServer() {
     if (db) {
       const userDoc = await db.collection('users').doc(userId).get();
       userData = userDoc.data() || {};
-      console.log("User state:", userData);
+      console.log(`Access check for ${req.path}:`, userId, userData);
     }
     
-    if (!userData.stage2_unlocked) {
+    const target = req.path.substring(1); // remove leading slash
+    let hasAccess = false;
+    
+    if (target === "stage2.html" || target === "node02.html" || target === "resonance.html") {
+      hasAccess = !!userData.stage2_unlocked;
+    }
+    
+    if (!hasAccess) {
       return res.status(403).send("ACCESS DENIED");
     }
     
     const isProduction = process.env.NODE_ENV === "production" || process.argv[1]?.endsWith('server.js') || fs.existsSync(path.join(process.cwd(), 'dist'));
     if (isProduction) {
-      res.sendFile(path.join(process.cwd(), 'dist', 'stage2.html'));
+      res.sendFile(path.join(process.cwd(), 'dist', target));
     } else {
-      // In dev mode, Vite handles it, but we already checked access.
-      // We can either redirect or just let it pass if we are here.
-      // But since we want to enforce it, we'll send the file if it exists in root.
-      const filePath = path.join(process.cwd(), 'stage2.html');
+      const filePath = path.join(process.cwd(), target);
       if (fs.existsSync(filePath)) {
         res.sendFile(filePath);
       } else {
         res.status(404).send("File not found");
       }
+    }
+  });
+
+  app.get("/api/getUserState", async (req: any, res: any) => {
+    try {
+      const userId = req.query.userId;
+      if (!userId) {
+        return res.status(400).json({ error: "Missing userId" });
+      }
+      
+      let db: any = null;
+      try {
+        db = await getDb();
+      } catch (e: any) {}
+      
+      let userData: any = {};
+      if (db) {
+        const userDoc = await db.collection('users').doc(userId).get();
+        userData = userDoc.data() || {};
+      }
+      
+      res.json(userData);
+    } catch (err: any) {
+      console.error(">>> [API] getUserState error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 
