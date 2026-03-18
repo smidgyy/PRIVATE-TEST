@@ -12,64 +12,68 @@ console.log(">>> [BOOT] Current Directory:", process.cwd());
 let _db: any = null;
 
 async function getDb() {
-  if (_db) return _db;
+  try {
+    if (_db) return _db;
 
-  const admin = (await import("firebase-admin")).default;
-  const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
-  const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
-  
-  let firebaseConfig: any = {};
-  
-  // 1. Try Environment Variable first (GitHub Safe)
-  if (process.env.FIREBASE_CONFIG) {
-    try {
-      firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
-    } catch (e) {
-      console.error("Error parsing FIREBASE_CONFIG env var:", e);
-    }
-  } 
-  // 2. Fallback to file
-  else if (fs.existsSync(configPath)) {
-    try {
-      firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    } catch (e) {
-      console.error("Error reading firebase-applet-config.json:", e);
-    }
-  }
-
-  let adminConfig: any = {};
-  if (firebaseConfig.firestoreDatabaseId) {
-    adminConfig.databaseId = firebaseConfig.firestoreDatabaseId;
-  }
-
-  if (!admin.apps.length) {
-    try {
-      // Priority 1: Environment Variable (The Secret Key)
-      if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        console.log(">>> [BOOT] Initializing Firebase with Environment Variable...");
-        adminConfig.credential = admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT));
-        admin.initializeApp(adminConfig);
-      } 
-      // Priority 2: Local File (For local testing only)
-      else if (fs.existsSync(serviceAccountPath)) {
-        console.log(">>> [BOOT] Initializing Firebase with Local File...");
-        const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-        adminConfig.credential = admin.credential.cert(serviceAccount);
-        admin.initializeApp(adminConfig);
-      } 
-      // Priority 3: Default (Cloud Run / Google Cloud environment)
-      else {
-        console.log(">>> [BOOT] Initializing Firebase with Default Credentials...");
-        admin.initializeApp(adminConfig);
+    const admin = (await import("firebase-admin")).default;
+    const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
+    const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+    
+    let firebaseConfig: any = {};
+    
+    // 1. Try Environment Variable first
+    if (process.env.FIREBASE_CONFIG) {
+      try {
+        firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
+      } catch (e) {
+        console.error("!!! [ERROR] Failed to parse FIREBASE_CONFIG env var:", e);
       }
-    } catch (e) {
-      console.error("Firebase Init Error:", e);
-      if (!admin.apps.length) admin.initializeApp();
+    } 
+    // 2. Fallback to file
+    else if (fs.existsSync(configPath)) {
+      try {
+        firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      } catch (e) {
+        console.error("!!! [ERROR] Failed to read firebase-applet-config.json:", e);
+      }
     }
-  }
 
-  _db = admin.firestore();
-  return _db;
+    let adminConfig: any = {
+      projectId: firebaseConfig.projectId
+    };
+    
+    if (firebaseConfig.firestoreDatabaseId) {
+      adminConfig.databaseId = firebaseConfig.firestoreDatabaseId;
+    }
+
+    if (!admin.apps.length) {
+      try {
+        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+          console.log(">>> [BOOT] Using Service Account from Environment Variable");
+          adminConfig.credential = admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT));
+          admin.initializeApp(adminConfig);
+        } else if (fs.existsSync(serviceAccountPath)) {
+          console.log(">>> [BOOT] Using Service Account from Local File");
+          const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+          adminConfig.credential = admin.credential.cert(serviceAccount);
+          admin.initializeApp(adminConfig);
+        } else {
+          console.log(">>> [BOOT] Using Default Application Credentials");
+          admin.initializeApp(adminConfig);
+        }
+      } catch (e) {
+        console.error("!!! [ERROR] Firebase Admin Init Failed:", e);
+        // Fallback to default init if possible
+        if (!admin.apps.length) admin.initializeApp({ projectId: firebaseConfig.projectId });
+      }
+    }
+
+    _db = admin.firestore();
+    return _db;
+  } catch (err) {
+    console.error("!!! [CRITICAL] getDb failed entirely:", err);
+    throw err;
+  }
 }
 
 // Global error handling
@@ -101,10 +105,13 @@ async function startServer() {
   });
 
   app.post("/api/validateCommand", async (req: any, res: any) => {
-    const { input, userId, type, step } = req.body;
-    if (!input || !userId || !type) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
+    try {
+      const { input, userId, type, step } = req.body;
+      console.log(`>>> [API] Request: ${type} from user ${userId}`);
+      
+      if (!input || !userId || !type) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
 
     const fullCmd = input.trim();
     const args = fullCmd.split(/\s+/);
