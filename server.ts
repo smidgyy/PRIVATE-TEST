@@ -16,65 +16,64 @@ async function getDb() {
   try {
     if (_db) return _db;
 
+    console.log(">>> [DB] Initializing database getter...");
     const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
     const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
     
+    console.log(">>> [DB] Checking for credentials in:", process.cwd());
+    const filesInDir = fs.readdirSync(process.cwd());
+    console.log(">>> [DB] Files found:", filesInDir.join(", "));
+
     let firebaseConfig: any = {};
     
     if (process.env.FIREBASE_CONFIG) {
-      try {
-        firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
-      } catch (e) {
-        console.error("!!! [ERROR] FIREBASE_CONFIG env var is not valid JSON");
-      }
+      firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
     } else if (fs.existsSync(configPath)) {
-      try {
-        firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-      } catch (e) {
-        console.error("!!! [ERROR] firebase-applet-config.json is not valid JSON");
-      }
+      firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    } else {
+      console.warn("!!! [WARN] firebase-applet-config.json not found. Using defaults.");
     }
 
-    const projectId = firebaseConfig.projectId || process.env.GOOGLE_CLOUD_PROJECT;
-    if (!projectId) {
-      console.warn("!!! [WARN] No Project ID found. Firebase might fail.");
-    }
-
+    const projectId = firebaseConfig.projectId || "gen-lang-client-0477651201";
     let adminConfig: any = { projectId };
+    
     if (firebaseConfig.firestoreDatabaseId) {
       adminConfig.databaseId = firebaseConfig.firestoreDatabaseId;
     }
 
     if (!admin.apps.length) {
-      try {
-        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-          console.log(">>> [BOOT] Initializing with Service Account (Env Var)");
-          const cert = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-          adminConfig.credential = admin.credential.cert(cert);
-          admin.initializeApp(adminConfig);
-        } else if (fs.existsSync(serviceAccountPath)) {
-          console.log(">>> [BOOT] Initializing with Service Account (File)");
+      let credentialSet = false;
+
+      if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        console.log(">>> [DB] Using Service Account from Env Var");
+        try {
+          adminConfig.credential = admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT));
+          credentialSet = true;
+        } catch (e) { console.error("!!! [ERROR] Env Var Parse Fail"); }
+      } 
+      
+      if (!credentialSet && fs.existsSync(serviceAccountPath)) {
+        console.log(">>> [DB] Using Service Account from File:", serviceAccountPath);
+        try {
           const cert = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
           adminConfig.credential = admin.credential.cert(cert);
-          admin.initializeApp(adminConfig);
-        } else {
-          console.log(">>> [BOOT] Initializing with Default Credentials");
-          admin.initializeApp(adminConfig);
-        }
-      } catch (e: any) {
-        console.error("!!! [ERROR] Firebase Admin Init Failed:", e.message);
-        if (!admin.apps.length) admin.initializeApp({ projectId });
+          credentialSet = true;
+        } catch (e) { console.error("!!! [ERROR] File Parse Fail"); }
       }
+
+      if (!credentialSet) {
+        throw new Error(`MISSING CREDENTIALS: 'service-account.json' was not found in ${process.cwd()}. Files present: ${filesInDir.join(", ")}`);
+      }
+
+      admin.initializeApp(adminConfig);
     }
 
     _db = admin.firestore();
-    // Test the connection immediately
-    await _db.collection('_health').limit(1).get();
-    console.log(">>> [BOOT] Database connection verified.");
+    console.log(">>> [DB] Firestore instance created.");
     return _db;
   } catch (err: any) {
-    console.error("!!! [CRITICAL] getDb failed entirely:", err.message);
-    throw err;
+    console.error("!!! [DB FATAL]", err.message);
+    throw new Error(`Database Initialization Failed: ${err.message}`);
   }
 }
 
@@ -110,30 +109,21 @@ async function startServer() {
 
   app.get("/api/debug-db", async (req: any, res: any) => {
     try {
+      const filesInDir = fs.readdirSync(process.cwd());
       const db = await getDb();
       const collections = await db.listCollections();
       res.json({ 
         status: "connected", 
-        collections: collections.map((c: any) => c.id),
-        env: {
-          hasServiceAccount: !!process.env.FIREBASE_SERVICE_ACCOUNT,
-          hasConfig: !!process.env.FIREBASE_CONFIG,
-          nodeEnv: process.env.NODE_ENV
-        },
-        files: {
-          serviceAccount: fs.existsSync(path.join(process.cwd(), 'service-account.json')),
-          config: fs.existsSync(path.join(process.cwd(), 'firebase-applet-config.json'))
-        }
+        cwd: process.cwd(),
+        files: filesInDir,
+        collections: collections.map((c: any) => c.id)
       });
     } catch (err: any) {
       res.status(500).json({ 
         status: "error", 
         message: err.message,
-        stack: err.stack,
-        files: {
-          serviceAccount: fs.existsSync(path.join(process.cwd(), 'service-account.json')),
-          config: fs.existsSync(path.join(process.cwd(), 'firebase-applet-config.json'))
-        }
+        cwd: process.cwd(),
+        files: fs.readdirSync(process.cwd())
       });
     }
   });
