@@ -174,11 +174,26 @@ async function startServer() {
       }
 
       const collections = await db.listCollections();
+      
+      // Test if the key can actually sign data (verifies format)
+      let keySignTest = "untested";
+      try {
+        const sa = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+        const sign = crypto.createSign('SHA256');
+        sign.update('test');
+        sign.sign(sa.private_key.replace(/\\n/g, '\n'));
+        keySignTest = "success";
+      } catch (e: any) {
+        keySignTest = "failed: " + e.message;
+      }
+
       res.json({ 
         status: "connected", 
+        buildId: "v1.0.6-aggressive-sanitization",
         serverTime: new Date().toISOString(),
         processTime: new Date().getTime(),
         clientEmail: clientEmail,
+        keySignTest: keySignTest,
         hasEnvVar: hasEnvVar,
         keyHash: keyHash,
         keyStart: keyStart,
@@ -203,6 +218,7 @@ async function startServer() {
 
       res.status(500).json({ 
         status: "error", 
+        buildId: "v1.0.6-aggressive-sanitization",
         serverTime: new Date().toISOString(),
         clientEmail: clientEmail,
         hasEnvVar: !!process.env.FIREBASE_SERVICE_ACCOUNT,
