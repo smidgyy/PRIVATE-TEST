@@ -701,7 +701,12 @@ async function startServer() {
         }
       }
 
-      return res.json({ contact, reply, action });
+      return res.json({ 
+        status: "success",
+        contact, 
+        reply, 
+        action 
+      });
     } catch (err: any) {
       console.error(">>> [API] sendMessage error:", err.message);
       res.status(500).json({ error: "Internal server error" });
