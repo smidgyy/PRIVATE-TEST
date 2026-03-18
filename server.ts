@@ -26,7 +26,7 @@ async function getDb() {
     }
 
     const databaseId = firebaseConfig.firestoreDatabaseId || "(default)";
-    console.log(">>> [DB] Target Database:", databaseId);
+    const projectId = firebaseConfig.projectId || "gen-lang-client-0477651201";
 
     if (!admin.apps.length) {
       let cert: any = null;
@@ -41,24 +41,30 @@ async function getDb() {
         throw new Error("No service-account.json found.");
       }
 
-      // CRITICAL: Sanitize the private key. 
-      // Sometimes it has literal \n strings, sometimes real newlines.
-      if (cert.private_key) {
+      // CRITICAL: Robust Private Key Sanitization
+      if (cert.private_key && typeof cert.private_key === 'string') {
+        // Fix literal "\n" strings and ensure actual newlines
         cert.private_key = cert.private_key.replace(/\\n/g, '\n');
+        // Remove any accidental whitespace/newlines at start/end
+        cert.private_key = cert.private_key.trim();
       }
 
       console.log(">>> [DB] Initializing Admin SDK for:", cert.project_id);
+      console.log(">>> [DB] Using Client Email:", cert.client_email);
+      
       admin.initializeApp({
         credential: admin.credential.cert(cert),
         projectId: cert.project_id
       });
     }
 
-    _db = admin.firestore();
-    
-    // Set the specific database ID if it's not the default one
-    if (databaseId !== "(default)") {
-      _db.settings({ databaseId: databaseId });
+    // Correct way to get a named database instance in Admin SDK
+    if (databaseId && databaseId !== "(default)") {
+      console.log(">>> [DB] Connecting to named database:", databaseId);
+      _db = admin.firestore(databaseId);
+    } else {
+      console.log(">>> [DB] Connecting to (default) database");
+      _db = admin.firestore();
     }
 
     console.log(">>> [DB] Firestore instance ready.");
