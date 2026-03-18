@@ -33,24 +33,54 @@ async function getDb() {
     if (getApps().length === 0) {
       let serviceAccount: any = null;
 
+      // Priority 1: Environment Variable
       if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-      } else if (fs.existsSync(serviceAccountPath)) {
+        console.log(">>> [DB] Loading service account from ENV...");
+        try {
+          serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        } catch (e: any) {
+          console.error("!!! [DB] Failed to parse FIREBASE_SERVICE_ACCOUNT env var:", e.message);
+        }
+      } 
+      
+      // Priority 2: service-account.json file
+      if (!serviceAccount && fs.existsSync(serviceAccountPath)) {
+        console.log(">>> [DB] Loading service account from FILE...");
         const raw = fs.readFileSync(serviceAccountPath, 'utf8');
-        console.log(">>> [DB] Raw service-account.json length:", raw.length);
         serviceAccount = JSON.parse(raw);
       }
 
       if (!serviceAccount) {
-        throw new Error("No service-account.json found.");
+        throw new Error("No service account credentials found (checked ENV and FILE).");
       }
 
-      // CRITICAL: Robust Private Key Sanitization
+      // CRITICAL: Aggressive Private Key Sanitization
       if (serviceAccount.private_key && typeof serviceAccount.private_key === 'string') {
-        const originalLen = serviceAccount.private_key.length;
-        // Replace literal \n with actual newlines
-        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n').trim();
-        console.log(`>>> [DB] Private key sanitized. Length: ${originalLen} -> ${serviceAccount.private_key.length}`);
+        let pk = serviceAccount.private_key;
+        
+        // 1. Fix literal "\n" strings (handles both \n and \\n)
+        pk = pk.replace(/\\n/g, '\n');
+        
+        // 2. Remove any accidental quotes or whitespace at start/end
+        pk = pk.replace(/^['"\s]+|['"\s]+$/g, '');
+        
+        // 3. Ensure it starts with the correct header
+        if (!pk.startsWith("-----BEGIN PRIVATE KEY-----")) {
+          if (pk.includes("-----BEGIN PRIVATE KEY-----")) {
+             pk = pk.substring(pk.indexOf("-----BEGIN PRIVATE KEY-----"));
+          } else {
+             console.error("!!! [DB] Private key missing header!");
+          }
+        }
+        
+        // 4. Ensure it ends with the correct footer
+        if (!pk.includes("-----END PRIVATE KEY-----")) {
+          console.error("!!! [DB] Private key missing footer!");
+        }
+
+        serviceAccount.private_key = pk;
+        console.log(">>> [DB] Private key sanitized. Length:", serviceAccount.private_key.length);
+        console.log(">>> [DB] Private key starts with:", serviceAccount.private_key.substring(0, 40));
       }
 
       console.log(">>> [DB] Initializing Admin SDK for Project:", serviceAccount.project_id);
@@ -65,7 +95,6 @@ async function getDb() {
     }
 
     // Force REST mode which is often more reliable on shared hosting (Hostinger)
-    // than gRPC which can be blocked or have credential issues.
     if (databaseId && databaseId !== "(default)") {
       console.log(">>> [DB] Connecting to named database (REST):", databaseId);
       _db = getFirestore(app, databaseId);
@@ -74,8 +103,11 @@ async function getDb() {
       _db = getFirestore(app);
     }
 
-    // Apply settings to force REST
-    _db.settings({ preferRest: true });
+    // Apply settings to force REST and disable SSL verification if needed (though usually not recommended)
+    _db.settings({ 
+      preferRest: true,
+      // Some environments have issues with gRPC keepalives
+    });
 
     console.log(">>> [DB] Firestore instance ready (REST enabled).");
     return _db;
@@ -122,22 +154,36 @@ async function startServer() {
       
       // Get service account info for diagnostics (safely)
       let clientEmail = "unknown";
+      let hasEnvVar = !!process.env.FIREBASE_SERVICE_ACCOUNT;
+      let keyHash = "none";
+      
       const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
       if (fs.existsSync(serviceAccountPath)) {
         const sa = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
         clientEmail = sa.client_email;
+        if (sa.private_key) {
+          keyHash = crypto.createHash('sha256').update(sa.private_key).digest('hex');
+        }
       }
 
       const collections = await db.listCollections();
       res.json({ 
         status: "connected", 
         serverTime: new Date().toISOString(),
+        processTime: new Date().getTime(),
         clientEmail: clientEmail,
+        hasEnvVar: hasEnvVar,
+        keyHash: keyHash,
         cwd: process.cwd(),
         files: filesInDir,
         collections: collections.map((c: any) => c.id),
         projectId: db.projectId,
-        databaseId: db.databaseId
+        databaseId: db.databaseId,
+        settings: db._settings,
+        env: {
+          NODE_ENV: process.env.NODE_ENV,
+          PORT: process.env.PORT
+        }
       });
     } catch (err: any) {
       let clientEmail = "unknown";
@@ -150,6 +196,7 @@ async function startServer() {
         status: "error", 
         serverTime: new Date().toISOString(),
         clientEmail: clientEmail,
+        hasEnvVar: !!process.env.FIREBASE_SERVICE_ACCOUNT,
         message: err.message,
         details: err.stack,
         cwd: process.cwd(),
