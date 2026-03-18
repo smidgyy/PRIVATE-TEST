@@ -621,6 +621,7 @@ async function startServer() {
         messenger_step: data?.messenger_step || 0,
         stage4_progress: data?.stage4_progress || 0,
         stage1_archive_unlocked: data?.stage1_archive_unlocked || false,
+        stage2_unlocked: data?.stage2_unlocked || false,
         stage1_vale_unlocked: data?.stage1_vale_unlocked || false,
         stage4_forum_unlocked: data?.stage4_forum_unlocked || false,
         stage3_messenger_complete: data?.stage3_messenger_complete || false,
