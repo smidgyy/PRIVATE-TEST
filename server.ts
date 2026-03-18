@@ -429,16 +429,19 @@ async function startServer() {
 
   app.post("/api/validateCommand", async (req: any, res: any) => {
     try {
-      const { input, userId, type, step, SECRET_KEY } = req.body;
-      console.log(`>>> [API] Request: ${type} from user ${userId}. Input: "${input}"`);
-      
-      // Allow bypass if SECRET_KEY is provided, or if userId is present
-      if (!input || (!userId && SECRET_KEY !== 'RESILIENT_BOOT') || !type) {
-        console.error(`!!! [API] Missing required fields: input=${!!input}, userId=${!!userId}, type=${!!type}`);
-        return res.status(400).json({ error: "Missing required fields" });
-      }
+    const { input, userId, type, step, SECRET_KEY } = req.body;
+    console.log(`>>> [API] Request: ${type} from user ${userId}. Input: "${input}"`);
+    
+    // Allow bypass if SECRET_KEY is provided, or if userId is present
+    // Note: input is optional for some types like 'check_access' and 'get_progression'
+    const isInputRequired = ['terminal', 'archive_password', 'node02_answer'].includes(type);
+    
+    if ((isInputRequired && !input) || (!userId && SECRET_KEY !== 'RESILIENT_BOOT') || !type) {
+      console.error(`!!! [API] Missing required fields: input=${!!input}, userId=${!!userId}, type=${!!type}`);
+      return res.status(400).json({ error: "Missing required fields" });
+    }
 
-    const fullCmd = input.trim();
+    const fullCmd = (input || "").trim();
     const t = fullCmd.toUpperCase();
     const args = fullCmd.split(/\s+/);
     const baseCmd = args[0].toLowerCase();
