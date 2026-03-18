@@ -210,7 +210,7 @@ async function startServer() {
 
       res.json({ 
         status: "connected", 
-        buildId: "v1.1.1-resilient-boot",
+        buildId: "v1.1.2-clean-diagnostics",
         serverTime: new Date().toISOString(),
         processTime: new Date().getTime(),
         clientEmail: clientEmail,
@@ -247,10 +247,14 @@ async function startServer() {
           source = "env";
           const rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
           rawFirstChars = JSON.stringify(rawEnv.substring(0, 10));
-          sa = JSON.parse(rawEnv);
-          if (typeof sa === 'string') {
-            sa = JSON.parse(sa);
-            saType = "string-wrapped-object";
+          try {
+            sa = JSON.parse(rawEnv);
+            if (typeof sa === 'string') {
+              sa = JSON.parse(sa);
+              saType = "string-wrapped-object";
+            }
+          } catch(e) {
+            keySignTest = "JSON Parse Error in ENV";
           }
         } else {
           const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
@@ -263,6 +267,8 @@ async function startServer() {
               sa = JSON.parse(sa);
               saType = "string-wrapped-object";
             }
+          } else {
+            keySignTest = "No credentials found (ENV or FILE)";
           }
         }
 
@@ -287,7 +293,7 @@ async function startServer() {
 
       res.status(500).json({ 
         status: "error", 
-        buildId: "v1.1.1-resilient-boot",
+        buildId: "v1.1.2-clean-diagnostics",
         serverTime: new Date().toISOString(),
         clientEmail: clientEmail,
         keySignTest: keySignTest,
