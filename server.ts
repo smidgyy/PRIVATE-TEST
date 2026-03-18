@@ -1,9 +1,16 @@
-import "dotenv/config";
 import express from "express";
 import path from "path";
 import cors from "cors";
 import fs from "fs";
 import crypto from "crypto";
+import dotenv from "dotenv";
+
+// Load environment variables safely
+try {
+  dotenv.config();
+} catch (e) {
+  console.error(">>> [BOOT] Failed to load .env file:", e);
+}
 import { initializeApp, cert, getApps, getApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -203,7 +210,7 @@ async function startServer() {
 
       res.json({ 
         status: "connected", 
-        buildId: "v1.1.0-dotenv-support",
+        buildId: "v1.1.1-resilient-boot",
         serverTime: new Date().toISOString(),
         processTime: new Date().getTime(),
         clientEmail: clientEmail,
@@ -280,7 +287,7 @@ async function startServer() {
 
       res.status(500).json({ 
         status: "error", 
-        buildId: "v1.1.0-dotenv-support",
+        buildId: "v1.1.1-resilient-boot",
         serverTime: new Date().toISOString(),
         clientEmail: clientEmail,
         keySignTest: keySignTest,
