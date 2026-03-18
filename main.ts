@@ -11,6 +11,7 @@ import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 // Automatically log in anonymously on load
 loginAnonymously().then((user) => {
   console.log("Logged in as:", user.uid);
+  localStorage.setItem('aurora_userId', user.uid);
   // Ensure user document exists
   const userRef = doc(db, 'users', user.uid);
   getDoc(userRef).then((docSnap) => {
@@ -22,4 +23,9 @@ loginAnonymously().then((user) => {
       });
     }
   });
-}).catch(console.error);
+}).catch(err => {
+  console.error("Firebase login failed, using local fallback:", err);
+  if (!localStorage.getItem('aurora_userId')) {
+    localStorage.setItem('aurora_userId', 'local_' + Math.random().toString(36).substring(2, 11));
+  }
+});

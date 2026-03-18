@@ -1836,7 +1836,7 @@ fragment remains</div>
 
     async function openWindow(id) {
       // Progression Validation
-      const userId = window.firebaseAuth?.currentUser?.uid || 'anonymous';
+      const userId = getUserId();
       const restrictedTargets = ['observer-folder', 'vale-folder', 'resonance', 'node02', 'node04', 'forum'];
       
       if (restrictedTargets.includes(id)) {
@@ -1844,7 +1844,7 @@ fragment remains</div>
           const res = await fetch('/api/validateCommand', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'check_access', target: id, userId })
+            body: JSON.stringify({ type: 'check_access', target: id, userId, SECRET_KEY: 'RESILIENT_BOOT' })
           });
           const data = await res.json();
           if (data.status !== 'success') {
@@ -1869,22 +1869,22 @@ fragment remains</div>
       
       // Stage 4 tracking
       if (id.startsWith('observer-log-')) {
-        const userId = window.firebaseAuth?.currentUser?.uid;
+        const userId = getUserId();
         if (userId) {
           fetch('/api/validateCommand', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'update_stage4_progress', step: getStage4Progress(), flag: 'stage4_observer_logs_opened', userId })
+            body: JSON.stringify({ type: 'update_stage4_progress', step: getStage4Progress(), flag: 'stage4_observer_logs_opened', userId, SECRET_KEY: 'RESILIENT_BOOT' })
           });
         }
       }
       if (id === 'network-trace') {
-        const userId = window.firebaseAuth?.currentUser?.uid;
+        const userId = getUserId();
         if (userId) {
           fetch('/api/validateCommand', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'update_stage4_progress', step: Math.max(getStage4Progress(), 3), flag: 'stage4_network_trace_viewed', userId })
+            body: JSON.stringify({ type: 'update_stage4_progress', step: Math.max(getStage4Progress(), 3), flag: 'stage4_network_trace_viewed', userId, SECRET_KEY: 'RESILIENT_BOOT' })
           });
         }
       }
@@ -3113,12 +3113,12 @@ fragment remains</div>
           break;
         default:
           // Send to backend for validation
-          const userId = window.firebaseAuth?.currentUser?.uid || 'anonymous';
-          fetch('/api/validateCommand', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ input: cmd, userId, type: 'terminal' })
-          })
+      const userId = getUserId();
+      fetch('/api/validateCommand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: cmd, userId, type: 'terminal', SECRET_KEY: 'RESILIENT_BOOT' })
+      })
           .then(res => res.json())
           .then(data => {
             if (data.status === 'success') {
@@ -3214,11 +3214,11 @@ fragment remains</div>
     }
 
     function handleArchivePassword(pwd) {
-      const userId = window.firebaseAuth?.currentUser?.uid || 'anonymous';
+      const userId = getUserId();
       fetch('/api/validateCommand', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: pwd, userId, type: 'archive_password' })
+        body: JSON.stringify({ input: pwd, userId, type: 'archive_password', SECRET_KEY: 'RESILIENT_BOOT' })
       })
       .then(res => res.json())
       .then(data => {
@@ -3269,6 +3269,20 @@ fragment remains</div>
     }
 
     // --- Messenger Logic ---
+    function getUserId() {
+      const authId = window.firebaseAuth?.currentUser?.uid;
+      if (authId) return authId;
+      
+      const localId = localStorage.getItem('aurora_userId');
+      if (localId) return localId;
+      
+      // Last resort: generate a session-only ID
+      if (!window._sessionUserId) {
+        window._sessionUserId = 'session_' + Math.random().toString(36).substring(2, 11);
+      }
+      return window._sessionUserId;
+    }
+
     const chats = {
       'elias': [
         { sender: 'Dr. Elias', time: '10:42 AM', text: 'Adrian, did you find the logs?' },
@@ -3313,7 +3327,7 @@ fragment remains</div>
       inputField.disabled = false;
       sendBtn.disabled = false;
       inputField.placeholder = "Type a message...";
-      inputField.focus();
+      setTimeout(() => inputField.focus(), 50);
       
       // Add enter key listener if not already added
       if (!inputField.dataset.listenerAdded) {
@@ -3370,13 +3384,51 @@ fragment remains</div>
       setTimeout(async () => {
         let reply = "";
         if (currentChatContact === 'elias') {
-          reply = "I'm currently offline. If you find the archive phrase, use the terminal.";
+          if (text.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
+            reply = "Wait, you found it? That's the phrase! The Archive Node should respond now.";
+            // Also trigger the unlock logic
+            const userId = getUserId();
+            fetch('/api/validateCommand', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                input: text, 
+                type: 'messenger', 
+                userId: userId,
+                SECRET_KEY: 'RESILIENT_BOOT' 
+              })
+            }).then(res => res.json()).then(data => {
+              if (data.action === 'unlock_archive') {
+                const icon = document.getElementById('icon-archive');
+                if (icon) {
+                  icon.classList.remove('hidden');
+                  arrangeIcons();
+                }
+                localStorage.setItem('aurora_stage1_complete', 'true');
+                if (window.soundManager) window.soundManager.playSuccess();
+              }
+            }).catch(console.error);
+          } else {
+            reply = "I'm currently offline. If you find the archive phrase, use the terminal.";
+          }
         } else if (currentChatContact === 'unknown') {
           reply = "You are running out of time.";
         } else if (currentChatContact === 'archive') {
+          // Fail-safe: even if API fails, allow the phrase to unlock locally
+          if (text.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
+            console.log('>>> [MESSENGER] Fail-safe: Unlocking Archive Node locally.');
+            const icon = document.getElementById('icon-archive');
+            if (icon) {
+              icon.classList.remove('hidden');
+              arrangeIcons();
+            }
+            localStorage.setItem('aurora_stage1_complete', 'true');
+            if (window.soundManager) window.soundManager.playSuccess();
+          }
+
           try {
-            const userId = window.firebaseAuth?.currentUser?.uid;
-            console.log('Calling validateCommand for messenger with userId:', userId);
+            const userId = getUserId();
+            console.log('>>> [MESSENGER] Sending to Archive Node. Text:', text, 'UserId:', userId);
             const res = await fetch('/api/validateCommand', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -3387,14 +3439,25 @@ fragment remains</div>
                 SECRET_KEY: 'RESILIENT_BOOT' 
               })
             });
+            
+            if (!res.ok) {
+              const errText = await res.text();
+              console.error('>>> [MESSENGER] API Error:', res.status, errText);
+              throw new Error(`API Error: ${res.status}`);
+            }
+            
             const data = await res.json();
-            console.log('Messenger API response:', data);
+            console.log('>>> [MESSENGER] API response:', data);
             reply = data.reply || data.message || "INVALID INPUT.";
             
             if (data.action === 'unlock_archive' || text.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
+              console.log('>>> [MESSENGER] Unlocking Archive Folder!');
               // Unlock archive
-              document.getElementById('icon-archive').classList.remove('hidden');
-              arrangeIcons();
+              const icon = document.getElementById('icon-archive');
+              if (icon) {
+                icon.classList.remove('hidden');
+                arrangeIcons();
+              }
               localStorage.setItem('aurora_stage1_complete', 'true');
               if (window.soundManager) window.soundManager.playSuccess();
             }
@@ -3669,12 +3732,12 @@ fragment remains</div>
       const token = btoa(step + '|' + SECRET_KEY);
       localStorage.setItem('aurora_stage3_token', token);
       
-      const userId = window.firebaseAuth?.currentUser?.uid;
+      const userId = getUserId();
       if (userId) {
         fetch('/api/validateCommand', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'update_messenger_step', step: step, userId })
+          body: JSON.stringify({ type: 'update_messenger_step', step: step, userId, SECRET_KEY: 'RESILIENT_BOOT' })
         });
       }
     }
@@ -3698,12 +3761,12 @@ fragment remains</div>
       const token = btoa(step + '|' + SECRET_KEY);
       localStorage.setItem('aurora_stage4_token', token);
       
-      const userId = window.firebaseAuth?.currentUser?.uid;
+      const userId = getUserId();
       if (userId) {
         fetch('/api/validateCommand', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'update_stage4_progress', step: step, userId })
+          body: JSON.stringify({ type: 'update_stage4_progress', step: step, userId, SECRET_KEY: 'RESILIENT_BOOT' })
         });
       }
     }
@@ -3715,14 +3778,14 @@ fragment remains</div>
     }
 
     async function syncProgression() {
-      const userId = window.firebaseAuth?.currentUser?.uid;
+      const userId = getUserId();
       if (!userId) return;
       
       try {
         const response = await fetch('/api/validateCommand', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'get_progression', userId })
+          body: JSON.stringify({ type: 'get_progression', userId, SECRET_KEY: 'RESILIENT_BOOT' })
         });
         const data = await response.json();
         if (data.status === 'success') {
@@ -3773,19 +3836,32 @@ fragment remains</div>
         }
       });
     }
+    
+    // Fallback sync if auth takes too long or is blocked
+    setTimeout(() => {
+      const fallbackId = localStorage.getItem('aurora_userId');
+      if (fallbackId && !window.firebaseAuth?.currentUser) {
+        console.log('Firebase auth not ready, using fallback sync with ID:', fallbackId);
+        syncProgression();
+      }
+    }, 3000);
 
-    // Restore Stage 4 icons on load
+    // Restore icons from localStorage on load
     (function() {
       const s4p = getStage4Progress();
-      if (s4p >= 1) {
+      if (s4p >= 1 || localStorage.getItem('aurora_stage4_progress') >= 1) {
         const obsIcon = document.getElementById('icon-observer');
         if (obsIcon) obsIcon.classList.remove('hidden');
       }
-      if (s4p >= 2) {
+      if (s4p >= 2 || localStorage.getItem('aurora_stage1_vale_unlocked') === 'true') {
         const valeIcon = document.getElementById('icon-vale');
         if (valeIcon) valeIcon.classList.remove('hidden');
       }
-      if (s4p >= 1) {
+      if (localStorage.getItem('aurora_stage1_complete') === 'true') {
+        const archiveIcon = document.getElementById('icon-archive');
+        if (archiveIcon) archiveIcon.classList.remove('hidden');
+      }
+      if (s4p >= 1 || localStorage.getItem('aurora_stage1_complete') === 'true') {
         arrangeIcons();
         startSystemAliveEffects();
       }
