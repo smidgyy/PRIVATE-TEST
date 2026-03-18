@@ -17,63 +17,57 @@ async function getDb() {
     if (_db) return _db;
 
     console.log(">>> [DB] Initializing database getter...");
+    console.log(">>> [DB] Server Time:", new Date().toISOString());
+    
     const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
     const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
     
-    console.log(">>> [DB] Checking for credentials in:", process.cwd());
-    const filesInDir = fs.readdirSync(process.cwd());
-    console.log(">>> [DB] Files found:", filesInDir.join(", "));
-
     let firebaseConfig: any = {};
-    
     if (process.env.FIREBASE_CONFIG) {
       firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
     } else if (fs.existsSync(configPath)) {
       firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    } else {
-      console.warn("!!! [WARN] firebase-applet-config.json not found. Using defaults.");
     }
 
-    const projectId = firebaseConfig.projectId || "gen-lang-client-0477651201";
-    let adminConfig: any = { projectId };
-    
-    if (firebaseConfig.firestoreDatabaseId) {
-      adminConfig.databaseId = firebaseConfig.firestoreDatabaseId;
-    }
+    const databaseId = firebaseConfig.firestoreDatabaseId || "(default)";
+    console.log(">>> [DB] Target Database:", databaseId);
 
     if (!admin.apps.length) {
-      let credentialSet = false;
+      let cert: any = null;
 
       if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        console.log(">>> [DB] Using Service Account from Env Var");
-        try {
-          adminConfig.credential = admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT));
-          credentialSet = true;
-        } catch (e) { console.error("!!! [ERROR] Env Var Parse Fail"); }
-      } 
+        console.log(">>> [DB] Loading cert from Env Var");
+        cert = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+      } else if (fs.existsSync(serviceAccountPath)) {
+        console.log(">>> [DB] Loading cert from File:", serviceAccountPath);
+        cert = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+      }
+
+      if (!cert) {
+        const filesInDir = fs.readdirSync(process.cwd());
+        throw new Error(`MISSING CREDENTIALS: 'service-account.json' not found in ${process.cwd()}. Files: ${filesInDir.join(", ")}`);
+      }
+
+      // Clean private key (common issue with env vars or copy-paste)
+      if (cert.private_key) {
+        cert.private_key = cert.private_key.replace(/\\n/g, '\n');
+      }
+
+      console.log(">>> [DB] Initializing Admin SDK for project:", cert.project_id);
+      console.log(">>> [DB] Client Email:", cert.client_email);
       
-      if (!credentialSet && fs.existsSync(serviceAccountPath)) {
-        console.log(">>> [DB] Using Service Account from File:", serviceAccountPath);
-        try {
-          const cert = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-          adminConfig.credential = admin.credential.cert(cert);
-          credentialSet = true;
-        } catch (e) { console.error("!!! [ERROR] File Parse Fail"); }
-      }
-
-      if (!credentialSet) {
-        throw new Error(`MISSING CREDENTIALS: 'service-account.json' was not found in ${process.cwd()}. Files present: ${filesInDir.join(", ")}`);
-      }
-
-      admin.initializeApp(adminConfig);
+      admin.initializeApp({
+        credential: admin.credential.cert(cert),
+        databaseId: databaseId === "(default)" ? undefined : databaseId
+      });
     }
 
     _db = admin.firestore();
-    console.log(">>> [DB] Firestore instance created.");
+    console.log(">>> [DB] Firestore instance ready.");
     return _db;
   } catch (err: any) {
     console.error("!!! [DB FATAL]", err.message);
-    throw new Error(`Database Initialization Failed: ${err.message}`);
+    throw new Error(`Firebase Auth Failed: ${err.message}. Ensure service-account.json is valid and server time is correct.`);
   }
 }
 
