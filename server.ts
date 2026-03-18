@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import cors from "cors";
@@ -202,7 +203,7 @@ async function startServer() {
 
       res.json({ 
         status: "connected", 
-        buildId: "v1.0.6-aggressive-sanitization",
+        buildId: "v1.1.0-dotenv-support",
         serverTime: new Date().toISOString(),
         processTime: new Date().getTime(),
         clientEmail: clientEmail,
@@ -279,7 +280,7 @@ async function startServer() {
 
       res.status(500).json({ 
         status: "error", 
-        buildId: "v1.0.9-env-priority",
+        buildId: "v1.1.0-dotenv-support",
         serverTime: new Date().toISOString(),
         clientEmail: clientEmail,
         keySignTest: keySignTest,
