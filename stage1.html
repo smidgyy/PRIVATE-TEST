@@ -2868,7 +2868,7 @@ fragment remains</div>
                   if (data.status === 'success') {
                     unlocked = true;
                   }
-                  fetchPath = 'stage2.html';
+                  fetchPath = 'stage2.html?userId=' + getUserId();
                   finishLoad();
                 });
               return;
@@ -2879,7 +2879,7 @@ fragment remains</div>
                   if (data.status === 'success') {
                     unlocked = true;
                   }
-                  fetchPath = 'resonance.html';
+                  fetchPath = 'resonance.html?userId=' + getUserId();
                   finishLoad();
                 });
               return;
@@ -3293,6 +3293,8 @@ fragment remains</div>
           icon.style.opacity = "1";
           icon.style.pointerEvents = "auto";
           localStorage.setItem("aurora_archive_unlocked", "true");
+          localStorage.setItem("stage2_unlocked", "true");
+          unlockStage2UI();
         }
       } else if (response.action === "unlock_vale") {
         const icon = document.getElementById("icon-vale");
@@ -3321,6 +3323,9 @@ fragment remains</div>
         const icon = document.getElementById("icon-archive");
         if (icon) icon.classList.remove("hidden");
       }
+      if (localStorage.getItem("stage2_unlocked") === "true") {
+        unlockStage2UI();
+      }
       if (localStorage.getItem("aurora_vale_unlocked") === "true") {
         const icon = document.getElementById("icon-vale");
         if (icon) icon.classList.remove("hidden");
@@ -3339,6 +3344,17 @@ fragment remains</div>
     window.addEventListener('load', () => {
       setTimeout(syncProgression, 500);
     });
+
+    function unlockStage2UI() {
+      const icon = document.getElementById("icon-archive");
+      if (icon) {
+        icon.classList.remove("hidden");
+        icon.style.display = "flex";
+        icon.style.visibility = "visible";
+        icon.style.opacity = "1";
+        icon.style.pointerEvents = "auto";
+      }
+    }
 
     function getUserId() {
       // Priority 1: Window global from main.ts

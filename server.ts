@@ -530,7 +530,13 @@ async function startServer() {
       }
       
       if (fullCmd.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
-        if (db) await db.collection('users').doc(effectiveUserId).set({ stage1_archive_unlocked: true }, { merge: true });
+        if (db) {
+          await db.collection('users').doc(effectiveUserId).set({ 
+            stage1_archive_unlocked: true,
+            archive_unlocked: true,
+            stage2_unlocked: true
+          }, { merge: true });
+        }
         return res.json({ status: 'success', action: 'unlock_archive' });
       }
       if (fullCmd.toUpperCase() === 'VALE') {
@@ -619,27 +625,28 @@ async function startServer() {
 
     if (type === 'check_access') {
       const { target } = req.body;
-      let data: any = {};
+      let userData: any = {};
       if (db) {
         const doc = await db.collection('users').doc(effectiveUserId).get();
-        data = doc.data() || {};
+        userData = doc.data() || {};
+        console.log("User state:", userData);
       }
       
       let hasAccess = false;
       if (SECRET_KEY === 'RESILIENT_BOOT') {
         hasAccess = true;
       } else if (target === 'node02' || target === 'resonance') {
-        hasAccess = !!data.stage1_archive_unlocked;
+        hasAccess = !!userData.stage2_unlocked;
       } else if (target === 'node03_secret') {
-        hasAccess = !!data.stage3_secret_unlocked;
+        hasAccess = !!userData.stage3_secret_unlocked;
       } else if (target === 'node04') {
-        hasAccess = !!data.stage4_unlocked;
+        hasAccess = !!userData.stage4_unlocked;
       } else if (target === 'observer-folder') {
-        hasAccess = (data.stage4_progress || 0) >= 1;
+        hasAccess = (userData.stage4_progress || 0) >= 1;
       } else if (target === 'vale-folder') {
-        hasAccess = (data.stage4_progress || 0) >= 2;
+        hasAccess = (userData.stage4_progress || 0) >= 2;
       } else if (target === 'forum') {
-        hasAccess = !!data.stage4_forum_unlocked;
+        hasAccess = !!userData.stage4_forum_unlocked;
       }
       
       if (hasAccess) {
@@ -678,12 +685,14 @@ async function startServer() {
       } catch (e: any) {}
 
       if (contact === 'unknown') {
-        const replies = [
-          "I can't reach you. Something is wrong.",
-          "Time is running out...",
-          "You're not supposed to be here."
+        const unknownReplies = [
+          "You weren't supposed to find this.",
+          "Stop. You don't understand what you're doing.",
+          "It sees you now.",
+          "Why are you still here?",
+          "You should have left when you had the chance."
         ];
-        reply = replies[Math.floor(Math.random() * replies.length)];
+        reply = unknownReplies[Math.floor(Math.random() * unknownReplies.length)];
       } else if (contact === 'elias') {
         const replies = [
           "Check the logs again.",
@@ -693,7 +702,13 @@ async function startServer() {
         reply = replies[Math.floor(Math.random() * replies.length)];
       } else if (contact === 'archive') {
         if (t === 'THE ARCHIVE REMEMBERS') {
-          if (db) await db.collection('users').doc(userId).set({ stage1_archive_unlocked: true }, { merge: true });
+          if (db) {
+            await db.collection('users').doc(userId).set({ 
+              stage1_archive_unlocked: true,
+              archive_unlocked: true,
+              stage2_unlocked: true
+            }, { merge: true });
+          }
           reply = "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.";
           action = "unlock_archive";
         } else {
@@ -710,6 +725,44 @@ async function startServer() {
     } catch (err: any) {
       console.error(">>> [API] sendMessage error:", err.message);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/stage2.html", async (req: any, res: any) => {
+    const userId = req.query.userId;
+    if (!userId) {
+      return res.status(403).send("ACCESS DENIED: Missing userId");
+    }
+    
+    let db: any = null;
+    try {
+      db = await getDb();
+    } catch (e: any) {}
+    
+    let userData: any = {};
+    if (db) {
+      const userDoc = await db.collection('users').doc(userId).get();
+      userData = userDoc.data() || {};
+      console.log("User state:", userData);
+    }
+    
+    if (!userData.stage2_unlocked) {
+      return res.status(403).send("ACCESS DENIED");
+    }
+    
+    const isProduction = process.env.NODE_ENV === "production" || process.argv[1]?.endsWith('server.js') || fs.existsSync(path.join(process.cwd(), 'dist'));
+    if (isProduction) {
+      res.sendFile(path.join(process.cwd(), 'dist', 'stage2.html'));
+    } else {
+      // In dev mode, Vite handles it, but we already checked access.
+      // We can either redirect or just let it pass if we are here.
+      // But since we want to enforce it, we'll send the file if it exists in root.
+      const filePath = path.join(process.cwd(), 'stage2.html');
+      if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+      } else {
+        res.status(404).send("File not found");
+      }
     }
   });
 
