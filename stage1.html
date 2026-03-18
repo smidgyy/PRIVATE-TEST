@@ -3375,20 +3375,33 @@ fragment remains</div>
           reply = "You are running out of time.";
         } else if (currentChatContact === 'archive') {
           try {
-            const res = await fetch('/api/chat', {
+            const userId = window.firebaseAuth?.currentUser?.uid;
+            console.log('Calling validateCommand for messenger with userId:', userId);
+            const res = await fetch('/api/validateCommand', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ message: text, type: 'messenger', SECRET_KEY: 'RESILIENT_BOOT' })
+              body: JSON.stringify({ 
+                input: text, 
+                type: 'messenger', 
+                userId: userId,
+                SECRET_KEY: 'RESILIENT_BOOT' 
+              })
             });
             const data = await res.json();
-            reply = data.reply || "INVALID INPUT.";
+            console.log('Messenger API response:', data);
+            reply = data.reply || data.message || "INVALID INPUT.";
             
-            if (text.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
+            if (data.action === 'unlock_archive' || text.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
               // Unlock archive
               document.getElementById('icon-archive').classList.remove('hidden');
               arrangeIcons();
               localStorage.setItem('aurora_stage1_complete', 'true');
               if (window.soundManager) window.soundManager.playSuccess();
+            }
+            
+            if (data.action === 'complete_messenger') {
+              // Handle messenger completion if needed
+              console.log('Messenger puzzle completed!');
             }
           } catch (err) {
             console.error('Chat API error:', err);

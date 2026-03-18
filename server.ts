@@ -401,6 +401,17 @@ async function startServer() {
     if (type === 'messenger') {
       const db = await getDb();
       const t = fullCmd.toUpperCase();
+      
+      // Special case for the Archive password in messenger
+      if (t === 'THE ARCHIVE REMEMBERS') {
+        await db.collection('users').doc(userId).set({ stage1_archive_unlocked: true }, { merge: true });
+        return res.json({ 
+          status: 'success', 
+          reply: "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.", 
+          action: 'unlock_archive' 
+        });
+      }
+
       const answers = ["GREED", "DEPTH", "MONEY", "GOLD", "CROWN"];
       
       const userDoc = await db.collection('users').doc(userId).get();
