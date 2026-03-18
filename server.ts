@@ -47,11 +47,20 @@ async function getDb() {
       if (!serviceAccount && fs.existsSync(serviceAccountPath)) {
         console.log(">>> [DB] Loading service account from FILE...");
         const raw = fs.readFileSync(serviceAccountPath, 'utf8');
-        serviceAccount = JSON.parse(raw);
+        try {
+          serviceAccount = JSON.parse(raw);
+          // Handle double-encoding (common when copy-pasting into some web editors)
+          if (typeof serviceAccount === 'string') {
+            console.log(">>> [DB] Service account was double-encoded string, parsing again...");
+            serviceAccount = JSON.parse(serviceAccount);
+          }
+        } catch (e: any) {
+          console.error("!!! [DB] Failed to parse service-account.json:", e.message);
+        }
       }
 
-      if (!serviceAccount) {
-        throw new Error("No service account credentials found (checked ENV and FILE).");
+      if (!serviceAccount || typeof serviceAccount !== 'object') {
+        throw new Error(`Service account credentials are invalid (Type: ${typeof serviceAccount}).`);
       }
 
       // CRITICAL: Aggressive Private Key Sanitization
@@ -215,13 +224,21 @@ async function startServer() {
       let keyStart = "none";
       let rawFirstChars = "none";
       let keySignTest = "untested";
+      let saType = "unknown";
       
       try {
         const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
         if (fs.existsSync(serviceAccountPath)) {
           const raw = fs.readFileSync(serviceAccountPath, 'utf8');
           rawFirstChars = JSON.stringify(raw.substring(0, 10));
-          const sa = JSON.parse(raw);
+          
+          let sa = JSON.parse(raw);
+          saType = typeof sa;
+          if (saType === 'string') {
+            sa = JSON.parse(sa);
+            saType = "string-wrapped-object";
+          }
+          
           clientEmail = sa.client_email;
           if (sa.private_key) {
             keyHash = crypto.createHash('sha256').update(sa.private_key).digest('hex');
@@ -241,13 +258,14 @@ async function startServer() {
 
       res.status(500).json({ 
         status: "error", 
-        buildId: "v1.0.7-full-diagnostics",
+        buildId: "v1.0.8-recursive-parse",
         serverTime: new Date().toISOString(),
         clientEmail: clientEmail,
         keySignTest: keySignTest,
         keyHash: keyHash,
         keyStart: keyStart,
         rawFirstChars: rawFirstChars,
+        saType: saType,
         hasEnvVar: !!process.env.FIREBASE_SERVICE_ACCOUNT,
         message: err.message,
         details: err.stack,
