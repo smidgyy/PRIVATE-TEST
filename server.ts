@@ -45,14 +45,12 @@ async function getDb() {
 
       // CRITICAL: Robust Private Key Sanitization
       if (serviceAccount.private_key && typeof serviceAccount.private_key === 'string') {
-        console.log(">>> [DB] Private key length before sanitization:", serviceAccount.private_key.length);
         serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n').trim();
-        console.log(">>> [DB] Private key length after sanitization:", serviceAccount.private_key.length);
-        console.log(">>> [DB] Private key start:", serviceAccount.private_key.substring(0, 30));
-        console.log(">>> [DB] Private key end:", serviceAccount.private_key.substring(serviceAccount.private_key.length - 30));
       }
 
       console.log(">>> [DB] Initializing Admin SDK for:", serviceAccount.project_id);
+      console.log(">>> [DB] Client Email:", serviceAccount.client_email);
+      
       app = initializeApp({
         credential: cert(serviceAccount),
         projectId: serviceAccount.project_id
@@ -112,9 +110,20 @@ async function startServer() {
     try {
       const filesInDir = fs.readdirSync(process.cwd());
       const db = await getDb();
+      
+      // Get service account info for diagnostics (safely)
+      let clientEmail = "unknown";
+      const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
+      if (fs.existsSync(serviceAccountPath)) {
+        const sa = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+        clientEmail = sa.client_email;
+      }
+
       const collections = await db.listCollections();
       res.json({ 
         status: "connected", 
+        serverTime: new Date().toISOString(),
+        clientEmail: clientEmail,
         cwd: process.cwd(),
         files: filesInDir,
         collections: collections.map((c: any) => c.id),
@@ -122,8 +131,16 @@ async function startServer() {
         databaseId: db.databaseId
       });
     } catch (err: any) {
+      let clientEmail = "unknown";
+      try {
+        const sa = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'service-account.json'), 'utf8'));
+        clientEmail = sa.client_email;
+      } catch(e) {}
+
       res.status(500).json({ 
         status: "error", 
+        serverTime: new Date().toISOString(),
+        clientEmail: clientEmail,
         message: err.message,
         details: err.stack,
         cwd: process.cwd(),
