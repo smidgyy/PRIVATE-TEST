@@ -108,6 +108,36 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  app.get("/api/debug-db", async (req: any, res: any) => {
+    try {
+      const db = await getDb();
+      const collections = await db.listCollections();
+      res.json({ 
+        status: "connected", 
+        collections: collections.map((c: any) => c.id),
+        env: {
+          hasServiceAccount: !!process.env.FIREBASE_SERVICE_ACCOUNT,
+          hasConfig: !!process.env.FIREBASE_CONFIG,
+          nodeEnv: process.env.NODE_ENV
+        },
+        files: {
+          serviceAccount: fs.existsSync(path.join(process.cwd(), 'service-account.json')),
+          config: fs.existsSync(path.join(process.cwd(), 'firebase-applet-config.json'))
+        }
+      });
+    } catch (err: any) {
+      res.status(500).json({ 
+        status: "error", 
+        message: err.message,
+        stack: err.stack,
+        files: {
+          serviceAccount: fs.existsSync(path.join(process.cwd(), 'service-account.json')),
+          config: fs.existsSync(path.join(process.cwd(), 'firebase-applet-config.json'))
+        }
+      });
+    }
+  });
+
   app.post("/api/validateCommand", async (req: any, res: any) => {
     try {
       const { input, userId, type, step } = req.body;
