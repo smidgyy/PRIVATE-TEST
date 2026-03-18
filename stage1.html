@@ -631,10 +631,14 @@
 
     /* Hidden elements */
     .hidden {
-      display: none !important;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
+      z-index: -1;
     }
 
-    #icon-archive:not(.hidden) {
+    .icon {
       display: flex !important;
     }
     
@@ -3118,6 +3122,7 @@ fragment remains</div>
         default:
           // Send to backend for validation
       const userId = getUserId();
+      printTerminal("Connecting to archive server...");
       fetch('/api/validateCommand', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3125,6 +3130,7 @@ fragment remains</div>
       })
           .then(res => res.json())
           .then(data => {
+            applyGameState(data);
             if (data.status === 'success') {
               if (data.action === 'redirect_archive') {
                 printTerminal("Decryption key accepted.");
@@ -3219,6 +3225,7 @@ fragment remains</div>
 
     function handleArchivePassword(pwd) {
       const userId = getUserId();
+      printTerminal("Verifying decryption key...");
       fetch('/api/validateCommand', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3226,18 +3233,14 @@ fragment remains</div>
       })
       .then(res => res.json())
       .then(data => {
+        applyGameState(data);
         if (data.status === 'success') {
           if (data.action === 'unlock_archive') {
             printTerminal("Access granted.");
             terminalState = 'normal';
             termPrompt.innerText = "C:\\>";
             
-            // Unlock archive
-            document.getElementById('icon-archive').classList.remove('hidden');
-            arrangeIcons();
-            localStorage.setItem('aurora_stage1_complete', 'true');
             if (window.soundManager) window.soundManager.playSuccess();
-            syncProgression();
           } else if (data.action === 'unlock_forum') {
             printTerminal("Verifying key...");
             terminalState = 'normal';
@@ -3273,6 +3276,66 @@ fragment remains</div>
     }
 
     // --- Messenger Logic ---
+    function applyGameState(response) {
+      if (!response || !response.status) return;
+      
+      console.log('>>> [GAME STATE] Applying response:', response);
+      
+      if (response.action === "unlock_archive") {
+        const icon = document.getElementById("icon-archive");
+        if (icon) {
+          console.log('>>> [GAME STATE] Unlocking Archive Folder.');
+          icon.classList.remove("hidden");
+          icon.style.visibility = "visible";
+          icon.style.opacity = "1";
+          icon.style.pointerEvents = "auto";
+          localStorage.setItem("aurora_archive_unlocked", "true");
+        }
+      } else if (response.action === "unlock_vale") {
+        const icon = document.getElementById("icon-vale");
+        if (icon) {
+          console.log('>>> [GAME STATE] Unlocking Vale Directory.');
+          icon.classList.remove("hidden");
+          icon.style.visibility = "visible";
+          icon.style.opacity = "1";
+          icon.style.pointerEvents = "auto";
+          localStorage.setItem("aurora_vale_unlocked", "true");
+        }
+      } else if (response.action === "unlock_forum") {
+        localStorage.setItem('aurora_stage4_forum_unlocked', 'true');
+      }
+      
+      // Ensure icons are arranged after any potential unlock
+      if (typeof arrangeIcons === 'function') {
+        setTimeout(arrangeIcons, 50);
+      }
+    }
+
+    function syncProgression() {
+      console.log('>>> [SYNC] Checking local progression...');
+      if (localStorage.getItem("aurora_archive_unlocked") === "true") {
+        const icon = document.getElementById("icon-archive");
+        if (icon) icon.classList.remove("hidden");
+      }
+      if (localStorage.getItem("aurora_vale_unlocked") === "true") {
+        const icon = document.getElementById("icon-vale");
+        if (icon) icon.classList.remove("hidden");
+      }
+      if (localStorage.getItem("aurora_stage1_complete") === "true") {
+        const icon = document.getElementById("icon-archive");
+        if (icon) icon.classList.remove("hidden");
+      }
+      
+      if (typeof arrangeIcons === 'function') {
+        arrangeIcons();
+      }
+    }
+
+    // Call sync on load
+    window.addEventListener('load', () => {
+      setTimeout(syncProgression, 500);
+    });
+
     function getUserId() {
       // Priority 1: Window global from main.ts
       if (typeof window.getUserId === 'function') {
@@ -3418,155 +3481,54 @@ fragment remains</div>
       
       // Auto-reply logic
       setTimeout(async () => {
-        let reply = "";
         const removeIndicator = () => {
           const indicator = document.getElementById('typing-indicator');
           if (indicator) indicator.remove();
         };
-        if (currentChatContact === 'elias') {
-          const userId = getUserId();
-          fetch('/api/validateCommand', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              input: text, 
-              type: 'messenger', 
-              userId: userId,
-              SECRET_KEY: 'RESILIENT_BOOT' 
-            })
-          }).then(res => res.json()).then(data => {
-            if (data.action === 'unlock_archive') {
-              console.log('>>> [MESSENGER] Unlocking Archive Folder!');
-              // Unlock archive
-              const icon = document.getElementById('icon-archive');
-              if (icon) {
-                console.log('>>> [MESSENGER] Removing hidden class from icon-archive.');
-                icon.classList.remove('hidden');
-                setTimeout(() => {
-                  arrangeIcons();
-                  // Force a reflow to ensure it's visible
-                  icon.style.display = 'flex';
-                }, 100);
-              } else {
-                console.error('!!! [MESSENGER] icon-archive element not found!');
-              }
-              localStorage.setItem('aurora_stage1_complete', 'true');
-              if (window.soundManager) window.soundManager.playSuccess();
-            }
-            
-            removeIndicator();
-            if (data.reply) {
-              chats['elias'].push({ sender: 'Dr. Elias', time: timeStr, text: data.reply });
-              renderChatHistory();
-            } else if (text.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
-              // Even if backend doesn't provide a reply, if it was the right phrase, Elias should acknowledge
-              chats['elias'].push({ sender: 'Dr. Elias', time: timeStr, text: "Wait, you found it? That's the phrase! The Archive Node should respond now." });
-              renderChatHistory();
-            } else {
-              chats['elias'].push({ sender: 'Dr. Elias', time: timeStr, text: "I'm currently offline. If you find the archive phrase, use the terminal." });
-              renderChatHistory();
-            }
-          }).catch(err => {
-            console.error(err);
-            removeIndicator();
-            chats['elias'].push({ sender: 'Dr. Elias', time: timeStr, text: "I'm currently offline. If you find the archive phrase, use the terminal." });
+
+        const userId = getUserId();
+        fetch('/api/validateCommand', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            input: text, 
+            type: 'messenger', 
+            userId: userId,
+            SECRET_KEY: 'RESILIENT_BOOT' 
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          removeIndicator();
+          applyGameState(data);
+          
+          if (data.reply) {
+            chats[currentChatContact].push({ 
+              sender: contactName, 
+              time: timeStr, 
+              text: data.reply 
+            });
             renderChatHistory();
+          } else {
+            chats[currentChatContact].push({ 
+              sender: contactName, 
+              time: timeStr, 
+              text: "CONNECTION INTERRUPTED. RETRYING..." 
+            });
+            renderChatHistory();
+          }
+          if (window.soundManager) window.soundManager.playPing();
+        })
+        .catch(err => {
+          console.error('>>> [MESSENGER] API Error:', err);
+          removeIndicator();
+          chats[currentChatContact].push({ 
+            sender: contactName, 
+            time: timeStr, 
+            text: "SYSTEM ERROR: UNABLE TO REACH ARCHIVE SERVER." 
           });
-          return; // Elias handling is async above
-        } else if (currentChatContact === 'unknown') {
-          try {
-            const userId = getUserId();
-            console.log('>>> [MESSENGER] Sending to Unknown User. Text:', text, 'UserId:', userId);
-            const res = await fetch('/api/validateCommand', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                input: text, 
-                type: 'messenger', 
-                userId: userId,
-                SECRET_KEY: 'RESILIENT_BOOT' 
-              })
-            });
-            
-            removeIndicator();
-            if (!res.ok) throw new Error(`API Error: ${res.status}`);
-            
-            const data = await res.json();
-            console.log('>>> [MESSENGER] API response from Unknown:', data);
-            reply = data.reply || data.message || "You are running out of time.";
-            
-            if (data.action === 'complete_messenger') {
-              // Handle stage completion
-              if (window.soundManager) window.soundManager.playSuccess();
-              localStorage.setItem('aurora_stage3_complete', 'true');
-            }
-          } catch (err) {
-            console.error(err);
-            removeIndicator();
-            reply = "You are running out of time.";
-          }
-        } else if (currentChatContact === 'archive') {
-          try {
-            const userId = getUserId();
-            console.log('>>> [MESSENGER] Sending to Archive Node. Text:', text, 'UserId:', userId);
-            const res = await fetch('/api/validateCommand', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                input: text, 
-                type: 'messenger', 
-                userId: userId,
-                SECRET_KEY: 'RESILIENT_BOOT' 
-              })
-            });
-            
-            removeIndicator();
-            if (!res.ok) {
-              const errText = await res.text();
-              console.error('>>> [MESSENGER] API Error:', res.status, errText);
-              throw new Error(`API Error: ${res.status}`);
-            }
-            
-            const data = await res.json();
-            console.log('>>> [MESSENGER] API response:', data);
-            reply = data.reply || data.message || "INVALID INPUT.";
-            
-            if (data.action === 'unlock_archive') {
-              console.log('>>> [MESSENGER] Unlocking Archive Folder!');
-              // Unlock archive
-              const icon = document.getElementById('icon-archive');
-              if (icon) {
-                console.log('>>> [MESSENGER] Removing hidden class from icon-archive.');
-                icon.classList.remove('hidden');
-                setTimeout(() => {
-                  arrangeIcons();
-                  // Force a reflow to ensure it's visible
-                  icon.style.display = 'flex';
-                }, 100);
-              } else {
-                console.error('!!! [MESSENGER] icon-archive element not found!');
-              }
-              localStorage.setItem('aurora_stage1_complete', 'true');
-              if (window.soundManager) window.soundManager.playSuccess();
-            }
-            
-            if (data.action === 'complete_messenger') {
-              // Handle messenger completion if needed
-              console.log('Messenger puzzle completed!');
-            }
-          } catch (err) {
-            console.error('Chat API error:', err);
-            reply = "CONNECTION ERROR.";
-          }
-        }
-        
-        chats[currentChatContact].push({ 
-          sender: currentChatContact === 'elias' ? 'Dr. Elias' : (currentChatContact === 'unknown' ? 'Unknown' : 'Archive Node'), 
-          time: timeStr, 
-          text: reply 
+          renderChatHistory();
         });
-        renderChatHistory();
-        if (window.soundManager) window.soundManager.playPing();
       }, 1000);
     }
 
