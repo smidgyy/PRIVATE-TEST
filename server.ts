@@ -36,7 +36,9 @@ async function getDb() {
       if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
       } else if (fs.existsSync(serviceAccountPath)) {
-        serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+        const raw = fs.readFileSync(serviceAccountPath, 'utf8');
+        console.log(">>> [DB] Raw service-account.json length:", raw.length);
+        serviceAccount = JSON.parse(raw);
       }
 
       if (!serviceAccount) {
@@ -45,11 +47,14 @@ async function getDb() {
 
       // CRITICAL: Robust Private Key Sanitization
       if (serviceAccount.private_key && typeof serviceAccount.private_key === 'string') {
+        const originalLen = serviceAccount.private_key.length;
+        // Replace literal \n with actual newlines
         serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n').trim();
+        console.log(`>>> [DB] Private key sanitized. Length: ${originalLen} -> ${serviceAccount.private_key.length}`);
       }
 
-      console.log(">>> [DB] Initializing Admin SDK for:", serviceAccount.project_id);
-      console.log(">>> [DB] Client Email:", serviceAccount.client_email);
+      console.log(">>> [DB] Initializing Admin SDK for Project:", serviceAccount.project_id);
+      console.log(">>> [DB] Service Account Email:", serviceAccount.client_email);
       
       app = initializeApp({
         credential: cert(serviceAccount),
@@ -59,16 +64,20 @@ async function getDb() {
       app = getApp();
     }
 
-    // Correct way to get a named database instance in modular Admin SDK
+    // Force REST mode which is often more reliable on shared hosting (Hostinger)
+    // than gRPC which can be blocked or have credential issues.
     if (databaseId && databaseId !== "(default)") {
-      console.log(">>> [DB] Connecting to named database:", databaseId);
+      console.log(">>> [DB] Connecting to named database (REST):", databaseId);
       _db = getFirestore(app, databaseId);
     } else {
-      console.log(">>> [DB] Connecting to (default) database");
+      console.log(">>> [DB] Connecting to (default) database (REST)");
       _db = getFirestore(app);
     }
 
-    console.log(">>> [DB] Firestore instance ready.");
+    // Apply settings to force REST
+    _db.settings({ preferRest: true });
+
+    console.log(">>> [DB] Firestore instance ready (REST enabled).");
     return _db;
   } catch (err: any) {
     console.error("!!! [DB FATAL]", err.message);
