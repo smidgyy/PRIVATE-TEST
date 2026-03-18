@@ -444,16 +444,12 @@ async function startServer() {
     const baseCmd = args[0].toLowerCase();
     console.log(`>>> [API] Normalized input: "${t}"`);
     
+    // Get database instance
     let db: any = null;
     try {
-      // Add a 5-second timeout to the database connection to prevent hanging
-      const dbPromise = getDb();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Database connection timeout")), 5000)
-      );
-      db = await Promise.race([dbPromise, timeoutPromise]);
+      db = await getDb();
     } catch (e: any) {
-      console.error("!!! [API] Database connection failed or timed out, proceeding with logic-only mode:", e.message);
+      console.error("!!! [API] Database connection failed, proceeding with logic-only mode:", e.message);
     }
 
     // We can use Firebase Admin here, but for simplicity and to avoid credential issues,
@@ -596,7 +592,13 @@ async function startServer() {
           return res.json({ status: 'success', reply: replies[currentStep], nextStep: currentStep + 1 });
         }
       }
-      return res.json({ status: 'error', message: 'INVALID RESPONSE' });
+      
+      // Default reply if no match
+      return res.json({ 
+        status: 'error', 
+        message: 'INVALID RESPONSE', 
+        reply: "I'm sorry, I don't understand that command. Please check your logs or try a different phrase." 
+      });
     }
 
     if (type === 'node02_answer') {

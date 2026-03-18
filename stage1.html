@@ -634,6 +634,10 @@
       display: none !important;
     }
 
+    #icon-archive:not(.hidden) {
+      display: flex !important;
+    }
+    
     /* Icon SVGs as data URIs */
     .icon-img {
       width: 32px; height: 32px;
@@ -3307,13 +3311,17 @@ fragment remains</div>
     let currentChatContact = null;
 
     function loadChat(contactId, element) {
+      console.log('>>> [MESSENGER] Loading chat for:', contactId);
       currentChatContact = contactId;
       const historyDiv = document.getElementById('chat-history');
       const inputField = document.getElementById('chat-input');
       const sendBtn = document.getElementById('chat-send-btn');
       
       const chat = chats[contactId];
-      if (!chat) return;
+      if (!chat) {
+        console.error('!!! [MESSENGER] Chat data not found for:', contactId);
+        return;
+      }
       
       // Update UI
       document.querySelectorAll('.contact-item').forEach(item => {
@@ -3329,7 +3337,7 @@ fragment remains</div>
       
       inputField.disabled = false;
       sendBtn.disabled = false;
-      inputField.placeholder = "Type a message...";
+      inputField.placeholder = "Type a message to " + (contactId === 'archive' ? 'Archive Node' : (contactId === 'elias' ? 'Dr. Elias' : 'Unknown User')) + "...";
       setTimeout(() => inputField.focus(), 50);
       
       // Add enter key listener if not already added
@@ -3338,7 +3346,7 @@ fragment remains</div>
         inputField.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
-            console.log('>>> [MESSENGER] Enter key pressed.');
+            console.log('>>> [MESSENGER] Enter key pressed for contact:', currentChatContact);
             sendChatMessage();
           }
         });
@@ -3356,9 +3364,14 @@ fragment remains</div>
       let html = '';
       chat.forEach(msg => {
         const isYou = msg.sender === 'You';
+        let senderColor = '#800000'; // Default red for incoming
+        if (isYou) senderColor = '#000080'; // Blue for you
+        else if (currentChatContact === 'archive') senderColor = '#800080'; // Purple for archive
+        else if (currentChatContact === 'elias') senderColor = '#000080'; // Dark blue for Elias
+        
         html += `
           <div style="margin-bottom: 12px; text-align: ${isYou ? 'right' : 'left'};">
-            <div style="font-weight: bold; color: ${isYou ? '#000080' : '#800000'}; margin-bottom: 2px;">${msg.sender} <span style="font-size: 10px; color: #666; font-weight: normal;">${msg.time}</span></div>
+            <div style="font-weight: bold; color: ${senderColor}; margin-bottom: 2px;">${msg.sender} <span style="font-size: 10px; color: #666; font-weight: normal;">${msg.time}</span></div>
             <div style="background: ${isYou ? '#e6e6ff' : '#ffe6e6'}; padding: 6px 8px; border-radius: 2px; display: inline-block; max-width: 80%; border: 1px solid ${isYou ? '#b3b3ff' : '#ffb3b3'}; text-align: left; box-shadow: 1px 1px 0 rgba(0,0,0,0.1);">${msg.text}</div>
           </div>
         `;
@@ -3390,8 +3403,12 @@ fragment remains</div>
       typingIndicator.id = 'typing-indicator';
       typingIndicator.style.marginBottom = '12px';
       typingIndicator.style.textAlign = 'left';
+      
+      const contactName = currentChatContact === 'archive' ? 'Archive Node' : (currentChatContact === 'elias' ? 'Dr. Elias' : 'Unknown User');
+      const contactColor = currentChatContact === 'archive' ? '#800080' : (currentChatContact === 'elias' ? '#000080' : '#800000');
+      
       typingIndicator.innerHTML = `
-        <div style="font-weight: bold; color: #800000; margin-bottom: 2px;">${currentChatContact === 'archive' ? 'Archive Node' : 'Unknown User'} <span style="font-size: 10px; color: #666; font-weight: normal;">${timeStr}</span></div>
+        <div style="font-weight: bold; color: ${contactColor}; margin-bottom: 2px;">${contactName} <span style="font-size: 10px; color: #666; font-weight: normal;">${timeStr}</span></div>
         <div style="background: #ffe6e6; padding: 6px 8px; border-radius: 2px; display: inline-block; max-width: 80%; border: 1px solid #ffb3b3; text-align: left; box-shadow: 1px 1px 0 rgba(0,0,0,0.1); font-style: italic;">...</div>
       `;
       
@@ -3425,7 +3442,11 @@ fragment remains</div>
               if (icon) {
                 console.log('>>> [MESSENGER] Removing hidden class from icon-archive.');
                 icon.classList.remove('hidden');
-                arrangeIcons();
+                setTimeout(() => {
+                  arrangeIcons();
+                  // Force a reflow to ensure it's visible
+                  icon.style.display = 'flex';
+                }, 100);
               } else {
                 console.error('!!! [MESSENGER] icon-archive element not found!');
               }
@@ -3453,8 +3474,37 @@ fragment remains</div>
           });
           return; // Elias handling is async above
         } else if (currentChatContact === 'unknown') {
-          removeIndicator();
-          reply = "You are running out of time.";
+          try {
+            const userId = getUserId();
+            console.log('>>> [MESSENGER] Sending to Unknown User. Text:', text, 'UserId:', userId);
+            const res = await fetch('/api/validateCommand', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                input: text, 
+                type: 'messenger', 
+                userId: userId,
+                SECRET_KEY: 'RESILIENT_BOOT' 
+              })
+            });
+            
+            removeIndicator();
+            if (!res.ok) throw new Error(`API Error: ${res.status}`);
+            
+            const data = await res.json();
+            console.log('>>> [MESSENGER] API response from Unknown:', data);
+            reply = data.reply || data.message || "You are running out of time.";
+            
+            if (data.action === 'complete_messenger') {
+              // Handle stage completion
+              if (window.soundManager) window.soundManager.playSuccess();
+              localStorage.setItem('aurora_stage3_complete', 'true');
+            }
+          } catch (err) {
+            console.error(err);
+            removeIndicator();
+            reply = "You are running out of time.";
+          }
         } else if (currentChatContact === 'archive') {
           try {
             const userId = getUserId();
@@ -3488,7 +3538,11 @@ fragment remains</div>
               if (icon) {
                 console.log('>>> [MESSENGER] Removing hidden class from icon-archive.');
                 icon.classList.remove('hidden');
-                arrangeIcons();
+                setTimeout(() => {
+                  arrangeIcons();
+                  // Force a reflow to ensure it's visible
+                  icon.style.display = 'flex';
+                }, 100);
               } else {
                 console.error('!!! [MESSENGER] icon-archive element not found!');
               }
