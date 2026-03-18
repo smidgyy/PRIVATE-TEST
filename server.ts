@@ -17,15 +17,11 @@ async function getDb() {
     if (_db) return _db;
 
     console.log(">>> [DB] Initializing database getter...");
-    console.log(">>> [DB] Server Time:", new Date().toISOString());
-    
     const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
     const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
     
     let firebaseConfig: any = {};
-    if (process.env.FIREBASE_CONFIG) {
-      firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
-    } else if (fs.existsSync(configPath)) {
+    if (fs.existsSync(configPath)) {
       firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     }
 
@@ -36,38 +32,40 @@ async function getDb() {
       let cert: any = null;
 
       if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        console.log(">>> [DB] Loading cert from Env Var");
         cert = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
       } else if (fs.existsSync(serviceAccountPath)) {
-        console.log(">>> [DB] Loading cert from File:", serviceAccountPath);
         cert = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
       }
 
       if (!cert) {
-        const filesInDir = fs.readdirSync(process.cwd());
-        throw new Error(`MISSING CREDENTIALS: 'service-account.json' not found in ${process.cwd()}. Files: ${filesInDir.join(", ")}`);
+        throw new Error("No service-account.json found.");
       }
 
-      // Clean private key (common issue with env vars or copy-paste)
+      // CRITICAL: Sanitize the private key. 
+      // Sometimes it has literal \n strings, sometimes real newlines.
       if (cert.private_key) {
         cert.private_key = cert.private_key.replace(/\\n/g, '\n');
       }
 
-      console.log(">>> [DB] Initializing Admin SDK for project:", cert.project_id);
-      console.log(">>> [DB] Client Email:", cert.client_email);
-      
+      console.log(">>> [DB] Initializing Admin SDK for:", cert.project_id);
       admin.initializeApp({
         credential: admin.credential.cert(cert),
-        databaseId: databaseId === "(default)" ? undefined : databaseId
+        projectId: cert.project_id
       });
     }
 
     _db = admin.firestore();
+    
+    // Set the specific database ID if it's not the default one
+    if (databaseId !== "(default)") {
+      _db.settings({ databaseId: databaseId });
+    }
+
     console.log(">>> [DB] Firestore instance ready.");
     return _db;
   } catch (err: any) {
     console.error("!!! [DB FATAL]", err.message);
-    throw new Error(`Firebase Auth Failed: ${err.message}. Ensure service-account.json is valid and server time is correct.`);
+    throw err;
   }
 }
 
