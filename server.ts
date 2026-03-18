@@ -45,8 +45,31 @@ async function getDb() {
       if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         console.log(">>> [DB] Loading service account from ENV...");
         try {
-          const rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
-          serviceAccount = JSON.parse(rawEnv);
+          let rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+          
+          // Handle cases where the ENV is wrapped in literal escaped quotes (common in some web panels)
+          if (rawEnv.startsWith('\\"') && rawEnv.endsWith('\\"')) {
+            console.log(">>> [DB] ENV is wrapped in literal escaped quotes, unescaping...");
+            rawEnv = rawEnv.substring(2, rawEnv.length - 2).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+          } else if (rawEnv.startsWith('"') && rawEnv.endsWith('"')) {
+             // If it's wrapped in normal quotes but not a valid JSON string yet, it might be double-quoted
+             try {
+                const parsedOnce = JSON.parse(rawEnv);
+                if (typeof parsedOnce === 'string') {
+                   rawEnv = parsedOnce;
+                }
+             } catch (e) {}
+          }
+
+          try {
+            serviceAccount = JSON.parse(rawEnv);
+          } catch (e) {
+            // Last ditch effort: try to unescape common patterns if it's still failing
+            console.log(">>> [DB] Initial parse failed, trying aggressive unescape...");
+            const unescaped = rawEnv.replace(/\\"/g, '"').replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
+            serviceAccount = JSON.parse(unescaped);
+          }
+
           // Handle double-encoding in ENV (common when copy-pasting into web panels)
           if (typeof serviceAccount === 'string') {
             console.log(">>> [DB] ENV was double-encoded string, parsing again...");
@@ -245,16 +268,31 @@ async function startServer() {
         // Check ENV first
         if (process.env.FIREBASE_SERVICE_ACCOUNT) {
           source = "env";
-          const rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
-          rawFirstChars = JSON.stringify(rawEnv.substring(0, 10));
+          let rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+          rawFirstChars = JSON.stringify(rawEnv.substring(0, 20));
+          
           try {
+            // Try robust parsing
+            if (rawEnv.startsWith('\\"') && rawEnv.endsWith('\\"')) {
+              rawEnv = rawEnv.substring(2, rawEnv.length - 2).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+            }
+            
             sa = JSON.parse(rawEnv);
             if (typeof sa === 'string') {
               sa = JSON.parse(sa);
               saType = "string-wrapped-object";
+            } else {
+              saType = "object";
             }
-          } catch(e) {
-            keySignTest = "JSON Parse Error in ENV";
+          } catch(e: any) {
+            keySignTest = "JSON Parse Error in ENV: " + e.message;
+            // Try aggressive unescape
+            try {
+               const unescaped = rawEnv.replace(/\\"/g, '"').replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
+               sa = JSON.parse(unescaped);
+               saType = "aggressive-unescaped-object";
+               keySignTest = "Aggressive unescape worked";
+            } catch (e2) {}
           }
         } else {
           const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
