@@ -3271,8 +3271,8 @@ fragment remains</div>
     // --- Messenger Logic ---
     function getUserId() {
       // Priority 1: Window global from main.ts
-      if (typeof (window as any).getUserId === 'function') {
-        return (window as any).getUserId();
+      if (typeof window.getUserId === 'function') {
+        return window.getUserId();
       }
       
       // Priority 2: Local storage
