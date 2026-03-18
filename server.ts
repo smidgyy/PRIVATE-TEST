@@ -58,18 +58,20 @@ async function getDb() {
       if (serviceAccount.private_key && typeof serviceAccount.private_key === 'string') {
         let pk = serviceAccount.private_key;
         
-        // 1. Fix literal "\n" strings (handles both \n and \\n)
+        // 1. Fix all variations of escaped newlines
         pk = pk.replace(/\\n/g, '\n');
+        pk = pk.replace(/\\r/g, '\r');
         
-        // 2. Remove any accidental quotes or whitespace at start/end
-        pk = pk.replace(/^['"\s]+|['"\s]+$/g, '');
+        // 2. Remove any accidental quotes, whitespace, or BOM markers at start/end
+        pk = pk.replace(/^['"\s\uFEFF]+|['"\s\uFEFF]+$/g, '');
         
         // 3. Ensure it starts with the correct header
         if (!pk.startsWith("-----BEGIN PRIVATE KEY-----")) {
-          if (pk.includes("-----BEGIN PRIVATE KEY-----")) {
-             pk = pk.substring(pk.indexOf("-----BEGIN PRIVATE KEY-----"));
+          const headerIndex = pk.indexOf("-----BEGIN PRIVATE KEY-----");
+          if (headerIndex !== -1) {
+             pk = pk.substring(headerIndex);
           } else {
-             console.error("!!! [DB] Private key missing header!");
+             console.error("!!! [DB] Private key missing header! Found:", pk.substring(0, 20));
           }
         }
         
@@ -79,8 +81,7 @@ async function getDb() {
         }
 
         serviceAccount.private_key = pk;
-        console.log(">>> [DB] Private key sanitized. Length:", serviceAccount.private_key.length);
-        console.log(">>> [DB] Private key starts with:", serviceAccount.private_key.substring(0, 40));
+        console.log(">>> [DB] Private key sanitized. Final Length:", serviceAccount.private_key.length);
       }
 
       console.log(">>> [DB] Initializing Admin SDK for Project:", serviceAccount.project_id);
@@ -156,13 +157,19 @@ async function startServer() {
       let clientEmail = "unknown";
       let hasEnvVar = !!process.env.FIREBASE_SERVICE_ACCOUNT;
       let keyHash = "none";
+      let keyStart = "none";
+      let rawFirstChars = "none";
       
       const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
       if (fs.existsSync(serviceAccountPath)) {
-        const sa = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+        const raw = fs.readFileSync(serviceAccountPath, 'utf8');
+        rawFirstChars = JSON.stringify(raw.substring(0, 10));
+        
+        const sa = JSON.parse(raw);
         clientEmail = sa.client_email;
         if (sa.private_key) {
           keyHash = crypto.createHash('sha256').update(sa.private_key).digest('hex');
+          keyStart = sa.private_key.substring(0, 25);
         }
       }
 
@@ -174,6 +181,8 @@ async function startServer() {
         clientEmail: clientEmail,
         hasEnvVar: hasEnvVar,
         keyHash: keyHash,
+        keyStart: keyStart,
+        rawFirstChars: rawFirstChars,
         cwd: process.cwd(),
         files: filesInDir,
         collections: collections.map((c: any) => c.id),
