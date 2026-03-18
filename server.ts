@@ -211,16 +211,43 @@ async function startServer() {
       });
     } catch (err: any) {
       let clientEmail = "unknown";
+      let keyHash = "none";
+      let keyStart = "none";
+      let rawFirstChars = "none";
+      let keySignTest = "untested";
+      
       try {
-        const sa = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'service-account.json'), 'utf8'));
-        clientEmail = sa.client_email;
+        const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
+        if (fs.existsSync(serviceAccountPath)) {
+          const raw = fs.readFileSync(serviceAccountPath, 'utf8');
+          rawFirstChars = JSON.stringify(raw.substring(0, 10));
+          const sa = JSON.parse(raw);
+          clientEmail = sa.client_email;
+          if (sa.private_key) {
+            keyHash = crypto.createHash('sha256').update(sa.private_key).digest('hex');
+            keyStart = sa.private_key.substring(0, 25);
+            
+            try {
+              const sign = crypto.createSign('SHA256');
+              sign.update('test');
+              sign.sign(sa.private_key.replace(/\\n/g, '\n'));
+              keySignTest = "success";
+            } catch (e: any) {
+              keySignTest = "failed: " + e.message;
+            }
+          }
+        }
       } catch(e) {}
 
       res.status(500).json({ 
         status: "error", 
-        buildId: "v1.0.6-aggressive-sanitization",
+        buildId: "v1.0.7-full-diagnostics",
         serverTime: new Date().toISOString(),
         clientEmail: clientEmail,
+        keySignTest: keySignTest,
+        keyHash: keyHash,
+        keyStart: keyStart,
+        rawFirstChars: rawFirstChars,
         hasEnvVar: !!process.env.FIREBASE_SERVICE_ACCOUNT,
         message: err.message,
         details: err.stack,
