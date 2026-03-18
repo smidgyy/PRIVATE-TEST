@@ -3121,77 +3121,78 @@ fragment remains</div>
           break;
         default:
           // Send to backend for validation
-      const userId = getUserId();
       printTerminal("Connecting to archive server...");
-      fetch('/api/validateCommand', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: cmd, userId, type: 'terminal', SECRET_KEY: 'RESILIENT_BOOT' })
-      })
-          .then(res => res.json())
-          .then(data => {
-            applyGameState(data);
-            if (data.status === 'success') {
-              if (data.action === 'redirect_archive') {
-                printTerminal("Decryption key accepted.");
+      waitForAuth().then(userId => {
+        fetch('/api/validateCommand', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input: cmd, userId, type: 'terminal', SECRET_KEY: 'RESILIENT_BOOT' })
+        })
+        .then(res => res.json())
+        .then(data => {
+          applyGameState(data);
+          if (data.status === 'success') {
+            if (data.action === 'redirect_archive') {
+              printTerminal("Decryption key accepted.");
+              setTimeout(() => {
+                printTerminal("Archive integrity verified.");
                 setTimeout(() => {
-                  printTerminal("Archive integrity verified.");
+                  printTerminal("Registering investigator...");
                   setTimeout(() => {
-                    printTerminal("Registering investigator...");
+                    printTerminal("Accessing root archive...");
                     setTimeout(() => {
-                      printTerminal("Accessing root archive...");
-                      setTimeout(() => {
-                        window.location.href = window.location.origin + '/archive';
-                      }, 2000);
-                    }, 1500);
+                      window.location.href = window.location.origin + '/archive';
+                    }, 2000);
                   }, 1500);
-                }, 1000);
-              } else if (data.action === 'unlock_vale') {
-                printTerminal("Decoding archive...");
-                setTimeout(() => {
-                  printTerminal("Archive decoded successfully.");
-                  printTerminal("Unlocking /vale/ directory...");
-                  document.getElementById('icon-vale').classList.remove('hidden');
-                  arrangeIcons();
-                  if (window.soundManager) window.soundManager.playSuccess();
-                }, 1000);
-              } else if (data.action === 'unlock_forum') {
-                printTerminal("Verifying key...");
-                setTimeout(() => {
-                  printTerminal("Archive match detected.");
-                  printTerminal("Access granted.");
-                  localStorage.setItem('aurora_stage4_forum_unlocked', 'true');
-                  if (window.soundManager) window.soundManager.playSuccess();
-                }, 1000);
-              } else if (data.action === 'require_password') {
-                printTerminal("Archive node detected.");
-                printTerminal("Enter archive phrase:");
-                terminalState = 'archive_password';
-                termPrompt.innerText = "";
-              } else if (data.action === 'show_caesar_clue') {
-                printTerminal("algorithm: caesar");
-                printTerminal("shift: 7");
-                printTerminal("");
-                printTerminal("encoded string:");
-                printTerminal("kwws://dufklyh.orfdo/qrgh03/vhfuhw");
-                localStorage.setItem('aurora_stage3_token1', btoa('true|AURORA_OS_SECRET'));
+                }, 1500);
+              }, 1000);
+            } else if (data.action === 'unlock_vale') {
+              printTerminal("Decoding archive...");
+              setTimeout(() => {
+                printTerminal("Archive decoded successfully.");
+                printTerminal("Unlocking /vale/ directory...");
+                document.getElementById('icon-vale').classList.remove('hidden');
+                arrangeIcons();
+                if (window.soundManager) window.soundManager.playSuccess();
+              }, 1000);
+            } else if (data.action === 'unlock_forum') {
+              printTerminal("Verifying key...");
+              setTimeout(() => {
+                printTerminal("Archive match detected.");
+                printTerminal("Access granted.");
+                localStorage.setItem('aurora_stage4_forum_unlocked', 'true');
+                if (window.soundManager) window.soundManager.playSuccess();
+              }, 1000);
+            } else if (data.action === 'require_password') {
+              printTerminal("Archive node detected.");
+              printTerminal("Enter archive phrase:");
+              terminalState = 'archive_password';
+              termPrompt.innerText = "";
+            } else if (data.action === 'show_caesar_clue') {
+              printTerminal("algorithm: caesar");
+              printTerminal("shift: 7");
+              printTerminal("");
+              printTerminal("encoded string:");
+              printTerminal("kwws://dufklyh.orfdo/qrgh03/vhfuhw");
+              localStorage.setItem('aurora_stage3_token1', btoa('true|AURORA_OS_SECRET'));
+            }
+          } else {
+            if (baseCmd === 'decrypt') {
+              if (args.length > 1) {
+                printTerminal("Error: Invalid decryption key.");
+              } else {
+                printTerminal("Usage: decrypt <code>");
               }
             } else {
-              if (baseCmd === 'decrypt') {
-                if (args.length > 1) {
-                  printTerminal("Error: Invalid decryption key.");
-                } else {
-                  printTerminal("Usage: decrypt <code>");
-                }
-              } else {
-                printTerminal(data.message || "Bad command or file name.");
-              }
+              printTerminal(data.message || "Bad command or file name.");
             }
-          })
-          .catch(err => {
-            printTerminal("Error communicating with archive server.");
-          });
-          break;
+          }
+        })
+        .catch(err => {
+          printTerminal("Error communicating with archive server.");
+        });
+      });
+      break;
       }
     }
 
@@ -3224,54 +3225,55 @@ fragment remains</div>
     }
 
     function handleArchivePassword(pwd) {
-      const userId = getUserId();
       printTerminal("Verifying decryption key...");
-      fetch('/api/validateCommand', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: pwd, userId, type: 'archive_password', SECRET_KEY: 'RESILIENT_BOOT' })
-      })
-      .then(res => res.json())
-      .then(data => {
-        applyGameState(data);
-        if (data.status === 'success') {
-          if (data.action === 'unlock_archive') {
-            printTerminal("Access granted.");
-            terminalState = 'normal';
-            termPrompt.innerText = "C:\\>";
-            
-            if (window.soundManager) window.soundManager.playSuccess();
-          } else if (data.action === 'unlock_forum') {
-            printTerminal("Verifying key...");
-            terminalState = 'normal';
-            termPrompt.innerText = "C:\\>";
-            setTimeout(() => {
-              printTerminal("Archive match detected.");
+      waitForAuth().then(userId => {
+        fetch('/api/validateCommand', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input: pwd, userId, type: 'archive_password', SECRET_KEY: 'RESILIENT_BOOT' })
+        })
+        .then(res => res.json())
+        .then(data => {
+          applyGameState(data);
+          if (data.status === 'success') {
+            if (data.action === 'unlock_archive') {
               printTerminal("Access granted.");
-              localStorage.setItem('aurora_stage4_forum_unlocked', 'true');
+              terminalState = 'normal';
+              termPrompt.innerText = "C:\\>";
+              
               if (window.soundManager) window.soundManager.playSuccess();
-              syncProgression();
-            }, 1000);
-          }
-        } else {
-          failedAttempts++;
-          if (failedAttempts >= 3) {
-            printTerminal("");
-            printTerminal("SYSTEM ALERT");
-            printTerminal("Archive protection triggered.");
-            printTerminal("");
-            failedAttempts = 0;
+            } else if (data.action === 'unlock_forum') {
+              printTerminal("Verifying key...");
+              terminalState = 'normal';
+              termPrompt.innerText = "C:\\>";
+              setTimeout(() => {
+                printTerminal("Archive match detected.");
+                printTerminal("Access granted.");
+                localStorage.setItem('aurora_stage4_forum_unlocked', 'true');
+                if (window.soundManager) window.soundManager.playSuccess();
+                syncProgression();
+              }, 1000);
+            }
           } else {
-            printTerminal("Access denied.");
+            failedAttempts++;
+            if (failedAttempts >= 3) {
+              printTerminal("");
+              printTerminal("SYSTEM ALERT");
+              printTerminal("Archive protection triggered.");
+              printTerminal("");
+              failedAttempts = 0;
+            } else {
+              printTerminal("Access denied.");
+            }
+            terminalState = 'normal';
+            termPrompt.innerText = "C:\\>";
           }
+        })
+        .catch(err => {
+          printTerminal("Error communicating with archive server.");
           terminalState = 'normal';
           termPrompt.innerText = "C:\\>";
-        }
-      })
-      .catch(err => {
-        printTerminal("Error communicating with archive server.");
-        terminalState = 'normal';
-        termPrompt.innerText = "C:\\>";
+        });
       });
     }
 
@@ -3286,6 +3288,7 @@ fragment remains</div>
         if (icon) {
           console.log('>>> [GAME STATE] Unlocking Archive Folder.');
           icon.classList.remove("hidden");
+          icon.style.display = "flex";
           icon.style.visibility = "visible";
           icon.style.opacity = "1";
           icon.style.pointerEvents = "auto";
@@ -3296,6 +3299,7 @@ fragment remains</div>
         if (icon) {
           console.log('>>> [GAME STATE] Unlocking Vale Directory.');
           icon.classList.remove("hidden");
+          icon.style.display = "flex";
           icon.style.visibility = "visible";
           icon.style.opacity = "1";
           icon.style.pointerEvents = "auto";
@@ -3351,6 +3355,22 @@ fragment remains</div>
         window._sessionUserId = 'session_' + Math.random().toString(36).substring(2, 11);
       }
       return window._sessionUserId;
+    }
+
+    async function waitForAuth() {
+      return new Promise((resolve) => {
+        const check = () => {
+          const id = getUserId();
+          if (id && !id.startsWith('session_')) {
+            resolve(id);
+          } else {
+            setTimeout(check, 100);
+          }
+        };
+        check();
+        // Timeout after 3 seconds
+        setTimeout(() => resolve(getUserId()), 3000);
+      });
     }
 
     const chats = {
@@ -3457,10 +3477,14 @@ fragment remains</div>
       const minutes = now.getMinutes() < 10 ? '0' + now.getMinutes() : now.getMinutes();
       const timeStr = hours + ':' + minutes + ampm;
       
+      // 1. User types message
+      // 2. message is immediately displayed in chat
       chats[currentChatContact].push({ sender: 'You', time: timeStr, text: text });
       inputField.value = '';
+      renderChatHistory();
       
-      // Add a "..." indicator
+      // 3. backend is called
+      // Show typing indicator
       const historyDiv = document.getElementById('chat-history');
       const typingIndicator = document.createElement('div');
       typingIndicator.id = 'typing-indicator';
@@ -3475,7 +3499,6 @@ fragment remains</div>
         <div style="background: #ffe6e6; padding: 6px 8px; border-radius: 2px; display: inline-block; max-width: 80%; border: 1px solid #ffb3b3; text-align: left; box-shadow: 1px 1px 0 rgba(0,0,0,0.1); font-style: italic;">...</div>
       `;
       
-      renderChatHistory();
       historyDiv.appendChild(typingIndicator);
       historyDiv.scrollTop = historyDiv.scrollHeight;
       
@@ -3486,20 +3509,21 @@ fragment remains</div>
           if (indicator) indicator.remove();
         };
 
-        const userId = getUserId();
-        fetch('/api/validateCommand', {
+        const userId = await waitForAuth();
+        fetch('/api/sendMessage', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            input: text, 
-            type: 'messenger', 
-            userId: userId,
-            SECRET_KEY: 'RESILIENT_BOOT' 
+            message: text, 
+            contact: currentChatContact, 
+            userId: userId
           })
         })
         .then(res => res.json())
         .then(data => {
           removeIndicator();
+          // 4. backend returns lore-based reply
+          // 5. reply is displayed
           applyGameState(data);
           
           if (data.reply) {
@@ -3507,13 +3531,6 @@ fragment remains</div>
               sender: contactName, 
               time: timeStr, 
               text: data.reply 
-            });
-            renderChatHistory();
-          } else {
-            chats[currentChatContact].push({ 
-              sender: contactName, 
-              time: timeStr, 
-              text: "CONNECTION INTERRUPTED. RETRYING..." 
             });
             renderChatHistory();
           }

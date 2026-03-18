@@ -544,63 +544,6 @@ async function startServer() {
       return res.json({ status: 'error', message: 'Access denied.' });
     }
 
-    if (type === 'messenger') {
-      const t = fullCmd.toUpperCase();
-      
-      // Special case for the Archive password in messenger
-      if (t === 'THE ARCHIVE REMEMBERS') {
-        console.log(`>>> [API] Archive password matched for user ${effectiveUserId}`);
-        if (db) await db.collection('users').doc(effectiveUserId).set({ stage1_archive_unlocked: true }, { merge: true });
-        return res.json({ 
-          status: 'success', 
-          reply: "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.", 
-          action: 'unlock_archive' 
-        });
-      }
-
-      console.log(`>>> [API] Checking messenger answers for user ${effectiveUserId}. Step logic follows...`);
-      const answers = ["GREED", "DEPTH", "MONEY", "GOLD", "CROWN"];
-      
-      let userData: any = {};
-      if (db) {
-        const userDoc = await db.collection('users').doc(effectiveUserId).get();
-        userData = userDoc.data() || {};
-      }
-      const currentStep = userData.messenger_step || 0;
-      
-      if (currentStep >= 0 && currentStep < answers.length) {
-        if (t === answers[currentStep]) {
-          const replies = [
-            "So you solved Vale’s second lock.<br><br>Greed was only the beginning.<br><br>Greed leaves traces.<br><br>Vale tried to erase one of them.<br><br>Check the trash.",
-            "Correct.<br><br>Vale encrypted the next fragment.<br><br>Use the terminal.",
-            "No.<br><br>Money is only the mask.<br><br>Look deeper.",
-            "Closer.<br><br>Vale didn’t follow wealth.<br><br>He followed power.<br><br>Listen.",
-            "You are beginning to see the pattern.<br><br>Greed becomes wealth.<br><br>Wealth becomes power.<br><br>Vale reached this point.<br><br>But he went further."
-          ];
-          
-          if (currentStep === 4) {
-            if (db) await db.collection('users').doc(effectiveUserId).set({ stage3_messenger_complete: true, messenger_step: 5, stage4_unlocked: true }, { merge: true });
-            return res.json({ 
-              status: 'success', 
-              reply: replies[currentStep], 
-              action: 'complete_messenger',
-              unknownMsg: "I was wondering when you would reach this point.<br><br>Vale reached Node04 as well.<br><br>He stopped responding shortly after.<br><br>Be careful what you uncover."
-            });
-          }
-          
-          if (db) await db.collection('users').doc(effectiveUserId).set({ messenger_step: currentStep + 1 }, { merge: true });
-          return res.json({ status: 'success', reply: replies[currentStep], nextStep: currentStep + 1 });
-        }
-      }
-      
-      // Default reply if no match
-      return res.json({ 
-        status: 'error', 
-        message: 'INVALID RESPONSE', 
-        reply: "I'm sorry, I don't understand that command. Please check your logs or try a different phrase." 
-      });
-    }
-
     if (type === 'node02_answer') {
       const hash = crypto.createHash('sha256').update(t.toLowerCase()).digest('hex');
       
@@ -714,6 +657,54 @@ async function startServer() {
         message: 'Internal Server Error',
         details: err.message 
       });
+    }
+  });
+
+  app.post("/api/sendMessage", async (req: any, res: any) => {
+    try {
+      const { message, contact, userId } = req.body;
+      if (!message || !contact || !userId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const t = message.trim().toUpperCase();
+      let reply = "I'm sorry, I can't help with that right now.";
+      let action = null;
+
+      // Get database instance
+      let db: any = null;
+      try {
+        db = await getDb();
+      } catch (e: any) {}
+
+      if (contact === 'unknown') {
+        const replies = [
+          "I can't reach you. Something is wrong.",
+          "Time is running out...",
+          "You're not supposed to be here."
+        ];
+        reply = replies[Math.floor(Math.random() * replies.length)];
+      } else if (contact === 'elias') {
+        const replies = [
+          "Check the logs again.",
+          "Something is missing.",
+          "I'm investigating the breach. Keep looking."
+        ];
+        reply = replies[Math.floor(Math.random() * replies.length)];
+      } else if (contact === 'archive') {
+        if (t === 'THE ARCHIVE REMEMBERS') {
+          if (db) await db.collection('users').doc(userId).set({ stage1_archive_unlocked: true }, { merge: true });
+          reply = "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.";
+          action = "unlock_archive";
+        } else {
+          reply = "INVALID INPUT. AWAITING COMMAND.";
+        }
+      }
+
+      return res.json({ contact, reply, action });
+    } catch (err: any) {
+      console.error(">>> [API] sendMessage error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 
