@@ -1569,16 +1569,16 @@ fragment remains</div>
       <div class="window-content" style="display: flex; padding: 0; background: var(--window-bg);">
         <div style="width: 120px; border-right: 2px solid var(--window-border-dark); background: #fff; display: flex; flex-direction: column;">
           <div style="padding: 5px; background: #000080; color: #fff; font-weight: bold; font-size: 12px; border-bottom: 1px solid var(--window-border-dark);">Contacts</div>
-          <div class="contact-item" onclick="loadChat('elias')" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; transition: background 0.1s;">Dr. Elias</div>
-          <div class="contact-item" onclick="loadChat('unknown')" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; font-weight: bold; color: #800000; transition: background 0.1s;">Unknown User</div>
-          <div class="contact-item" onclick="loadChat('archive')" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; color: #800080; transition: background 0.1s;">Archive Node</div>
+          <div class="contact-item" onclick="loadChat('elias', this)" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; transition: background 0.1s;">Dr. Elias</div>
+          <div class="contact-item" onclick="loadChat('unknown', this)" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; font-weight: bold; color: #800000; transition: background 0.1s;">Unknown User</div>
+          <div class="contact-item" onclick="loadChat('archive', this)" style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; color: #800080; transition: background 0.1s;">Archive Node</div>
         </div>
         <div style="flex: 1; display: flex; flex-direction: column; background: #f0f0f0;">
           <div id="chat-history" style="flex: 1; overflow-y: auto; padding: 10px; font-size: 12px; border-bottom: 2px solid var(--window-border-dark); background: #e8e8e8; box-shadow: inset 1px 1px 3px rgba(0,0,0,0.1);">
             <div style="color: #666; text-align: center; margin-top: 50px;">Select a contact to view history.</div>
           </div>
           <div style="height: 40px; display: flex; padding: 5px; background: var(--window-bg);">
-            <input type="text" id="chat-input" disabled placeholder="Select a contact..." style="flex: 1; border: 2px inset #fff; padding: 2px 5px;" onkeydown="if(event.key==='Enter') sendChatMessage()">
+            <input type="text" id="chat-input" disabled placeholder="Select a contact..." style="flex: 1; border: 2px inset #fff; padding: 2px 5px;">
             <button id="chat-send-btn" disabled style="margin-left: 5px; padding: 0 10px; border: 2px outset #fff; background: #c0c0c0; cursor: pointer;" onclick="sendChatMessage()">Send</button>
           </div>
         </div>
@@ -3289,7 +3289,7 @@ fragment remains</div>
 
     let currentChatContact = null;
 
-    function loadChat(contactId) {
+    function loadChat(contactId, element) {
       currentChatContact = contactId;
       const historyDiv = document.getElementById('chat-history');
       const inputField = document.getElementById('chat-input');
@@ -3303,14 +3303,28 @@ fragment remains</div>
         item.style.background = 'transparent';
         item.style.color = item.innerText === 'Unknown User' ? '#800000' : (item.innerText === 'Archive Node' ? '#800080' : '#000');
       });
-      event.currentTarget.style.background = '#000080';
-      event.currentTarget.style.color = '#fff';
-      event.currentTarget.style.animation = 'none';
+      
+      if (element) {
+        element.style.background = '#000080';
+        element.style.color = '#fff';
+        element.style.animation = 'none';
+      }
       
       inputField.disabled = false;
       sendBtn.disabled = false;
       inputField.placeholder = "Type a message...";
       inputField.focus();
+      
+      // Add enter key listener if not already added
+      if (!inputField.dataset.listenerAdded) {
+        inputField.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            sendChatMessage();
+          }
+        });
+        inputField.dataset.listenerAdded = 'true';
+      }
       
       renderChatHistory();
     }
@@ -3337,6 +3351,7 @@ fragment remains</div>
     function sendChatMessage() {
       const inputField = document.getElementById('chat-input');
       const text = inputField.value.trim();
+      console.log('Sending message:', text, 'to:', currentChatContact);
       if (!text || !currentChatContact) return;
       
       const now = new Date();
@@ -3352,22 +3367,32 @@ fragment remains</div>
       renderChatHistory();
       
       // Auto-reply logic
-      setTimeout(() => {
+      setTimeout(async () => {
         let reply = "";
         if (currentChatContact === 'elias') {
           reply = "I'm currently offline. If you find the archive phrase, use the terminal.";
         } else if (currentChatContact === 'unknown') {
           reply = "You are running out of time.";
         } else if (currentChatContact === 'archive') {
-          if (text.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
-            reply = "ACCESS GRANTED. NODE 03 UNLOCKED.";
-            // Unlock archive
-            document.getElementById('icon-archive').classList.remove('hidden');
-            arrangeIcons();
-            localStorage.setItem('aurora_stage1_complete', 'true');
-            if (window.soundManager) window.soundManager.playSuccess();
-          } else {
-            reply = "INVALID INPUT.";
+          try {
+            const res = await fetch('/api/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message: text, type: 'messenger', SECRET_KEY: 'RESILIENT_BOOT' })
+            });
+            const data = await res.json();
+            reply = data.reply || "INVALID INPUT.";
+            
+            if (text.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
+              // Unlock archive
+              document.getElementById('icon-archive').classList.remove('hidden');
+              arrangeIcons();
+              localStorage.setItem('aurora_stage1_complete', 'true');
+              if (window.soundManager) window.soundManager.playSuccess();
+            }
+          } catch (err) {
+            console.error('Chat API error:', err);
+            reply = "CONNECTION ERROR.";
           }
         }
         
@@ -3378,7 +3403,7 @@ fragment remains</div>
         });
         renderChatHistory();
         if (window.soundManager) window.soundManager.playPing();
-      }, 1500);
+      }, 1000);
     }
 
     // --- Music Player Logic ---
