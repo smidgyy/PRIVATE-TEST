@@ -3,7 +3,8 @@ import path from "path";
 import cors from "cors";
 import fs from "fs";
 import crypto from "crypto";
-import admin from "firebase-admin";
+import { initializeApp, cert, getApps, getApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
 console.log(">>> [BOOT] Server process started at:", new Date().toISOString());
 console.log(">>> [BOOT] Node Version:", process.version);
@@ -28,35 +29,47 @@ async function getDb() {
     const databaseId = firebaseConfig.firestoreDatabaseId || "(default)";
     console.log(">>> [DB] Target Database ID:", databaseId);
 
-    if (!admin.apps.length) {
-      let cert: any = null;
+    let app;
+    if (getApps().length === 0) {
+      let serviceAccount: any = null;
 
       if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        cert = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
       } else if (fs.existsSync(serviceAccountPath)) {
-        cert = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+        serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
       }
 
-      if (!cert) {
+      if (!serviceAccount) {
         throw new Error("No service-account.json found.");
       }
 
       // CRITICAL: Robust Private Key Sanitization
-      if (cert.private_key && typeof cert.private_key === 'string') {
-        cert.private_key = cert.private_key.replace(/\\n/g, '\n').trim();
+      if (serviceAccount.private_key && typeof serviceAccount.private_key === 'string') {
+        console.log(">>> [DB] Private key length before sanitization:", serviceAccount.private_key.length);
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n').trim();
+        console.log(">>> [DB] Private key length after sanitization:", serviceAccount.private_key.length);
+        console.log(">>> [DB] Private key start:", serviceAccount.private_key.substring(0, 30));
+        console.log(">>> [DB] Private key end:", serviceAccount.private_key.substring(serviceAccount.private_key.length - 30));
       }
 
-      console.log(">>> [DB] Initializing Admin SDK for:", cert.project_id);
-      
-      // For named databases in Admin SDK, databaseId MUST be in initializeApp
-      admin.initializeApp({
-        credential: admin.credential.cert(cert),
-        projectId: cert.project_id,
-        databaseId: databaseId === "(default)" ? undefined : databaseId
+      console.log(">>> [DB] Initializing Admin SDK for:", serviceAccount.project_id);
+      app = initializeApp({
+        credential: cert(serviceAccount),
+        projectId: serviceAccount.project_id
       });
+    } else {
+      app = getApp();
     }
 
-    _db = admin.firestore();
+    // Correct way to get a named database instance in modular Admin SDK
+    if (databaseId && databaseId !== "(default)") {
+      console.log(">>> [DB] Connecting to named database:", databaseId);
+      _db = getFirestore(app, databaseId);
+    } else {
+      console.log(">>> [DB] Connecting to (default) database");
+      _db = getFirestore(app);
+    }
+
     console.log(">>> [DB] Firestore instance ready.");
     return _db;
   } catch (err: any) {
@@ -104,12 +117,15 @@ async function startServer() {
         status: "connected", 
         cwd: process.cwd(),
         files: filesInDir,
-        collections: collections.map((c: any) => c.id)
+        collections: collections.map((c: any) => c.id),
+        projectId: db.projectId,
+        databaseId: db.databaseId
       });
     } catch (err: any) {
       res.status(500).json({ 
         status: "error", 
         message: err.message,
+        details: err.stack,
         cwd: process.cwd(),
         files: fs.readdirSync(process.cwd())
       });
