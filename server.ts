@@ -33,25 +33,29 @@ async function getDb() {
     if (getApps().length === 0) {
       let serviceAccount: any = null;
 
-      // Priority 1: Environment Variable
+      // Priority 1: Environment Variable (MOST SECURE)
       if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         console.log(">>> [DB] Loading service account from ENV...");
         try {
-          serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+          const rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+          serviceAccount = JSON.parse(rawEnv);
+          // Handle double-encoding in ENV (common when copy-pasting into web panels)
+          if (typeof serviceAccount === 'string') {
+            console.log(">>> [DB] ENV was double-encoded string, parsing again...");
+            serviceAccount = JSON.parse(serviceAccount);
+          }
         } catch (e: any) {
           console.error("!!! [DB] Failed to parse FIREBASE_SERVICE_ACCOUNT env var:", e.message);
         }
       } 
       
-      // Priority 2: service-account.json file
+      // Priority 2: service-account.json file (BACKUP)
       if (!serviceAccount && fs.existsSync(serviceAccountPath)) {
         console.log(">>> [DB] Loading service account from FILE...");
         const raw = fs.readFileSync(serviceAccountPath, 'utf8');
         try {
           serviceAccount = JSON.parse(raw);
-          // Handle double-encoding (common when copy-pasting into some web editors)
           if (typeof serviceAccount === 'string') {
-            console.log(">>> [DB] Service account was double-encoded string, parsing again...");
             serviceAccount = JSON.parse(serviceAccount);
           }
         } catch (e: any) {
@@ -225,20 +229,37 @@ async function startServer() {
       let rawFirstChars = "none";
       let keySignTest = "untested";
       let saType = "unknown";
+      let source = "none";
       
       try {
-        const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
-        if (fs.existsSync(serviceAccountPath)) {
-          const raw = fs.readFileSync(serviceAccountPath, 'utf8');
-          rawFirstChars = JSON.stringify(raw.substring(0, 10));
-          
-          let sa = JSON.parse(raw);
-          saType = typeof sa;
-          if (saType === 'string') {
+        let sa: any = null;
+        
+        // Check ENV first
+        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+          source = "env";
+          const rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+          rawFirstChars = JSON.stringify(rawEnv.substring(0, 10));
+          sa = JSON.parse(rawEnv);
+          if (typeof sa === 'string') {
             sa = JSON.parse(sa);
             saType = "string-wrapped-object";
           }
-          
+        } else {
+          const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
+          if (fs.existsSync(serviceAccountPath)) {
+            source = "file";
+            const raw = fs.readFileSync(serviceAccountPath, 'utf8');
+            rawFirstChars = JSON.stringify(raw.substring(0, 10));
+            sa = JSON.parse(raw);
+            if (typeof sa === 'string') {
+              sa = JSON.parse(sa);
+              saType = "string-wrapped-object";
+            }
+          }
+        }
+
+        if (sa) {
+          saType = saType === "unknown" ? typeof sa : saType;
           clientEmail = sa.client_email;
           if (sa.private_key) {
             keyHash = crypto.createHash('sha256').update(sa.private_key).digest('hex');
@@ -258,7 +279,7 @@ async function startServer() {
 
       res.status(500).json({ 
         status: "error", 
-        buildId: "v1.0.8-recursive-parse",
+        buildId: "v1.0.9-env-priority",
         serverTime: new Date().toISOString(),
         clientEmail: clientEmail,
         keySignTest: keySignTest,
@@ -266,6 +287,7 @@ async function startServer() {
         keyStart: keyStart,
         rawFirstChars: rawFirstChars,
         saType: saType,
+        source: source,
         hasEnvVar: !!process.env.FIREBASE_SERVICE_ACCOUNT,
         message: err.message,
         details: err.stack,
