@@ -3384,48 +3384,47 @@ fragment remains</div>
       setTimeout(async () => {
         let reply = "";
         if (currentChatContact === 'elias') {
-          if (text.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
-            reply = "Wait, you found it? That's the phrase! The Archive Node should respond now.";
-            // Also trigger the unlock logic
-            const userId = getUserId();
-            fetch('/api/validateCommand', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                input: text, 
-                type: 'messenger', 
-                userId: userId,
-                SECRET_KEY: 'RESILIENT_BOOT' 
-              })
-            }).then(res => res.json()).then(data => {
-              if (data.action === 'unlock_archive') {
-                const icon = document.getElementById('icon-archive');
-                if (icon) {
-                  icon.classList.remove('hidden');
-                  arrangeIcons();
-                }
-                localStorage.setItem('aurora_stage1_complete', 'true');
-                if (window.soundManager) window.soundManager.playSuccess();
+          const userId = getUserId();
+          fetch('/api/validateCommand', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              input: text, 
+              type: 'messenger', 
+              userId: userId,
+              SECRET_KEY: 'RESILIENT_BOOT' 
+            })
+          }).then(res => res.json()).then(data => {
+            if (data.action === 'unlock_archive') {
+              const icon = document.getElementById('icon-archive');
+              if (icon) {
+                icon.classList.remove('hidden');
+                arrangeIcons();
               }
-            }).catch(console.error);
-          } else {
-            reply = "I'm currently offline. If you find the archive phrase, use the terminal.";
-          }
+              localStorage.setItem('aurora_stage1_complete', 'true');
+              if (window.soundManager) window.soundManager.playSuccess();
+            }
+            
+            if (data.reply) {
+              chats['elias'].push({ sender: 'Dr. Elias', time: timeStr, text: data.reply });
+              renderChatHistory();
+            } else if (text.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
+              // Even if backend doesn't provide a reply, if it was the right phrase, Elias should acknowledge
+              chats['elias'].push({ sender: 'Dr. Elias', time: timeStr, text: "Wait, you found it? That's the phrase! The Archive Node should respond now." });
+              renderChatHistory();
+            } else {
+              chats['elias'].push({ sender: 'Dr. Elias', time: timeStr, text: "I'm currently offline. If you find the archive phrase, use the terminal." });
+              renderChatHistory();
+            }
+          }).catch(err => {
+            console.error(err);
+            chats['elias'].push({ sender: 'Dr. Elias', time: timeStr, text: "I'm currently offline. If you find the archive phrase, use the terminal." });
+            renderChatHistory();
+          });
+          return; // Elias handling is async above
         } else if (currentChatContact === 'unknown') {
           reply = "You are running out of time.";
         } else if (currentChatContact === 'archive') {
-          // Fail-safe: even if API fails, allow the phrase to unlock locally
-          if (text.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
-            console.log('>>> [MESSENGER] Fail-safe: Unlocking Archive Node locally.');
-            const icon = document.getElementById('icon-archive');
-            if (icon) {
-              icon.classList.remove('hidden');
-              arrangeIcons();
-            }
-            localStorage.setItem('aurora_stage1_complete', 'true');
-            if (window.soundManager) window.soundManager.playSuccess();
-          }
-
           try {
             const userId = getUserId();
             console.log('>>> [MESSENGER] Sending to Archive Node. Text:', text, 'UserId:', userId);
@@ -3450,7 +3449,7 @@ fragment remains</div>
             console.log('>>> [MESSENGER] API response:', data);
             reply = data.reply || data.message || "INVALID INPUT.";
             
-            if (data.action === 'unlock_archive' || text.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
+            if (data.action === 'unlock_archive') {
               console.log('>>> [MESSENGER] Unlocking Archive Folder!');
               // Unlock archive
               const icon = document.getElementById('icon-archive');
