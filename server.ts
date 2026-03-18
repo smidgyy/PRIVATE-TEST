@@ -3,6 +3,7 @@ import path from "path";
 import cors from "cors";
 import fs from "fs";
 import crypto from "crypto";
+import admin from "firebase-admin";
 
 console.log(">>> [BOOT] Server process started at:", new Date().toISOString());
 console.log(">>> [BOOT] Node Version:", process.version);
@@ -15,33 +16,31 @@ async function getDb() {
   try {
     if (_db) return _db;
 
-    const admin = (await import("firebase-admin")).default;
     const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
     const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
     
     let firebaseConfig: any = {};
     
-    // 1. Try Environment Variable first
     if (process.env.FIREBASE_CONFIG) {
       try {
         firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
       } catch (e) {
-        console.error("!!! [ERROR] Failed to parse FIREBASE_CONFIG env var:", e);
+        console.error("!!! [ERROR] FIREBASE_CONFIG env var is not valid JSON");
       }
-    } 
-    // 2. Fallback to file
-    else if (fs.existsSync(configPath)) {
+    } else if (fs.existsSync(configPath)) {
       try {
         firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       } catch (e) {
-        console.error("!!! [ERROR] Failed to read firebase-applet-config.json:", e);
+        console.error("!!! [ERROR] firebase-applet-config.json is not valid JSON");
       }
     }
 
-    let adminConfig: any = {
-      projectId: firebaseConfig.projectId
-    };
-    
+    const projectId = firebaseConfig.projectId || process.env.GOOGLE_CLOUD_PROJECT;
+    if (!projectId) {
+      console.warn("!!! [WARN] No Project ID found. Firebase might fail.");
+    }
+
+    let adminConfig: any = { projectId };
     if (firebaseConfig.firestoreDatabaseId) {
       adminConfig.databaseId = firebaseConfig.firestoreDatabaseId;
     }
@@ -49,29 +48,32 @@ async function getDb() {
     if (!admin.apps.length) {
       try {
         if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-          console.log(">>> [BOOT] Using Service Account from Environment Variable");
-          adminConfig.credential = admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT));
+          console.log(">>> [BOOT] Initializing with Service Account (Env Var)");
+          const cert = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+          adminConfig.credential = admin.credential.cert(cert);
           admin.initializeApp(adminConfig);
         } else if (fs.existsSync(serviceAccountPath)) {
-          console.log(">>> [BOOT] Using Service Account from Local File");
-          const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-          adminConfig.credential = admin.credential.cert(serviceAccount);
+          console.log(">>> [BOOT] Initializing with Service Account (File)");
+          const cert = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+          adminConfig.credential = admin.credential.cert(cert);
           admin.initializeApp(adminConfig);
         } else {
-          console.log(">>> [BOOT] Using Default Application Credentials");
+          console.log(">>> [BOOT] Initializing with Default Credentials");
           admin.initializeApp(adminConfig);
         }
-      } catch (e) {
-        console.error("!!! [ERROR] Firebase Admin Init Failed:", e);
-        // Fallback to default init if possible
-        if (!admin.apps.length) admin.initializeApp({ projectId: firebaseConfig.projectId });
+      } catch (e: any) {
+        console.error("!!! [ERROR] Firebase Admin Init Failed:", e.message);
+        if (!admin.apps.length) admin.initializeApp({ projectId });
       }
     }
 
     _db = admin.firestore();
+    // Test the connection immediately
+    await _db.collection('_health').limit(1).get();
+    console.log(">>> [BOOT] Database connection verified.");
     return _db;
-  } catch (err) {
-    console.error("!!! [CRITICAL] getDb failed entirely:", err);
+  } catch (err: any) {
+    console.error("!!! [CRITICAL] getDb failed entirely:", err.message);
     throw err;
   }
 }
@@ -91,9 +93,11 @@ async function startServer() {
   // Hostinger and most VPS providers provide the port via process.env.PORT
   const PORT = Number(process.env.PORT) || 3000;
   
-  // Listen immediately to satisfy process managers like PM2
+  // 1. LISTEN IMMEDIATELY to satisfy Hostinger
   const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`>>> [SERVER] Running on port ${PORT}`);
+    // Warm up the database in the background
+    getDb().catch(e => console.error("!!! [WARMUP ERROR] Database failed to warm up:", e.message));
   });
 
   app.use(cors());
