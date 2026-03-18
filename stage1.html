@@ -2854,7 +2854,7 @@ fragment remains</div>
             let accessDeniedMsg = 'Archive fragment locked.';
             
             if (targetUrl === 'archive://node/02') {
-              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node02', userId: window.firebaseAuth?.currentUser?.uid || 'anonymous' }) })
+              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node02', userId: getUserId(), SECRET_KEY: 'RESILIENT_BOOT' }) })
                 .then(res => res.json())
                 .then(data => {
                   if (data.status === 'success') {
@@ -2865,7 +2865,7 @@ fragment remains</div>
                 });
               return;
             } else if (targetUrl === 'archive://node02/resonance.html' || targetUrl === 'archive://node/02/resonance.html') {
-              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'resonance', userId: window.firebaseAuth?.currentUser?.uid || 'anonymous' }) })
+              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'resonance', userId: getUserId(), SECRET_KEY: 'RESILIENT_BOOT' }) })
                 .then(res => res.json())
                 .then(data => {
                   if (data.status === 'success') {
@@ -2876,7 +2876,7 @@ fragment remains</div>
                 });
               return;
             } else if (targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://' + atob('bm9kZTAzL3NlY3JldA==')) {
-              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node03_secret', userId: window.firebaseAuth?.currentUser?.uid || 'anonymous' }) })
+              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node03_secret', userId: getUserId(), SECRET_KEY: 'RESILIENT_BOOT' }) })
                 .then(res => res.json())
                 .then(data => {
                   if (data.status === 'success') {
@@ -2887,7 +2887,7 @@ fragment remains</div>
                 });
               return;
             } else if (targetUrl === 'archive://node/04') {
-              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node04', userId: window.firebaseAuth?.currentUser?.uid || 'anonymous' }) })
+              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node04', userId: getUserId(), SECRET_KEY: 'RESILIENT_BOOT' }) })
                 .then(res => res.json())
                 .then(data => {
                   if (data.status === 'success') {
@@ -2898,7 +2898,7 @@ fragment remains</div>
                 });
               return;
             } else if (targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt')) {
-              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'forum', userId: window.firebaseAuth?.currentUser?.uid || 'anonymous' }) })
+              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'forum', userId: getUserId(), SECRET_KEY: 'RESILIENT_BOOT' }) })
                 .then(res => res.json())
                 .then(data => {
                   if (data.status === 'success') {
@@ -3270,9 +3270,12 @@ fragment remains</div>
 
     // --- Messenger Logic ---
     function getUserId() {
-      const authId = window.firebaseAuth?.currentUser?.uid;
-      if (authId) return authId;
+      // Priority 1: Window global from main.ts
+      if (typeof (window as any).getUserId === 'function') {
+        return (window as any).getUserId();
+      }
       
+      // Priority 2: Local storage
       const localId = localStorage.getItem('aurora_userId');
       if (localId) return localId;
       
@@ -3331,9 +3334,11 @@ fragment remains</div>
       
       // Add enter key listener if not already added
       if (!inputField.dataset.listenerAdded) {
+        console.log('>>> [MESSENGER] Adding Enter key listener to input field.');
         inputField.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
+            console.log('>>> [MESSENGER] Enter key pressed.');
             sendChatMessage();
           }
         });
@@ -3378,11 +3383,29 @@ fragment remains</div>
       
       chats[currentChatContact].push({ sender: 'You', time: timeStr, text: text });
       inputField.value = '';
+      
+      // Add a "..." indicator
+      const historyDiv = document.getElementById('chat-history');
+      const typingIndicator = document.createElement('div');
+      typingIndicator.id = 'typing-indicator';
+      typingIndicator.style.marginBottom = '12px';
+      typingIndicator.style.textAlign = 'left';
+      typingIndicator.innerHTML = `
+        <div style="font-weight: bold; color: #800000; margin-bottom: 2px;">${currentChatContact === 'archive' ? 'Archive Node' : 'Unknown User'} <span style="font-size: 10px; color: #666; font-weight: normal;">${timeStr}</span></div>
+        <div style="background: #ffe6e6; padding: 6px 8px; border-radius: 2px; display: inline-block; max-width: 80%; border: 1px solid #ffb3b3; text-align: left; box-shadow: 1px 1px 0 rgba(0,0,0,0.1); font-style: italic;">...</div>
+      `;
+      
       renderChatHistory();
+      historyDiv.appendChild(typingIndicator);
+      historyDiv.scrollTop = historyDiv.scrollHeight;
       
       // Auto-reply logic
       setTimeout(async () => {
         let reply = "";
+        const removeIndicator = () => {
+          const indicator = document.getElementById('typing-indicator');
+          if (indicator) indicator.remove();
+        };
         if (currentChatContact === 'elias') {
           const userId = getUserId();
           fetch('/api/validateCommand', {
@@ -3396,15 +3419,21 @@ fragment remains</div>
             })
           }).then(res => res.json()).then(data => {
             if (data.action === 'unlock_archive') {
+              console.log('>>> [MESSENGER] Unlocking Archive Folder!');
+              // Unlock archive
               const icon = document.getElementById('icon-archive');
               if (icon) {
+                console.log('>>> [MESSENGER] Removing hidden class from icon-archive.');
                 icon.classList.remove('hidden');
                 arrangeIcons();
+              } else {
+                console.error('!!! [MESSENGER] icon-archive element not found!');
               }
               localStorage.setItem('aurora_stage1_complete', 'true');
               if (window.soundManager) window.soundManager.playSuccess();
             }
             
+            removeIndicator();
             if (data.reply) {
               chats['elias'].push({ sender: 'Dr. Elias', time: timeStr, text: data.reply });
               renderChatHistory();
@@ -3418,11 +3447,13 @@ fragment remains</div>
             }
           }).catch(err => {
             console.error(err);
+            removeIndicator();
             chats['elias'].push({ sender: 'Dr. Elias', time: timeStr, text: "I'm currently offline. If you find the archive phrase, use the terminal." });
             renderChatHistory();
           });
           return; // Elias handling is async above
         } else if (currentChatContact === 'unknown') {
+          removeIndicator();
           reply = "You are running out of time.";
         } else if (currentChatContact === 'archive') {
           try {
@@ -3439,6 +3470,7 @@ fragment remains</div>
               })
             });
             
+            removeIndicator();
             if (!res.ok) {
               const errText = await res.text();
               console.error('>>> [MESSENGER] API Error:', res.status, errText);
@@ -3454,8 +3486,11 @@ fragment remains</div>
               // Unlock archive
               const icon = document.getElementById('icon-archive');
               if (icon) {
+                console.log('>>> [MESSENGER] Removing hidden class from icon-archive.');
                 icon.classList.remove('hidden');
                 arrangeIcons();
+              } else {
+                console.error('!!! [MESSENGER] icon-archive element not found!');
               }
               localStorage.setItem('aurora_stage1_complete', 'true');
               if (window.soundManager) window.soundManager.playSuccess();
@@ -3838,12 +3873,12 @@ fragment remains</div>
     
     // Fallback sync if auth takes too long or is blocked
     setTimeout(() => {
-      const fallbackId = localStorage.getItem('aurora_userId');
-      if (fallbackId && !window.firebaseAuth?.currentUser) {
-        console.log('Firebase auth not ready, using fallback sync with ID:', fallbackId);
+      const fallbackId = getUserId();
+      if (fallbackId) {
+        console.log('Syncing progression with ID:', fallbackId);
         syncProgression();
       }
-    }, 3000);
+    }, 1000);
 
     // Restore icons from localStorage on load
     (function() {
@@ -3982,11 +4017,11 @@ fragment remains</div>
           const t = text.toUpperCase();
           let step = getProgressStep();
           
-          const userId = window.firebaseAuth?.currentUser?.uid || 'anonymous';
+          const userId = getUserId();
           fetch('/api/validateCommand', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ input: t, userId, type: 'messenger', step })
+            body: JSON.stringify({ input: t, userId, type: 'messenger', step, SECRET_KEY: 'RESILIENT_BOOT' })
           })
           .then(res => res.json())
           .then(data => {

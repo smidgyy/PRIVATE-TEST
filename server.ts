@@ -330,9 +330,14 @@ async function startServer() {
     
     let db: any = null;
     try {
-      db = await getDb();
+      // Add a 5-second timeout to the database connection to prevent hanging
+      const dbPromise = getDb();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Database connection timeout")), 5000)
+      );
+      db = await Promise.race([dbPromise, timeoutPromise]);
     } catch (e: any) {
-      console.error("!!! [API] Database connection failed, proceeding with logic-only mode:", e.message);
+      console.error("!!! [API] Database connection failed or timed out, proceeding with logic-only mode:", e.message);
     }
 
     // We can use Firebase Admin here, but for simplicity and to avoid credential issues,
