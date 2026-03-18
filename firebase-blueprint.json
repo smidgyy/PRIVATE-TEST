@@ -1,0 +1,26 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Player progression data",
+      "type": "object",
+      "properties": {
+        "stage": { "type": "integer" },
+        "unlockedNodes": { "type": "array", "items": { "type": "string" } },
+        "completedSteps": { "type": "array", "items": { "type": "string" } },
+        "stage1_archive_unlocked": { "type": "boolean" },
+        "stage1_vale_unlocked": { "type": "boolean" },
+        "stage4_progress": { "type": "integer" },
+        "stage4_forum_unlocked": { "type": "boolean" },
+        "stage3_secret_unlocked": { "type": "boolean" },
+        "messenger_step": { "type": "integer" }
+      }
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profile and game state"
+    }
+  }
+}

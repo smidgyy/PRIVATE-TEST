@@ -1,46 +1,106 @@
-import "dotenv/config";
 import express from "express";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import cors from "cors";
-import admin from "firebase-admin";
 import fs from "fs";
+import crypto from "crypto";
 
-// Load Firebase Config
-const firebaseConfig = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'firebase-applet-config.json'), 'utf8'));
+console.log(">>> [BOOT] Server process started at:", new Date().toISOString());
+console.log(">>> [BOOT] Node Version:", process.version);
+console.log(">>> [BOOT] Current Directory:", process.cwd());
 
-// Initialize Firebase Admin
-const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
-let adminConfig: any = {
-  databaseId: firebaseConfig.firestoreDatabaseId
-};
+// Lazy database getter to prevent startup crashes
+let _db: any = null;
 
-if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-  adminConfig.credential = admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT));
-  admin.initializeApp(adminConfig);
-} else if (fs.existsSync(serviceAccountPath)) {
-  const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-  adminConfig.credential = admin.credential.cert(serviceAccount);
-  admin.initializeApp(adminConfig);
-} else {
-  admin.initializeApp(adminConfig);
+async function getDb() {
+  if (_db) return _db;
+
+  const admin = (await import("firebase-admin")).default;
+  const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
+  const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+  
+  let firebaseConfig: any = {};
+  
+  // 1. Try Environment Variable first (GitHub Safe)
+  if (process.env.FIREBASE_CONFIG) {
+    try {
+      firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
+    } catch (e) {
+      console.error("Error parsing FIREBASE_CONFIG env var:", e);
+    }
+  } 
+  // 2. Fallback to file
+  else if (fs.existsSync(configPath)) {
+    try {
+      firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    } catch (e) {
+      console.error("Error reading firebase-applet-config.json:", e);
+    }
+  }
+
+  let adminConfig: any = {};
+  if (firebaseConfig.firestoreDatabaseId) {
+    adminConfig.databaseId = firebaseConfig.firestoreDatabaseId;
+  }
+
+  if (!admin.apps.length) {
+    try {
+      // Priority 1: Environment Variable (The Secret Key)
+      if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        console.log(">>> [BOOT] Initializing Firebase with Environment Variable...");
+        adminConfig.credential = admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT));
+        admin.initializeApp(adminConfig);
+      } 
+      // Priority 2: Local File (For local testing only)
+      else if (fs.existsSync(serviceAccountPath)) {
+        console.log(">>> [BOOT] Initializing Firebase with Local File...");
+        const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+        adminConfig.credential = admin.credential.cert(serviceAccount);
+        admin.initializeApp(adminConfig);
+      } 
+      // Priority 3: Default (Cloud Run / Google Cloud environment)
+      else {
+        console.log(">>> [BOOT] Initializing Firebase with Default Credentials...");
+        admin.initializeApp(adminConfig);
+      }
+    } catch (e) {
+      console.error("Firebase Init Error:", e);
+      if (!admin.apps.length) admin.initializeApp();
+    }
+  }
+
+  _db = admin.firestore();
+  return _db;
 }
 
-const db = admin.firestore();
+// Global error handling
+process.on('uncaughtException', (err) => {
+  console.error('CRITICAL: Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  
+  // Hostinger and most VPS providers provide the port via process.env.PORT
+  const PORT = Number(process.env.PORT) || 3000;
+  
+  // Listen immediately to satisfy process managers like PM2
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`>>> [SERVER] Running on port ${PORT}`);
+  });
 
   app.use(cors());
   app.use(express.json());
 
   // API Routes
-  app.get("/api/health", (req, res) => {
+  app.get("/api/health", (req: any, res: any) => {
     res.json({ status: "ok" });
   });
 
-  app.post("/api/validateCommand", async (req, res) => {
+  app.post("/api/validateCommand", async (req: any, res: any) => {
     const { input, userId, type, step } = req.body;
     if (!input || !userId || !type) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -63,24 +123,24 @@ async function startServer() {
     
     if (type === 'terminal') {
       if (baseCmd === 'decrypt' && args.length > 1 && args[1] === '840291') {
-        await db.collection('users').doc(userId).set({ stage1_archive_unlocked: true }, { merge: true });
+        await getDb().collection('users').doc(userId).set({ stage1_archive_unlocked: true }, { merge: true });
         return res.json({ status: 'success', action: 'redirect_archive' });
       }
       if (baseCmd === 'decode' && args.length > 1 && args[1].toLowerCase() === 'vale_archive.enc') {
-        const userDoc = await db.collection('users').doc(userId).get();
+        const userDoc = await getDb().collection('users').doc(userId).get();
         const userData = userDoc.data() || {};
         if (userData.stage4_progress >= 1) {
-          await db.collection('users').doc(userId).set({ stage1_vale_unlocked: true, stage4_progress: 2 }, { merge: true });
+          await getDb().collection('users').doc(userId).set({ stage1_vale_unlocked: true, stage4_progress: 2 }, { merge: true });
           return res.json({ status: 'success', action: 'unlock_vale' });
         } else {
           return res.json({ status: 'error', message: 'Bad command or file name.' });
         }
       }
       if (baseCmd === 'archive' && args.length > 1 && args[1].toLowerCase() === 'vale') {
-        const userDoc = await db.collection('users').doc(userId).get();
+        const userDoc = await getDb().collection('users').doc(userId).get();
         const userData = userDoc.data() || {};
         if (userData.stage1_vale_unlocked) {
-          await db.collection('users').doc(userId).set({ stage4_forum_unlocked: true }, { merge: true });
+          await getDb().collection('users').doc(userId).set({ stage4_forum_unlocked: true }, { merge: true });
           return res.json({ status: 'success', action: 'unlock_forum' });
         } else {
           return res.json({ status: 'error', message: 'Access denied.' });
@@ -90,11 +150,11 @@ async function startServer() {
         return res.json({ status: 'success', action: 'require_password' });
       }
       if (baseCmd === 'decrypt' && args.length > 1 && args[1].toLowerCase() === 'depth') {
-        const userDoc = await db.collection('users').doc(userId).get();
+        const userDoc = await getDb().collection('users').doc(userId).get();
         const userData = userDoc.data() || {};
         const currentStep = userData.messenger_step || 0;
         if (currentStep >= 2) {
-          await db.collection('users').doc(userId).set({ stage3_secret_unlocked: true }, { merge: true });
+          await getDb().collection('users').doc(userId).set({ stage3_secret_unlocked: true }, { merge: true });
           return res.json({ status: 'success', action: 'show_caesar_clue' });
         } else {
           return res.json({ status: 'error', message: 'Bad command or file name.' });
@@ -104,16 +164,16 @@ async function startServer() {
     }
 
     if (type === 'archive_password') {
-      const userDoc = await db.collection('users').doc(userId).get();
+      const userDoc = await getDb().collection('users').doc(userId).get();
       const userData = userDoc.data() || {};
       
       if (fullCmd.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
-        await db.collection('users').doc(userId).set({ stage1_archive_unlocked: true }, { merge: true });
+        await getDb().collection('users').doc(userId).set({ stage1_archive_unlocked: true }, { merge: true });
         return res.json({ status: 'success', action: 'unlock_archive' });
       }
       if (fullCmd.toUpperCase() === 'VALE') {
         if (userData.stage1_vale_unlocked) {
-          await db.collection('users').doc(userId).set({ stage4_forum_unlocked: true }, { merge: true });
+          await getDb().collection('users').doc(userId).set({ stage4_forum_unlocked: true }, { merge: true });
           return res.json({ status: 'success', action: 'unlock_forum' });
         } else {
           return res.json({ status: 'error', message: 'Access denied.' });
@@ -126,7 +186,7 @@ async function startServer() {
       const t = fullCmd.toUpperCase();
       const answers = ["GREED", "DEPTH", "MONEY", "GOLD", "CROWN"];
       
-      const userDoc = await db.collection('users').doc(userId).get();
+      const userDoc = await getDb().collection('users').doc(userId).get();
       const userData = userDoc.data() || {};
       const currentStep = userData.messenger_step || 0;
       
@@ -141,7 +201,7 @@ async function startServer() {
           ];
           
           if (currentStep === 4) {
-            await db.collection('users').doc(userId).set({ stage3_messenger_complete: true, messenger_step: 5, stage4_unlocked: true }, { merge: true });
+            await getDb().collection('users').doc(userId).set({ stage3_messenger_complete: true, messenger_step: 5, stage4_unlocked: true }, { merge: true });
             return res.json({ 
               status: 'success', 
               reply: replies[currentStep], 
@@ -150,7 +210,7 @@ async function startServer() {
             });
           }
           
-          await db.collection('users').doc(userId).set({ messenger_step: currentStep + 1 }, { merge: true });
+          await getDb().collection('users').doc(userId).set({ messenger_step: currentStep + 1 }, { merge: true });
           return res.json({ status: 'success', reply: replies[currentStep], nextStep: currentStep + 1 });
         }
       }
@@ -158,24 +218,23 @@ async function startServer() {
     }
 
     if (type === 'node02_answer') {
-      const crypto = require('crypto');
       const hash = crypto.createHash('sha256').update(fullCmd.toLowerCase()).digest('hex');
       
-      const userDoc = await db.collection('users').doc(userId).get();
+      const userDoc = await getDb().collection('users').doc(userId).get();
       const userData = userDoc.data() || {};
       
       if (step === '1' && hash === '76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22') {
-        await db.collection('users').doc(userId).set({ stage2_phase1_complete: true }, { merge: true });
+        await getDb().collection('users').doc(userId).set({ stage2_phase1_complete: true }, { merge: true });
         return res.json({ status: 'success', action: 'phase1_success', msg: "The earth opens. Seek the marginalia." });
       }
       if (step === '2' && hash === 'ba6f8ed6d0d150b2a2ab2bebe99540f8c00cafb0ebdbf71a6f0b768c45425ca7') {
         if (!userData.stage2_phase1_complete) return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
-        await db.collection('users').doc(userId).set({ stage2_phase2_complete: true }, { merge: true });
+        await getDb().collection('users').doc(userId).set({ stage2_phase2_complete: true }, { merge: true });
         return res.json({ status: 'success', action: 'phase2_success', msg: "The flame is extinguished." });
       }
       if (step === '3' && hash === '90b7b8654171c04a5e5de1eae884cfd86952739d50d09d9bb7680763e31faee8') {
         if (!userData.stage2_phase2_complete) return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
-        await db.collection('users').doc(userId).set({ stage2_phase3_complete: true }, { merge: true });
+        await getDb().collection('users').doc(userId).set({ stage2_phase3_complete: true }, { merge: true });
         return res.json({ status: 'success', action: 'phase3_success', msg: String.fromCharCode(71, 82, 69, 69, 68) });
       }
       
@@ -183,13 +242,13 @@ async function startServer() {
     }
 
     if (type === 'unlock_node03_secret') {
-      await db.collection('users').doc(userId).set({ stage3_secret_unlocked: true }, { merge: true });
+      await getDb().collection('users').doc(userId).set({ stage3_secret_unlocked: true }, { merge: true });
       return res.json({ status: 'success' });
     }
 
     if (type === 'update_messenger_step') {
       const { step } = req.body;
-      await db.collection('users').doc(userId).set({ messenger_step: step }, { merge: true });
+      await getDb().collection('users').doc(userId).set({ messenger_step: step }, { merge: true });
       return res.json({ status: 'success' });
     }
 
@@ -197,12 +256,12 @@ async function startServer() {
       const { step, flag } = req.body;
       const updateData: any = { stage4_progress: step };
       if (flag) updateData[flag] = true;
-      await db.collection('users').doc(userId).set(updateData, { merge: true });
+      await getDb().collection('users').doc(userId).set(updateData, { merge: true });
       return res.json({ status: 'success' });
     }
 
     if (type === 'get_progression') {
-      const userDoc = await db.collection('users').doc(userId).get();
+      const userDoc = await getDb().collection('users').doc(userId).get();
       if (!userDoc.exists) {
         return res.json({ status: 'success', messenger_step: 0, stage4_progress: 0 });
       }
@@ -225,7 +284,7 @@ async function startServer() {
 
     if (type === 'check_access') {
       const { target } = req.body;
-      const doc = await db.collection('users').doc(userId).get();
+      const doc = await getDb().collection('users').doc(userId).get();
       const data = doc.data() || {};
       
       let hasAccess = false;
@@ -254,24 +313,38 @@ async function startServer() {
   });
 
   // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
+  const isProduction = process.env.NODE_ENV === "production" || process.argv[1]?.endsWith('server.js');
+  
+  if (!isProduction) {
+    console.log("Starting Vite in development mode...");
+    try {
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+    } catch (e) {
+      console.error("Failed to start Vite:", e);
+    }
   } else {
+    console.log("Starting in production mode...");
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+    if (fs.existsSync(distPath)) {
+      app.use(express.static(distPath));
+      app.get('*', (req: any, res: any) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+    } else {
+      console.warn("Warning: 'dist' directory not found. Static files will not be served.");
+    }
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  // Remove the old listen call at the bottom
 }
 
-startServer();
+startServer().catch(err => {
+  console.error("FATAL ERROR DURING STARTUP:", err);
+  process.exit(1);
+});
 

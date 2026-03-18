@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // User data validation
+    function isValidUser(data) {
+      return data.keys().hasAny(['stage', 'unlockedNodes', 'completedSteps']) || 
+             data.keys().hasAny(['stage1_archive_unlocked', 'stage1_vale_unlocked', 'stage4_progress', 'stage4_forum_unlocked', 'stage3_secret_unlocked', 'messenger_step']);
+    }
+
+    match /users/{userId} {
+      // Users can read and write their own data
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
