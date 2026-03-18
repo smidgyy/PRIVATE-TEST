@@ -326,6 +326,14 @@ async function startServer() {
     }
 
     return res.status(400).json({ error: "Invalid type" });
+    } catch (err: any) {
+      console.error("!!! [API ERROR] validateCommand crashed:", err);
+      return res.status(500).json({ 
+        status: 'error', 
+        message: 'Internal Server Error',
+        details: err.message 
+      });
+    }
   });
 
   // Vite middleware for development
