@@ -2873,51 +2873,77 @@ fragment remains</div>
             }
             
             if (targetUrl === 'archive://node/02') {
-              fetch('/api/getUserState?userId=' + getUserId())
+              const userId = getUserId();
+              if (!userId) {
+                console.error("User ID missing");
+                return;
+              }
+              console.log("Loading node02 with userId:", userId);
+              fetch('/api/getUserState?userId=' + userId)
                 .then(res => res.json())
                 .then(data => {
                   if (data.stage2_unlocked) {
                     unlocked = true;
                   }
-                  fetchPath = 'stage2.html?userId=' + getUserId();
+                  fetchPath = '/api/getNode02?userId=' + userId;
                   finishLoad();
                 });
               return;
             } else if (targetUrl === 'archive://node02/resonance.html' || targetUrl === 'archive://node/02/resonance.html') {
-              fetch('/api/getUserState?userId=' + getUserId())
+              const userId = getUserId();
+              if (!userId) {
+                console.error("User ID missing");
+                return;
+              }
+              fetch('/api/getUserState?userId=' + userId)
                 .then(res => res.json())
                 .then(data => {
                   if (data.stage2_unlocked) {
                     unlocked = true;
                   }
-                  fetchPath = 'resonance.html?userId=' + getUserId();
+                  fetchPath = 'resonance.html?userId=' + userId;
                   finishLoad();
                 });
               return;
             } else if (targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://' + atob('bm9kZTAzL3NlY3JldA==')) {
-              fetch('/api/validateCommand?userId=' + getUserId(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node03_secret', userId: getUserId(), SECRET_KEY: 'RESILIENT_BOOT' }) })
+              const userId = getUserId();
+              if (!userId) {
+                console.error("User ID missing");
+                return;
+              }
+              fetch('/api/validateCommand?userId=' + userId, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node03_secret', userId: userId, SECRET_KEY: 'RESILIENT_BOOT' }) })
                 .then(res => res.json())
                 .then(data => {
                   if (data.status === 'success') {
                     unlocked = true;
                   }
-                  fetchPath = 'node03/secret.html';
+                  fetchPath = 'node03/secret.html?userId=' + userId;
                   finishLoad();
                 });
               return;
             } else if (targetUrl === 'archive://node/04') {
-              fetch('/api/validateCommand?userId=' + getUserId(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node04', userId: getUserId(), SECRET_KEY: 'RESILIENT_BOOT' }) })
+              const userId = getUserId();
+              if (!userId) {
+                console.error("User ID missing");
+                return;
+              }
+              fetch('/api/validateCommand?userId=' + userId, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node04', userId: userId, SECRET_KEY: 'RESILIENT_BOOT' }) })
                 .then(res => res.json())
                 .then(data => {
                   if (data.status === 'success') {
                     unlocked = true;
                   }
-                  fetchPath = 'node04.html';
+                  fetchPath = 'node04.html?userId=' + userId;
                   finishLoad();
                 });
               return;
             } else if (targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt')) {
-              fetch('/api/validateCommand?userId=' + getUserId(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'forum', userId: getUserId(), SECRET_KEY: 'RESILIENT_BOOT' }) })
+              const userId = getUserId();
+              if (!userId) {
+                console.error("User ID missing");
+                return;
+              }
+              fetch('/api/validateCommand?userId=' + userId, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'forum', userId: userId, SECRET_KEY: 'RESILIENT_BOOT' }) })
                 .then(res => res.json())
                 .then(data => {
                   if (data.status === 'success') {
@@ -2963,20 +2989,9 @@ fragment remains</div>
                 if (dynamicHtml) {
                   iframe.srcdoc = dynamicHtml;
                 } else {
-                  fetch(fetchPath)
-                    .then(res => res.text())
-                    .then(html => {
-                      const baseTag = '<base href="' + window.location.href + '">';
-                      if (html.includes('<head>')) {
-                        html = html.replace('<head>', '<head>' + baseTag);
-                      } else {
-                        html = baseTag + html;
-                      }
-                      iframe.srcdoc = html;
-                    })
-                    .catch(err => {
-                      page.innerHTML = '<div style="color:#f00;padding:20px;">Error loading archive fragment.</div>';
-                    });
+                  // Use src instead of fetch + srcdoc to ensure window.location.search is available
+                  // and relative links work correctly.
+                  iframe.src = fetchPath;
                 }
                 
                 if (window.soundManager && targetUrl === 'archive://node/04') {

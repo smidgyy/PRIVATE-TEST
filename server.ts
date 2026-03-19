@@ -751,11 +751,49 @@ async function startServer() {
   });
 
   // Protected HTML routes
-  const protectedRoutes = ["/stage2.html", "/node02.html", "/resonance.html"];
+  const protectedRoutes = [
+    "/stage1.html", 
+    "/stage2.html", 
+    "/node02.html", 
+    "/resonance.html", 
+    "/node04.html", 
+    "/node04/index.html",
+    "/node03/secret.html", 
+    "/node03/secret/index.html",
+    "/article.html", 
+    "/node03/index.html",
+    "/archive/index.html"
+  ];
   
+  app.get("/api/getNode02", async (req: any, res: any) => {
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(403).send("ACCESS DENIED: Missing userId");
+    }
+
+    try {
+      const db = await getDb();
+      const userDoc = await db.collection("users").doc(userId).get();
+      const userData = userDoc.data();
+
+      if (!userData?.stage2_unlocked) {
+        return res.status(403).send("ACCESS DENIED");
+      }
+
+      console.log("Loading node02 with userId:", userId);
+      const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.join(process.cwd(), 'dist'));
+      const baseDir = isProduction ? 'dist' : 'public';
+      res.sendFile(path.join(process.cwd(), baseDir, "node02.html"));
+    } catch (err: any) {
+      console.error("Error in /api/getNode02:", err);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+
   app.get(protectedRoutes, async (req: any, res: any) => {
     const userId = req.query.userId;
-    if (!userId) {
+    if (!userId && req.path !== "/stage1.html" && req.path !== "/article.html" && req.path !== "/node03/index.html") {
       return res.status(403).send("ACCESS DENIED: Missing userId");
     }
     
@@ -765,7 +803,7 @@ async function startServer() {
     } catch (e: any) {}
     
     let userData: any = {};
-    if (db) {
+    if (db && userId) {
       const userDoc = await db.collection('users').doc(userId).get();
       userData = userDoc.data() || {};
       console.log(`Access check for ${req.path}:`, userId, userData);
@@ -774,24 +812,30 @@ async function startServer() {
     const target = req.path.substring(1); // remove leading slash
     let hasAccess = false;
     
-    if (target === "stage2.html" || target === "node02.html" || target === "resonance.html") {
+    if (target === "stage1.html" || target === "article.html" || target === "node03/index.html") {
+      hasAccess = true; // Publicly accessible but served through backend
+    } else if (target === "stage2.html" || target === "node02.html" || target === "resonance.html") {
       hasAccess = !!userData.stage2_unlocked;
+    } else if (target === "node04.html" || target === "node04/index.html") {
+      hasAccess = !!userData.stage4_unlocked;
+    } else if (target === "node03/secret.html" || target === "node03/secret/index.html") {
+      hasAccess = !!userData.stage3_secret_unlocked;
+    } else if (target === "archive/index.html") {
+      hasAccess = !!userData.stage4_progress && userData.stage4_progress >= 3; // Assuming stage 3 is the end
     }
     
     if (!hasAccess) {
       return res.status(403).send("ACCESS DENIED");
     }
     
-    const isProduction = process.env.NODE_ENV === "production" || process.argv[1]?.endsWith('server.js') || fs.existsSync(path.join(process.cwd(), 'dist'));
-    if (isProduction) {
-      res.sendFile(path.join(process.cwd(), 'dist', target));
+    const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.join(process.cwd(), 'dist'));
+    const baseDir = isProduction ? 'dist' : 'public';
+    const filePath = path.join(process.cwd(), baseDir, target);
+    
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
     } else {
-      const filePath = path.join(process.cwd(), target);
-      if (fs.existsSync(filePath)) {
-        res.sendFile(filePath);
-      } else {
-        res.status(404).send("File not found");
-      }
+      res.status(404).send("File not found");
     }
   });
 
