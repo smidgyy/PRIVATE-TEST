@@ -482,7 +482,11 @@ async function startServer() {
 
     if (type === 'terminal') {
       if (baseCmd === 'decrypt' && args.length > 1 && args[1] === '840291') {
-        if (db) await db.collection('users').doc(effectiveUserId).set({ stage1_archive_unlocked: true }, { merge: true });
+        if (db) await db.collection('users').doc(effectiveUserId).set({ 
+          stage1_archive_unlocked: true,
+          archive_unlocked: true,
+          stage2_unlocked: true
+        }, { merge: true });
         return res.json({ status: 'success', action: 'redirect_archive' });
       }
       if (baseCmd === 'decode' && args.length > 1 && args[1].toLowerCase() === 'vale_archive.enc') {
@@ -647,7 +651,7 @@ async function startServer() {
       if (SECRET_KEY === 'RESILIENT_BOOT') {
         hasAccess = true;
       } else if (target === 'node02' || target === 'resonance') {
-        hasAccess = !!userData.stage2_unlocked || !!userData.archive_unlocked;
+        hasAccess = !!userData.stage2_unlocked || !!userData.archive_unlocked || !!userData.stage1_archive_unlocked;
       } else if (target === 'node03_secret') {
         hasAccess = !!userData.stage3_secret_unlocked;
       } else if (target === 'node04') {
@@ -781,8 +785,8 @@ async function startServer() {
       console.log(">>> [API] getNode02: Request userId:", userId);
       console.log(">>> [API] getNode02: User state:", userData);
 
-      // Fix: Allow access if either archive_unlocked OR stage2_unlocked is true
-      if (!userData?.archive_unlocked && !userData?.stage2_unlocked) {
+      // Fix: Allow access if any of the archive/stage2 unlock flags are true
+      if (!userData?.archive_unlocked && !userData?.stage2_unlocked && !userData?.stage1_archive_unlocked) {
         console.log(">>> [API] getNode02: Access denied for:", userId);
         return res.status(403).json({ error: "Access denied" });
       }
@@ -819,7 +823,7 @@ async function startServer() {
     if (target === "stage1.html" || target === "article.html" || target === "node03/index.html") {
       hasAccess = true; // Publicly accessible but served through backend
     } else if (target === "stage2.html" || target === "resonance.html") {
-      hasAccess = !!userData.stage2_unlocked || !!userData.archive_unlocked;
+      hasAccess = !!userData.stage2_unlocked || !!userData.archive_unlocked || !!userData.stage1_archive_unlocked;
     } else if (target === "node04.html" || target === "node04/index.html") {
       hasAccess = !!userData.stage4_unlocked;
     } else if (target === "node03/secret.html" || target === "node03/secret/index.html") {
