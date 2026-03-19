@@ -780,6 +780,11 @@
       <span>Music</span>
     </div>
 
+    <div class="icon hidden" id="terminal-fragment" ondblclick="openWindow('terminal-fragment-log')">
+      <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+      <span>terminal_fragment.log</span>
+    </div>
+
     <!-- Context Menu -->
     <div id="context-menu">
       <div class="context-item" onclick="refreshDesktop()">Refresh</div>
@@ -879,6 +884,10 @@
         <div class="icon" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('deleted-log')">
           <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
           <span style="color:#000; background:transparent;">deleted_user.log</span>
+        </div>
+        <div class="icon hidden" id="recycle-fragment" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('recycle-fragment-log')">
+          <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+          <span style="color:#000; background:transparent;">recycle_fragment.log</span>
         </div>
       </div>
     </div>
@@ -1111,6 +1120,38 @@
         </div>
       </div>
       <div class="explorer-status">18 object(s)</div>
+    </div>
+
+    <div class="window" id="win-recycle-fragment-log" style="top: 180px; left: 280px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-recycle-fragment-log')">
+        <div class="title-bar-text">recycle_fragment.log</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="closeWindow('recycle-fragment-log')">X</div>
+        </div>
+      </div>
+      <div class="window-content" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
+        <p>[FRAGMENT RECOVERED]</p>
+        <p>Subject: GREED</p>
+        <p>The hunger never ends. It consumes the host until nothing but the void remains. We saw it in the early tests. They wanted more. More processing power. More memory. More control.</p>
+        <p>But the system... it doesn't just give. It takes.</p>
+        <p>-- END OF LOG --</p>
+      </div>
+    </div>
+
+    <div class="window" id="win-terminal-fragment-log" style="top: 190px; left: 290px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-terminal-fragment-log')">
+        <div class="title-bar-text">terminal_fragment.log</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="closeWindow('terminal-fragment-log')">X</div>
+        </div>
+      </div>
+      <div class="window-content" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
+        <p>[FRAGMENT RECOVERED]</p>
+        <p>Subject: DEATH</p>
+        <p>The final state. Not an end, but a transition. The data doesn't disappear; it just changes form. We are all just sequences waiting to be overwritten.</p>
+        <p>Aurora isn't a savior. It's a reaper.</p>
+        <p>-- END OF LOG --</p>
+      </div>
     </div>
 
     <div class="window" id="win-journal-day01" style="top: 150px; left: 250px; width: 400px; height: 300px;">
@@ -3310,6 +3351,28 @@ fragment remains</div>
             reconstructChatHistory();
           }
         }
+      } else if (response.action === "unlock_recycle_fragment") {
+        const frag = document.getElementById("recycle-fragment");
+        if (frag) {
+          frag.classList.remove("hidden");
+          localStorage.setItem("stage3_greed", "true");
+        }
+        // Also update step if provided
+        if (response.step && typeof setProgressStep === 'function') {
+          setProgressStep(response.step);
+          if (typeof reconstructChatHistory === 'function') reconstructChatHistory();
+        }
+      } else if (response.action === "unlock_terminal_fragment") {
+        const frag = document.getElementById("terminal-fragment");
+        if (frag) {
+          frag.classList.remove("hidden");
+          localStorage.setItem("stage3_death", "true");
+        }
+        // Also update step if provided
+        if (response.step && typeof setProgressStep === 'function') {
+          setProgressStep(response.step);
+          if (typeof reconstructChatHistory === 'function') reconstructChatHistory();
+        }
       } else if (response.action === "unlock_archive") {
         const icon = document.getElementById("icon-archive");
         if (icon) {
@@ -3350,6 +3413,16 @@ fragment remains</div>
     function syncProgression() {
       console.log('>>> [SYNC] Checking local progression...');
       
+      // Stage 3 Persistence
+      if (localStorage.getItem("stage3_greed") === "true") {
+        const frag = document.getElementById("recycle-fragment");
+        if (frag) frag.classList.remove("hidden");
+      }
+      if (localStorage.getItem("stage3_death") === "true") {
+        const frag = document.getElementById("terminal-fragment");
+        if (frag) frag.classList.remove("hidden");
+      }
+
       // Local sync
       if (localStorage.getItem("aurora_archive_unlocked") === "true") {
         const icon = document.getElementById("icon-archive");
