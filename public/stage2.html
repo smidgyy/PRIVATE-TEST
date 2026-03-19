@@ -5,7 +5,7 @@
   if (window !== window.top) {
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('userId');
-    window.location.href = 'node02.html' + (userId ? '?userId=' + userId : '');
+    window.location.href = '/api/getNode02' + (userId ? '?userId=' + userId : '');
   } else {
     window.top.location.href = 'stage1.html';
   }

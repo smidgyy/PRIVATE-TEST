@@ -754,7 +754,6 @@ async function startServer() {
   const protectedRoutes = [
     "/stage1.html", 
     "/stage2.html", 
-    "/node02.html", 
     "/resonance.html", 
     "/node04.html", 
     "/node04/index.html",
@@ -769,7 +768,7 @@ async function startServer() {
     const { userId } = req.query;
 
     if (!userId) {
-      return res.status(403).send("ACCESS DENIED: Missing userId");
+      return res.status(403).json({ error: "Access denied: Missing userId" });
     }
 
     try {
@@ -778,16 +777,14 @@ async function startServer() {
       const userData = userDoc.data();
 
       if (!userData?.stage2_unlocked) {
-        return res.status(403).send("ACCESS DENIED");
+        return res.status(403).json({ error: "Access denied" });
       }
 
-      console.log("Loading node02 with userId:", userId);
-      const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.join(process.cwd(), 'dist'));
-      const baseDir = isProduction ? 'dist' : 'public';
-      res.sendFile(path.join(process.cwd(), baseDir, "node02.html"));
+      console.log("Serving Node02 to:", userId);
+      res.sendFile(path.join(process.cwd(), "public/node02.html"));
     } catch (err: any) {
       console.error("Error in /api/getNode02:", err);
-      res.status(500).send("Internal Server Error");
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 
@@ -814,7 +811,7 @@ async function startServer() {
     
     if (target === "stage1.html" || target === "article.html" || target === "node03/index.html") {
       hasAccess = true; // Publicly accessible but served through backend
-    } else if (target === "stage2.html" || target === "node02.html" || target === "resonance.html") {
+    } else if (target === "stage2.html" || target === "resonance.html") {
       hasAccess = !!userData.stage2_unlocked;
     } else if (target === "node04.html" || target === "node04/index.html") {
       hasAccess = !!userData.stage4_unlocked;
