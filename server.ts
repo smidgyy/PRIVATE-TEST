@@ -639,14 +639,15 @@ async function startServer() {
       if (db) {
         const doc = await db.collection('users').doc(effectiveUserId).get();
         userData = doc.data() || {};
-        console.log("User state:", userData);
+        console.log(">>> [API] validateCommand check_access: userId:", effectiveUserId);
+        console.log(">>> [API] validateCommand check_access: User state:", userData);
       }
       
       let hasAccess = false;
       if (SECRET_KEY === 'RESILIENT_BOOT') {
         hasAccess = true;
       } else if (target === 'node02' || target === 'resonance') {
-        hasAccess = !!userData.stage2_unlocked;
+        hasAccess = !!userData.stage2_unlocked || !!userData.archive_unlocked;
       } else if (target === 'node03_secret') {
         hasAccess = !!userData.stage3_secret_unlocked;
       } else if (target === 'node04') {
@@ -768,7 +769,8 @@ async function startServer() {
     const { userId } = req.query;
 
     if (!userId) {
-      return res.status(403).json({ error: "Access denied: Missing userId" });
+      console.log(">>> [API] getNode02: Missing userId");
+      return res.status(400).json({ error: "Missing userId" });
     }
 
     try {
@@ -776,14 +778,19 @@ async function startServer() {
       const userDoc = await db.collection("users").doc(userId).get();
       const userData = userDoc.data();
 
-      if (!userData?.stage2_unlocked) {
+      console.log(">>> [API] getNode02: Request userId:", userId);
+      console.log(">>> [API] getNode02: User state:", userData);
+
+      // Fix: Allow access if either archive_unlocked OR stage2_unlocked is true
+      if (!userData?.archive_unlocked && !userData?.stage2_unlocked) {
+        console.log(">>> [API] getNode02: Access denied for:", userId);
         return res.status(403).json({ error: "Access denied" });
       }
 
-      console.log("Serving Node02 to:", userId);
+      console.log(">>> [API] getNode02: Serving Node02 to:", userId);
       res.sendFile(path.join(process.cwd(), "public/node02.html"));
     } catch (err: any) {
-      console.error("Error in /api/getNode02:", err);
+      console.error(">>> [API] getNode02 error:", err);
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -812,7 +819,7 @@ async function startServer() {
     if (target === "stage1.html" || target === "article.html" || target === "node03/index.html") {
       hasAccess = true; // Publicly accessible but served through backend
     } else if (target === "stage2.html" || target === "resonance.html") {
-      hasAccess = !!userData.stage2_unlocked;
+      hasAccess = !!userData.stage2_unlocked || !!userData.archive_unlocked;
     } else if (target === "node04.html" || target === "node04/index.html") {
       hasAccess = !!userData.stage4_unlocked;
     } else if (target === "node03/secret.html" || target === "node03/secret/index.html") {
