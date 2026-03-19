@@ -20,16 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ type: 'get_progression', userId })
       });
       const data = await res.json();
-      if (data.status === 'success') {
-        if (data.stage2_phase2_complete) {
-          localStorage.setItem('stage1_phase', '3');
-          phase = '3';
-        } else if (data.stage2_phase1_complete) {
-          localStorage.setItem('stage1_phase', '2');
-          phase = '2';
-        }
-        initPhase();
-      }
+      // REMOVED: Auto-progression from server data that was overriding initial state
       
       const resAccess = await fetch('/api/validateCommand?userId=' + userId, {
         method: 'POST',
@@ -272,7 +263,16 @@ const title = document.getElementById('main-title');
 const subtitle = document.getElementById('subtitle');
 let busy = false;
 
-let phase = localStorage.getItem('stage1_phase') || '1';
+let currentStep = 1;
+const savedStep = localStorage.getItem("node02_step");
+
+if (savedStep !== null) {
+  currentStep = parseInt(savedStep);
+} else {
+  currentStep = 1;
+}
+
+console.log("Node02 currentStep:", currentStep);
 
 function playBlowSound() {
   if (window.soundManager) {
@@ -287,14 +287,23 @@ function playFlintSound() {
 }
 
 function initPhase() {
-  if (phase === '2') {
+  console.log("Rendering Node02 section for step:", currentStep);
+  
+  // Ensure we start fresh
+  document.body.classList.remove('phase-2', 'phase-3', 'light-mode');
+  
+  if (currentStep === 2) {
     title.textContent = "The Voynich Marginalia.";
     subtitle.textContent = "The Frenchman holds the key.";
     document.body.classList.add('phase-2');
     if (window.soundManager) window.soundManager.startFireCrackling();
-  } else if (phase === '3') {
+  } else if (currentStep === 3) {
     document.body.classList.add('phase-3');
     startPhase3();
+  } else {
+    // Default to Step 1
+    title.textContent = "The First Trial.";
+    subtitle.textContent = "Many have tried. The door remains sealed.";
   }
 }
 
@@ -510,7 +519,7 @@ async function dissolveAndRespond() {
     const res = await fetch('/api/validateCommand?userId=' + userId, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ input: text, userId, type: 'node02_answer', step: phase })
+      body: JSON.stringify({ input: text, userId, type: 'node02_answer', step: currentStep.toString() })
     });
     const data = await res.json();
     
@@ -521,15 +530,16 @@ async function dissolveAndRespond() {
       msg = data.msg;
       if (data.action === 'phase1_success') {
         if (window.soundManager) window.soundManager.playSuccess();
-        localStorage.setItem('stage1_phase', '2');
+        currentStep = 2;
+        localStorage.setItem('node02_step', '2');
         setTimeout(() => { window.location.href = 'article.html'; }, 3000);
       } else if (data.action === 'phase2_success') {
         if (window.soundManager) {
           window.soundManager.playSuccess();
           window.soundManager.stopFireCrackling();
         }
-        phase = '3';
-        localStorage.setItem('stage1_phase', '3');
+        currentStep = 3;
+        localStorage.setItem('node02_step', '3');
         
         // Extinguish the flame immediately
         document.body.classList.remove('phase-2');
@@ -582,7 +592,7 @@ input.addEventListener('keydown', (e) => {
 });
 
 function startPhase3(isTransition = false) {
-  phase = '3';
+  currentStep = 3;
   document.body.classList.add('phase-3');
   input.value = '';
   input.classList.add('hidden');
@@ -617,7 +627,7 @@ function startPhase3(isTransition = false) {
     document.getElementById('flashlight-overlay').style.setProperty('--x', e.clientX + 'px');
     document.getElementById('flashlight-overlay').style.setProperty('--y', e.clientY + 'px');
 
-    if (!dotActive || phase !== '3') return;
+    if (!dotActive || currentStep !== 3) return;
     
     const dx = e.clientX - dotX;
     const dy = e.clientY - dotY;
@@ -679,7 +689,7 @@ function startPhase3(isTransition = false) {
   });
 
   document.addEventListener('contextmenu', (e) => {
-    if (phase === '3') e.preventDefault();
+    if (currentStep === 3) e.preventDefault();
   });
 
   setTimeout(() => {
@@ -692,7 +702,7 @@ function startPhase3(isTransition = false) {
     
     // Add random glitch sounds in the void
     const glitchInterval = setInterval(() => {
-      if (phase === '3' && !document.body.classList.contains('light-mode')) {
+      if (currentStep === 3 && !document.body.classList.contains('light-mode')) {
         if (Math.random() < 0.2 && window.soundManager) {
           window.soundManager.playGlitch();
         }
