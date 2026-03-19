@@ -3303,7 +3303,14 @@ fragment remains</div>
       
       console.log('>>> [GAME STATE] Applying response:', response);
       
-      if (response.action === "unlock_archive") {
+      if (response.action === "update_messenger_step") {
+        if (typeof setProgressStep === 'function') {
+          setProgressStep(response.step);
+          if (typeof reconstructChatHistory === 'function') {
+            reconstructChatHistory();
+          }
+        }
+      } else if (response.action === "unlock_archive") {
         const icon = document.getElementById("icon-archive");
         if (icon) {
           console.log('>>> [GAME STATE] Unlocking Archive Folder.');
@@ -4129,7 +4136,17 @@ fragment remains</div>
     // Reconstruct chat history
     function reconstructChatHistory() {
       const step = getProgressStep();
-      if (step === 0) return;
+      
+      // Reset to initial state to avoid duplicates
+      chats['archive'] = [
+        { sender: 'Archive Node', time: '00:00 AM', text: 'CONNECTION ESTABLISHED' },
+        { sender: 'Archive Node', time: '00:01 AM', text: 'AWAITING INPUT...' }
+      ];
+      
+      if (step === 0) {
+        if (currentChatContact === 'archive') renderChatHistory();
+        return;
+      }
       
       const payloads = [
         "3c702b677e650000131511172278666b7037677e65012a653d282765362b2b2420216411332920a6c7cb36653722312a2b20673e2a262f696e27377a7b30377b033537202164303336652b293e3c65302f37652721203b2b2b2d29356b7926356c7927367915372021237229202531373665303533262037696e27377a7b30377b12263e206530353b202164333d652036262120652b2937652a2267262d2029696e27377a7b30377b072f37262e64333a2065303533362d6a652f",

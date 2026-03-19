@@ -783,16 +783,58 @@ async function startServer() {
         ];
         reply = eliasReplies[Math.floor(Math.random() * eliasReplies.length)];
       } else if (contact === 'archive') {
+        const normalized = message.trim().toLowerCase();
+        const stage3Answers = ["greed", "depth", "money", "gold", "crown"];
+        const aliases: { [key: string]: string } = { "death": "depth" };
+        const canonicalInput = aliases[normalized] || normalized;
+        
+        // Get user data for stage gating and step tracking
+        let userData: any = {};
+        if (db) {
+          const userDoc = await db.collection('users').doc(userId).get();
+          userData = userDoc.data() || {};
+        }
+        
+        const currentStep = userData.messenger_step || 0;
+        const userStage = userData.stage || 0;
+
         if (t === 'THE ARCHIVE REMEMBERS') {
           if (db) {
             await db.collection('users').doc(userId).set({ 
               stage1_archive_unlocked: true,
               archive_unlocked: true,
-              stage2_unlocked: true
+              stage2_unlocked: true,
+              stage: 3 // Ensure stage is set to 3 when archive is unlocked
             }, { merge: true });
           }
           reply = "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.";
           action = "unlock_archive";
+        } else if (stage3Answers.includes(canonicalInput)) {
+          // Stage 3 Answer Validation - only allow if stage is 3
+          if (userStage === 3 || userData.stage1_archive_unlocked) {
+            if (canonicalInput === stage3Answers[currentStep]) {
+              const nextStep = currentStep + 1;
+              if (db) {
+                await db.collection('users').doc(userId).set({ 
+                  messenger_step: nextStep 
+                }, { merge: true });
+              }
+              reply = `RECOVERY SUCCESSFUL. ARCHIVE FRAGMENT ${nextStep} DECRYPTED.`;
+              action = "update_messenger_step";
+              // Include the new step in the response for the client
+              return res.json({ 
+                status: "success",
+                contact, 
+                reply, 
+                action,
+                step: nextStep
+              });
+            } else {
+              reply = "ERROR: SEQUENTIAL ACCESS REQUIRED. FRAGMENT " + (currentStep + 1) + " IS NEXT.";
+            }
+          } else {
+            reply = "ERROR: SYSTEM STAGE MISMATCH. ACCESS DENIED.";
+          }
         } else {
           reply = "INVALID INPUT. AWAITING COMMAND.";
         }
