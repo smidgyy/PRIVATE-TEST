@@ -7,7 +7,10 @@
     const userId = urlParams.get('userId');
     window.location.href = '/api/getNode02' + (userId ? '?userId=' + userId : '');
   } else {
-    window.top.location.href = 'stage1.html';
+    // If loaded as top window, redirect to stage1.html with userId if present
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('userId');
+    window.location.href = 'stage1.html' + (userId ? '?userId=' + userId : '');
   }
 </script>
 </head>

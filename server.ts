@@ -820,7 +820,7 @@ async function startServer() {
     const target = req.path.substring(1); // remove leading slash
     let hasAccess = false;
     
-    if (target === "stage1.html" || target === "article.html" || target === "node03/index.html") {
+    if (target === "stage1.html" || target === "article.html" || target === "node03/index.html" || target === "archive/index.html") {
       hasAccess = true; // Publicly accessible but served through backend
     } else if (target === "stage2.html" || target === "resonance.html") {
       hasAccess = !!userData.stage2_unlocked || !!userData.archive_unlocked || !!userData.stage1_archive_unlocked;
@@ -843,8 +843,12 @@ async function startServer() {
     if (fs.existsSync(filePath)) {
       res.sendFile(filePath);
     } else {
-      res.status(404).send("File not found");
+      res.status(404).sendFile(path.join(process.cwd(), 'index.html'));
     }
+  });
+
+  app.get("/", (req: any, res: any) => {
+    res.redirect("/stage1.html" + (req.query.userId ? "?userId=" + req.query.userId : ""));
   });
 
   app.get("/api/getUserState", async (req: any, res: any) => {
