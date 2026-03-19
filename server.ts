@@ -21,6 +21,46 @@ console.log(">>> [BOOT] Current Directory:", process.cwd());
 // Lazy database getter to prevent startup crashes
 let _db: any = null;
 
+// Mock Firestore for session-only mode when credentials are missing
+class MockFirestore {
+  private storage: Map<string, Map<string, any>> = new Map();
+
+  collection(name: string) {
+    if (!this.storage.has(name)) {
+      this.storage.set(name, new Map());
+    }
+    const col = this.storage.get(name)!;
+    return {
+      doc: (id: string) => ({
+        get: async () => ({
+          exists: col.has(id),
+          data: () => col.get(id) || {}
+        }),
+        set: async (data: any, options?: { merge?: boolean }) => {
+          const existing = col.get(id) || {};
+          if (options?.merge) {
+            col.set(id, { ...existing, ...data });
+          } else {
+            col.set(id, data);
+          }
+          return { id };
+        },
+        update: async (data: any) => {
+          const existing = col.get(id) || {};
+          col.set(id, { ...existing, ...data });
+          return { id };
+        },
+        delete: async () => {
+          col.delete(id);
+          return { id };
+        }
+      })
+    };
+  }
+
+  settings() {}
+}
+
 async function getDb() {
   try {
     if (_db) return _db;
@@ -38,168 +78,183 @@ async function getDb() {
     console.log(">>> [DB] Target Database ID:", databaseId);
 
     let app;
-    if (getApps().length === 0) {
-      let serviceAccount: any = null;
+    try {
+      if (getApps().length === 0) {
+        let serviceAccount: any = null;
 
-      // Fallback: Manual .env parsing if process.env is missing it (sometimes dotenv fails in certain Node environments)
-      if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-        try {
-          const envPath = path.join(process.cwd(), '.env');
-          if (fs.existsSync(envPath)) {
-            console.log(">>> [DB] process.env missing key, attempting manual .env read...");
-            const content = fs.readFileSync(envPath, 'utf8');
-            const lines = content.split('\n');
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (trimmed.startsWith('FIREBASE_SERVICE_ACCOUNT=')) {
-                let val = trimmed.substring('FIREBASE_SERVICE_ACCOUNT='.length).trim();
-                // Strip quotes if present
-                if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith('"') && val.endsWith('"'))) {
-                  val = val.substring(1, val.length - 1);
+        // Fallback: Manual .env parsing if process.env is missing it (sometimes dotenv fails in certain Node environments)
+        if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+          try {
+            const envPath = path.join(process.cwd(), '.env');
+            if (fs.existsSync(envPath)) {
+              console.log(">>> [DB] process.env missing key, attempting manual .env read...");
+              const content = fs.readFileSync(envPath, 'utf8');
+              const lines = content.split('\n');
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('FIREBASE_SERVICE_ACCOUNT=')) {
+                  let val = trimmed.substring('FIREBASE_SERVICE_ACCOUNT='.length).trim();
+                  // Strip quotes if present
+                  if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith('"') && val.endsWith('"'))) {
+                    val = val.substring(1, val.length - 1);
+                  }
+                  process.env.FIREBASE_SERVICE_ACCOUNT = val;
+                  console.log(">>> [DB] Manually recovered FIREBASE_SERVICE_ACCOUNT from .env file");
+                  break;
                 }
-                process.env.FIREBASE_SERVICE_ACCOUNT = val;
-                console.log(">>> [DB] Manually recovered FIREBASE_SERVICE_ACCOUNT from .env file");
-                break;
               }
             }
+          } catch (e: any) {
+            console.error(">>> [DB] Manual .env recovery failed:", e.message);
           }
-        } catch (e: any) {
-          console.error(">>> [DB] Manual .env recovery failed:", e.message);
         }
-      }
 
-      // Priority 1: Environment Variable (MOST SECURE)
-      if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        console.log(">>> [DB] Loading service account from ENV...");
-        try {
-          let rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
-          
-          // Handle cases where the ENV is wrapped in literal escaped quotes (common in some web panels)
-          if (rawEnv.startsWith('\\"') && rawEnv.endsWith('\\"')) {
-            console.log(">>> [DB] ENV is wrapped in literal escaped quotes, unescaping...");
-            rawEnv = rawEnv.substring(2, rawEnv.length - 2).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-          } else if (rawEnv.startsWith('"') && rawEnv.endsWith('"')) {
-             // If it's wrapped in normal quotes but not a valid JSON string yet, it might be double-quoted
-             try {
-                const parsedOnce = JSON.parse(rawEnv);
-                if (typeof parsedOnce === 'string') {
-                   rawEnv = parsedOnce;
-                }
-             } catch (e) {}
-          }
-
+        // Priority 1: Environment Variable (MOST SECURE)
+        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+          console.log(">>> [DB] Loading service account from ENV...");
           try {
-            serviceAccount = JSON.parse(rawEnv);
-          } catch (e) {
-            // Last ditch effort: try to unescape common patterns if it's still failing
-            console.log(">>> [DB] Initial parse failed, trying aggressive unescape...");
-            const unescaped = rawEnv.replace(/\\"/g, '"').replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
-            serviceAccount = JSON.parse(unescaped);
-          }
+            let rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+            
+            // Handle cases where the ENV is wrapped in literal escaped quotes (common in some web panels)
+            if (rawEnv.startsWith('\\"') && rawEnv.endsWith('\\"')) {
+              console.log(">>> [DB] ENV is wrapped in literal escaped quotes, unescaping...");
+              rawEnv = rawEnv.substring(2, rawEnv.length - 2).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+            } else if (rawEnv.startsWith('"') && rawEnv.endsWith('"')) {
+               // If it's wrapped in normal quotes but not a valid JSON string yet, it might be double-quoted
+               try {
+                  const parsedOnce = JSON.parse(rawEnv);
+                  if (typeof parsedOnce === 'string') {
+                     rawEnv = parsedOnce;
+                  }
+               } catch (e) {}
+            }
 
-          // Handle double-encoding in ENV (common when copy-pasting into web panels)
-          if (typeof serviceAccount === 'string') {
-            console.log(">>> [DB] ENV was double-encoded string, parsing again...");
-            serviceAccount = JSON.parse(serviceAccount);
-          }
-        } catch (e: any) {
-          console.error("!!! [DB] Failed to parse FIREBASE_SERVICE_ACCOUNT env var:", e.message);
-        }
-      } 
-      
-      // Priority 1.5: Fallback ENV name
-      if (!serviceAccount && process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-        console.log(">>> [DB] Loading service account from FIREBASE_SERVICE_ACCOUNT_JSON...");
-        try {
-          serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON.trim());
-          if (typeof serviceAccount === 'string') {
-            serviceAccount = JSON.parse(serviceAccount);
-          }
-        } catch (e) {}
-      }
-      
-      // Priority 2: service-account.json file (BACKUP)
-      if (!serviceAccount && fs.existsSync(serviceAccountPath)) {
-        console.log(">>> [DB] Loading service account from FILE...");
-        const raw = fs.readFileSync(serviceAccountPath, 'utf8');
-        try {
-          serviceAccount = JSON.parse(raw);
-          if (typeof serviceAccount === 'string') {
-            serviceAccount = JSON.parse(serviceAccount);
-          }
-        } catch (e: any) {
-          console.error("!!! [DB] Failed to parse service-account.json:", e.message);
-        }
-      }
+            try {
+              serviceAccount = JSON.parse(rawEnv);
+            } catch (e) {
+              // Last ditch effort: try to unescape common patterns if it's still failing
+              console.log(">>> [DB] Initial parse failed, trying aggressive unescape...");
+              const unescaped = rawEnv.replace(/\\"/g, '"').replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
+              serviceAccount = JSON.parse(unescaped);
+            }
 
-      if (!serviceAccount) {
-        throw new Error("Service account credentials not found. Ensure FIREBASE_SERVICE_ACCOUNT is set in your environment or provide service-account.json.");
-      }
-      if (typeof serviceAccount !== 'object') {
-        throw new Error(`Service account credentials must be an object, but got ${typeof serviceAccount}.`);
-      }
-
-      // CRITICAL: Aggressive Private Key Sanitization
-      if (serviceAccount.private_key && typeof serviceAccount.private_key === 'string') {
-        let pk = serviceAccount.private_key;
-        
-        // 1. Fix all variations of escaped newlines
-        pk = pk.replace(/\\n/g, '\n');
-        pk = pk.replace(/\\r/g, '\r');
-        
-        // 2. Remove any accidental quotes, whitespace, or BOM markers at start/end
-        pk = pk.replace(/^['"\s\uFEFF]+|['"\s\uFEFF]+$/g, '');
-        
-        // 3. Ensure it starts with the correct header
-        if (!pk.startsWith("-----BEGIN PRIVATE KEY-----")) {
-          const headerIndex = pk.indexOf("-----BEGIN PRIVATE KEY-----");
-          if (headerIndex !== -1) {
-             pk = pk.substring(headerIndex);
-          } else {
-             console.error("!!! [DB] Private key missing header! Found:", pk.substring(0, 20));
+            // Handle double-encoding in ENV (common when copy-pasting into web panels)
+            if (typeof serviceAccount === 'string') {
+              console.log(">>> [DB] ENV was double-encoded string, parsing again...");
+              serviceAccount = JSON.parse(serviceAccount);
+            }
+          } catch (e: any) {
+            console.error("!!! [DB] Failed to parse FIREBASE_SERVICE_ACCOUNT env var:", e.message);
           }
+        } 
+        
+        // Priority 1.5: Fallback ENV name
+        if (!serviceAccount && process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+          console.log(">>> [DB] Loading service account from FIREBASE_SERVICE_ACCOUNT_JSON...");
+          try {
+            serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON.trim());
+            if (typeof serviceAccount === 'string') {
+              serviceAccount = JSON.parse(serviceAccount);
+            }
+          } catch (e) {}
         }
         
-        // 4. Ensure it ends with the correct footer
-        if (!pk.includes("-----END PRIVATE KEY-----")) {
-          console.error("!!! [DB] Private key missing footer!");
+        // Priority 2: service-account.json file (BACKUP)
+        if (!serviceAccount && fs.existsSync(serviceAccountPath)) {
+          console.log(">>> [DB] Loading service account from FILE...");
+          const raw = fs.readFileSync(serviceAccountPath, 'utf8');
+          try {
+            serviceAccount = JSON.parse(raw);
+            if (typeof serviceAccount === 'string') {
+              serviceAccount = JSON.parse(serviceAccount);
+            }
+          } catch (e: any) {
+            console.error("!!! [DB] Failed to parse service-account.json:", e.message);
+          }
         }
 
-        serviceAccount.private_key = pk;
-        console.log(">>> [DB] Private key sanitized. Final Length:", serviceAccount.private_key.length);
+        if (!serviceAccount) {
+          console.warn("!!! [DB WARNING] Service account credentials not found. Falling back to MockFirestore (Session-only mode).");
+          console.warn("To enable cloud persistence, follow these steps in AI Studio:");
+          console.warn("1. Go to Firebase Console > Project Settings > Service Accounts.");
+          console.warn("2. Generate and download a new private key JSON.");
+          console.warn("3. In AI Studio, go to Settings (gear icon) > Secrets.");
+          console.warn("4. Add a secret named 'FIREBASE_SERVICE_ACCOUNT' and paste the JSON content as the value.");
+          _db = new MockFirestore();
+          return _db;
+        }
+
+        if (typeof serviceAccount !== 'object') {
+          throw new Error(`Service account credentials must be an object, but got ${typeof serviceAccount}.`);
+        }
+
+        // CRITICAL: Aggressive Private Key Sanitization
+        if (serviceAccount.private_key && typeof serviceAccount.private_key === 'string') {
+          let pk = serviceAccount.private_key;
+          
+          // 1. Fix all variations of escaped newlines
+          pk = pk.replace(/\\n/g, '\n');
+          pk = pk.replace(/\\r/g, '\r');
+          
+          // 2. Remove any accidental quotes, whitespace, or BOM markers at start/end
+          pk = pk.replace(/^['"\s\uFEFF]+|['"\s\uFEFF]+$/g, '');
+          
+          // 3. Ensure it starts with the correct header
+          if (!pk.startsWith("-----BEGIN PRIVATE KEY-----")) {
+            const headerIndex = pk.indexOf("-----BEGIN PRIVATE KEY-----");
+            if (headerIndex !== -1) {
+               pk = pk.substring(headerIndex);
+            } else {
+               console.error("!!! [DB] Private key missing header! Found:", pk.substring(0, 20));
+            }
+          }
+          
+          // 4. Ensure it ends with the correct footer
+          if (!pk.includes("-----END PRIVATE KEY-----")) {
+            console.error("!!! [DB] Private key missing footer!");
+          }
+
+          serviceAccount.private_key = pk;
+          console.log(">>> [DB] Private key sanitized. Final Length:", serviceAccount.private_key.length);
+        }
+
+        console.log(">>> [DB] Initializing Admin SDK for Project:", serviceAccount.project_id);
+        console.log(">>> [DB] Service Account Email:", serviceAccount.client_email);
+        
+        app = initializeApp({
+          credential: cert(serviceAccount),
+          projectId: serviceAccount.project_id
+        });
+      } else {
+        app = getApp();
       }
 
-      console.log(">>> [DB] Initializing Admin SDK for Project:", serviceAccount.project_id);
-      console.log(">>> [DB] Service Account Email:", serviceAccount.client_email);
-      
-      app = initializeApp({
-        credential: cert(serviceAccount),
-        projectId: serviceAccount.project_id
+      // Force REST mode which is often more reliable on shared hosting (Hostinger)
+      if (databaseId && databaseId !== "(default)") {
+        console.log(">>> [DB] Connecting to named database (REST):", databaseId);
+        _db = getFirestore(app, databaseId);
+      } else {
+        console.log(">>> [DB] Connecting to (default) database (REST)");
+        _db = getFirestore(app);
+      }
+
+      // Apply settings to force REST and disable SSL verification if needed (though usually not recommended)
+      _db.settings({ 
+        preferRest: true,
+        // Some environments have issues with gRPC keepalives
       });
-    } else {
-      app = getApp();
+
+      console.log(">>> [DB] Firestore instance ready (REST enabled).");
+      return _db;
+    } catch (e: any) {
+      console.error("!!! [DB] Admin SDK initialization failed, falling back to MockFirestore:", e.message);
+      _db = new MockFirestore();
+      return _db;
     }
-
-    // Force REST mode which is often more reliable on shared hosting (Hostinger)
-    if (databaseId && databaseId !== "(default)") {
-      console.log(">>> [DB] Connecting to named database (REST):", databaseId);
-      _db = getFirestore(app, databaseId);
-    } else {
-      console.log(">>> [DB] Connecting to (default) database (REST)");
-      _db = getFirestore(app);
-    }
-
-    // Apply settings to force REST and disable SSL verification if needed (though usually not recommended)
-    _db.settings({ 
-      preferRest: true,
-      // Some environments have issues with gRPC keepalives
-    });
-
-    console.log(">>> [DB] Firestore instance ready (REST enabled).");
-    return _db;
   } catch (err: any) {
     console.error("!!! [DB FATAL]", err.message);
-    throw err;
+    _db = new MockFirestore();
+    return _db;
   }
 }
 
@@ -801,24 +856,35 @@ async function startServer() {
 
   app.get(protectedRoutes, async (req: any, res: any) => {
     const userId = req.query.userId;
-    if (!userId && req.path !== "/stage1.html" && req.path !== "/article.html" && req.path !== "/node03/index.html") {
+    if (!userId && req.path !== "/stage1.html" && req.path !== "/article.html" && req.path !== "/node03/index.html" && req.path !== "/archive/index.html") {
       return res.status(403).send("ACCESS DENIED: Missing userId");
     }
     
     let db: any = null;
     try {
       db = await getDb();
-    } catch (e: any) {}
+    } catch (e: any) {
+      console.error("!!! [ROUTING] Database connection failed for route check:", e.message);
+    }
     
     let userData: any = {};
-    if (db && userId) {
+    if (db) {
       const userDoc = await db.collection('users').doc(userId).get();
       userData = userDoc.data() || {};
+      if (_db instanceof MockFirestore) {
+        userData.isMock = true;
+      }
       console.log(`Access check for ${req.path}:`, userId, userData);
     }
     
     const target = req.path.substring(1); // remove leading slash
     let hasAccess = false;
+    
+    // Check if we are in Mock mode
+    const isMock = _db instanceof MockFirestore;
+    if (isMock) {
+      console.warn(`>>> [ROUTING] Running in Mock mode for ${req.path}. Persistence is disabled.`);
+    }
     
     if (target === "stage1.html" || target === "article.html" || target === "node03/index.html" || target === "archive/index.html") {
       hasAccess = true; // Publicly accessible but served through backend
@@ -867,6 +933,9 @@ async function startServer() {
       if (db) {
         const userDoc = await db.collection('users').doc(userId).get();
         userData = userDoc.data() || {};
+        if (_db instanceof MockFirestore) {
+          userData.isMock = true;
+        }
       }
       
       res.json(userData);

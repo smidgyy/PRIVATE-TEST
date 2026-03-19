@@ -10,6 +10,12 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "specterb47@gmail.com" && request.auth.token.email_verified == true));
+    }
+
     // User data validation
     function isValidUser(data) {
       return data.keys().hasAny(['stage', 'unlockedNodes', 'completedSteps']) || 
@@ -18,7 +24,7 @@ service cloud.firestore {
 
     match /users/{userId} {
       // Users can read and write their own data
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isAdmin();
     }
     
     // Default deny
