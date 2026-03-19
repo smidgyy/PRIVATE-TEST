@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const dataAccess = await resAccess.json();
       if (dataAccess.status !== 'success') {
         document.documentElement.innerHTML = '<body style="background:#000;color:#f00;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;margin:0;"><div><h1>ARCHIVE ACCESS DENIED</h1><p>Node authentication required.</p></div></body>';
-        setTimeout(function(){ window.top.location.href = 'stage1.html'; }, 3000);
+        showErrorWindow("ACCESS DENIED");
       } else {
         document.getElementById('content').style.display = 'flex';
       }
@@ -47,6 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(err);
     }
   };
+  
+  function showErrorWindow(msg) {
+    alert(msg);
+  }
+  
   checkAccess();
 });
 </script>
