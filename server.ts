@@ -757,7 +757,9 @@ async function startServer() {
 
       // FIX: Stage 3 specific overrides with immediate return
       if (contact === 'archive') {
-        if (normalized === "greed") {
+        const input = message.toLowerCase().trim();
+
+        if (input === "greed") {
           if (db) {
             await db.collection("users").doc(userId).set({
               stage3_greed: true,
@@ -766,13 +768,12 @@ async function startServer() {
           }
           return res.json({
             status: "success",
-            contact,
             reply: "You chose greed... Check the recycle bin.",
-            action: "unlock_recycle_bin"
+            action: "unlock_recycle_fragment"
           });
         }
 
-        if (normalized === "death") {
+        if (input === "depth") {
           if (db) {
             await db.collection("users").doc(userId).set({
               stage3_death: true,
@@ -781,29 +782,28 @@ async function startServer() {
           }
           return res.json({
             status: "success",
-            contact,
             reply: "Death is inevitable... Use the terminal.",
-            action: "unlock_terminal"
+            action: "unlock_terminal_fragment"
           });
         }
 
-        if (normalized === "money") {
+        if (input === "money") {
           return res.json({
             status: "success",
-            contact,
-            reply: "No money, only the mask. Look deeper."
+            reply: "No money, only the mask. Look deeper.",
+            action: "unlock_fragment_3"
           });
         }
 
-        if (normalized === "gold") {
+        if (input === "gold") {
           return res.json({
             status: "success",
-            contact,
-            reply: "Closer now. He followed wealth. He followed power."
+            reply: "Closer now. Power reveals truth.",
+            action: "unlock_fragment_4"
           });
         }
 
-        if (normalized === "crown") {
+        if (input === "crown") {
           if (db) {
             await db.collection("users").doc(userId).set({
               stage3_crown: true,
@@ -813,9 +813,8 @@ async function startServer() {
           }
           return res.json({
             status: "success",
-            contact,
-            reply: "Access granted. Node 04 unlocked.",
-            action: "unlock_node04"
+            reply: "You see it now. The pattern is complete.",
+            action: "unlock_stage4"
           });
         }
       }

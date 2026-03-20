@@ -780,9 +780,17 @@
       <span>Music</span>
     </div>
 
-    <div class="icon hidden" id="terminal-fragment" ondblclick="openWindow('terminal-fragment-log')">
+    <div class="icon hidden" id="terminal_fragment" ondblclick="openWindow('terminal-fragment-log')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
       <span>terminal_fragment.log</span>
+    </div>
+    <div class="icon hidden" id="fragment_3" ondblclick="openWindow('fragment-3-log')">
+      <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+      <span>fragment_3.log</span>
+    </div>
+    <div class="icon hidden" id="fragment_4" ondblclick="openWindow('fragment-4-log')">
+      <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+      <span>fragment_4.log</span>
     </div>
 
     <!-- Context Menu -->
@@ -885,7 +893,7 @@
           <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
           <span style="color:#000; background:transparent;">deleted_user.log</span>
         </div>
-        <div class="icon hidden" id="recycle-fragment" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('recycle-fragment-log')">
+        <div class="icon hidden" id="recycle_fragment" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('recycle-fragment-log')">
           <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
           <span style="color:#000; background:transparent;">recycle_fragment.log</span>
         </div>
@@ -3345,38 +3353,34 @@ fragment remains</div>
 
     // --- Messenger Logic ---
     function applyGameState(response) {
-      if (!response || !response.status) return;
-      
+      if (!response) return;
       console.log('>>> [GAME STATE] Applying response:', response);
-      
-      if (response.action === "update_messenger_step") {
+      console.log("Stage 3:", response);
+
+      if (response.action === "unlock_recycle_fragment") {
+        document.getElementById("recycle_fragment").classList.remove("hidden");
+        localStorage.setItem("stage3_greed", "true");
+      } else if (response.action === "unlock_terminal_fragment") {
+        document.getElementById("terminal_fragment").classList.remove("hidden");
+        localStorage.setItem("stage3_death", "true");
+      } else if (response.action === "unlock_fragment_3") {
+        const frag = document.getElementById("fragment_3");
+        if (frag) frag.classList.remove("hidden");
+        localStorage.setItem("stage3_money", "true");
+      } else if (response.action === "unlock_fragment_4") {
+        const frag = document.getElementById("fragment_4");
+        if (frag) frag.classList.remove("hidden");
+        localStorage.setItem("stage3_gold", "true");
+      } else if (response.action === "unlock_stage4") {
+        currentStage = 4;
+        localStorage.setItem("currentStage", currentStage);
+        if (typeof startStage4 === 'function') startStage4();
+      } else if (response.action === "update_messenger_step") {
         if (typeof setProgressStep === 'function') {
           setProgressStep(response.step);
           if (typeof reconstructChatHistory === 'function') {
             reconstructChatHistory();
           }
-        }
-      } else if (response.action === "unlock_recycle" || response.action === "unlock_recycle_bin") {
-        const frag = document.getElementById("recycle-fragment");
-        if (frag) {
-          frag.classList.remove("hidden");
-          localStorage.setItem("stage3_greed", "true");
-        }
-        // Also update step if provided
-        if (response.step && typeof setProgressStep === 'function') {
-          setProgressStep(response.step);
-          if (typeof reconstructChatHistory === 'function') reconstructChatHistory();
-        }
-      } else if (response.action === "unlock_terminal") {
-        const frag = document.getElementById("terminal-fragment");
-        if (frag) {
-          frag.classList.remove("hidden");
-          localStorage.setItem("stage3_death", "true");
-        }
-        // Also update step if provided
-        if (response.step && typeof setProgressStep === 'function') {
-          setProgressStep(response.step);
-          if (typeof reconstructChatHistory === 'function') reconstructChatHistory();
         }
       } else if (response.action === "unlock_archive") {
         const icon = document.getElementById("icon-archive");
@@ -3421,11 +3425,19 @@ fragment remains</div>
       
       // Stage 3 Persistence
       if (localStorage.getItem("stage3_greed") === "true") {
-        const frag = document.getElementById("recycle-fragment");
+        const frag = document.getElementById("recycle_fragment");
         if (frag) frag.classList.remove("hidden");
       }
       if (localStorage.getItem("stage3_death") === "true") {
-        const frag = document.getElementById("terminal-fragment");
+        const frag = document.getElementById("terminal_fragment");
+        if (frag) frag.classList.remove("hidden");
+      }
+      if (localStorage.getItem("stage3_money") === "true") {
+        const frag = document.getElementById("fragment_3");
+        if (frag) frag.classList.remove("hidden");
+      }
+      if (localStorage.getItem("stage3_gold") === "true") {
+        const frag = document.getElementById("fragment_4");
         if (frag) frag.classList.remove("hidden");
       }
 
@@ -3678,7 +3690,7 @@ fragment remains</div>
         
         // FIX 2 & 4: Show reply exactly once after backend response
         // If it's an archive action that triggered reconstructChatHistory, the reply is already added
-        const isStepAction = ['update_messenger_step', 'unlock_recycle', 'unlock_recycle_bin', 'unlock_terminal'].includes(data.action);
+        const isStepAction = ['update_messenger_step'].includes(data.action);
         const alreadyHandledByReconstruct = currentChatContact === 'archive' && isStepAction;
 
         if (data.reply && !alreadyHandledByReconstruct) {
