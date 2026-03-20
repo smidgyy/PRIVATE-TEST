@@ -1703,6 +1703,10 @@ fragment remains</div>
 
   <script src="/sound-manager.js?v=2"></script>
   <script>
+    let chats = {};
+    function getUserId() {
+      return localStorage.getItem("userId");
+    }
     function arrangeIcons() {
       const icons = Array.from(document.querySelectorAll('#desktop > .icon:not(.hidden)'));
       let startX = 10;
@@ -3517,26 +3521,6 @@ fragment remains</div>
       }
     }
 
-    let cachedUserId = null;
-
-    function getUserId() {
-      if (cachedUserId) return cachedUserId;
-
-      const stored = localStorage.getItem("aurora_user_id");
-
-      if (stored) {
-        cachedUserId = stored;
-        return stored;
-      }
-
-      // fallback: generate once
-      const newId = "user_" + Math.random().toString(36).substring(2, 10);
-      localStorage.setItem("aurora_user_id", newId);
-      cachedUserId = newId;
-
-      return newId;
-    }
-
     async function waitForAuth() {
       return new Promise((resolve) => {
         const check = () => {
@@ -3553,44 +3537,12 @@ fragment remains</div>
       });
     }
 
-    let currentStage = 1;
-    let chats = {
-      'elias': [
-        { sender: 'Dr. Elias', time: '10:42 AM', text: 'Adrian, did you find the logs?' },
-        { sender: 'You', time: '10:45 AM', text: 'Still looking. The system is fighting me.' },
-        { sender: 'Dr. Elias', time: '10:47 AM', text: 'Be careful. They monitor everything.' }
-      ],
-      'unknown': [
-        { sender: 'Unknown', time: '11:00 PM', text: 'Stop digging.' },
-        { sender: 'Unknown', time: '11:01 PM', text: 'You will end up like the others.' },
-        { sender: 'You', time: '11:05 PM', text: 'Who is this?' },
-        { sender: 'Unknown', time: '11:06 PM', text: 'A warning.' }
-      ],
-      'archive': [
-        { sender: 'Archive Node', time: '00:00 AM', text: 'CONNECTION ESTABLISHED' },
-        { sender: 'Archive Node', time: '00:01 AM', text: 'AWAITING INPUT...' }
-      ]
-    };
-
     function saveChats() {
-      localStorage.setItem("aurora_chats", JSON.stringify(chats));
+      // Chat history is no longer persisted to localStorage to ensure backend truth
     }
 
     function loadChats() {
-      const saved = localStorage.getItem("aurora_chats");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          // Only merge if it's a valid object with the right keys
-          if (parsed && typeof parsed === 'object') {
-            Object.keys(chats).forEach(key => {
-              if (parsed[key]) chats[key] = parsed[key];
-            });
-          }
-        } catch (e) {
-          console.error("Error loading chats:", e);
-        }
-      }
+      // Chat history is no longer loaded from localStorage to prevent stale state
     }
 
     loadChats();
@@ -3604,10 +3556,8 @@ fragment remains</div>
       const inputField = document.getElementById('chat-input');
       const sendBtn = document.getElementById('chat-send-btn');
       
-      const chat = chats[contactId];
-      if (!chat) {
-        console.error('!!! [MESSENGER] Chat data not found for:', contactId);
-        return;
+      if (!chats[contactId]) {
+        chats[contactId] = [];
       }
       
       // Update UI
@@ -3667,28 +3617,24 @@ fragment remains</div>
       historyDiv.scrollTop = historyDiv.scrollHeight;
     }
 
-    function sendChatMessage() {
+    async function sendChatMessage() {
       const inputField = document.getElementById('chat-input');
       const text = inputField.value.trim();
-      console.log('Sending message:', text, 'to:', currentChatContact);
       if (!text || !currentChatContact) return;
       
       const now = new Date();
       let hours = now.getHours();
       const ampm = hours >= 12 ? ' PM' : ' AM';
       hours = hours % 12;
-      hours = hours ? hours : 12; // the hour '0' should be '12'
+      hours = hours ? hours : 12;
       const minutes = now.getMinutes() < 10 ? '0' + now.getMinutes() : now.getMinutes();
       const timeStr = hours + ':' + minutes + ampm;
       
-      // 1. User types message
-      // 2. message is immediately displayed in chat
+      // FIX 2: Show user message immediately
       chats[currentChatContact].push({ sender: 'You', time: timeStr, text: text });
-      saveChats();
       inputField.value = '';
       renderChatHistory();
       
-      // 3. backend is called
       // Show typing indicator
       const historyDiv = document.getElementById('chat-history');
       const typingIndicator = document.createElement('div');
@@ -3703,19 +3649,12 @@ fragment remains</div>
         <div style="font-weight: bold; color: ${contactColor}; margin-bottom: 2px;">${contactName} <span style="font-size: 10px; color: #666; font-weight: normal;">${timeStr}</span></div>
         <div style="background: #ffe6e6; padding: 6px 8px; border-radius: 2px; display: inline-block; max-width: 80%; border: 1px solid #ffb3b3; text-align: left; box-shadow: 1px 1px 0 rgba(0,0,0,0.1); font-style: italic;">...</div>
       `;
-      
       historyDiv.appendChild(typingIndicator);
       historyDiv.scrollTop = historyDiv.scrollHeight;
       
-      // Auto-reply logic
-      setTimeout(async () => {
-        const removeIndicator = () => {
-          const indicator = document.getElementById('typing-indicator');
-          if (indicator) indicator.remove();
-        };
-
+      try {
         const userId = await waitForAuth();
-        fetch('/api/sendMessage?userId=' + userId, {
+        const response = await fetch('/api/sendMessage?userId=' + userId, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -3723,37 +3662,44 @@ fragment remains</div>
             contact: currentChatContact, 
             userId: userId
           })
-        })
-        .then(res => res.json())
-        .then(data => {
-          removeIndicator();
-          // 4. backend returns lore-based reply
-          // 5. reply is displayed
-          applyGameState(data);
-          
-          if (data.reply) {
-            chats[currentChatContact].push({ 
-              sender: contactName, 
-              time: timeStr, 
-              text: data.reply 
-            });
-            saveChats();
-            renderChatHistory();
-          }
-          if (window.soundManager) window.soundManager.playPing();
-        })
-        .catch(err => {
-          console.error('>>> [MESSENGER] API Error:', err);
-          removeIndicator();
+        });
+        
+        const data = await response.json();
+        
+        // Remove indicator
+        const indicator = document.getElementById('typing-indicator');
+        if (indicator) indicator.remove();
+        
+        // Apply game state (updates progress, etc.)
+        applyGameState(data);
+        
+        // FIX 2 & 4: Show reply exactly once after backend response
+        // If it's an archive action that triggered reconstructChatHistory, the reply is already added
+        const isStepAction = ['update_messenger_step', 'unlock_recycle', 'unlock_recycle_bin', 'unlock_terminal'].includes(data.action);
+        const alreadyHandledByReconstruct = currentChatContact === 'archive' && isStepAction;
+
+        if (data.reply && !alreadyHandledByReconstruct) {
           chats[currentChatContact].push({ 
             sender: contactName, 
             time: timeStr, 
-            text: "SYSTEM ERROR: UNABLE TO REACH ARCHIVE SERVER." 
+            text: data.reply 
           });
-          saveChats();
           renderChatHistory();
+        }
+        if (window.soundManager) window.soundManager.playPing();
+        
+      } catch (err) {
+        console.error('>>> [MESSENGER] API Error:', err);
+        const indicator = document.getElementById('typing-indicator');
+        if (indicator) indicator.remove();
+        
+        chats[currentChatContact].push({ 
+          sender: contactName, 
+          time: timeStr, 
+          text: "SYSTEM ERROR: UNABLE TO REACH SERVER." 
         });
-      }, 1000);
+        renderChatHistory();
+      }
     }
 
     // --- Music Player Logic ---
@@ -4248,7 +4194,6 @@ fragment remains</div>
         if (decrypted && decrypted.n) {
           chats['archive'].push({ sender: 'You', time: 'RECOVERED', text: t });
           chats['archive'].push({ sender: 'Archive Node', time: 'RECOVERED', text: decrypted.r });
-          saveChats();
         }
       }
       

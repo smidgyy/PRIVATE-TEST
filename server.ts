@@ -786,6 +786,38 @@ async function startServer() {
             action: "unlock_terminal"
           });
         }
+
+        if (normalized === "money") {
+          return res.json({
+            status: "success",
+            contact,
+            reply: "No money, only the mask. Look deeper."
+          });
+        }
+
+        if (normalized === "gold") {
+          return res.json({
+            status: "success",
+            contact,
+            reply: "Closer now. He followed wealth. He followed power."
+          });
+        }
+
+        if (normalized === "crown") {
+          if (db) {
+            await db.collection("users").doc(userId).set({
+              stage3_crown: true,
+              stage: 4,
+              stage4_unlocked: true
+            }, { merge: true });
+          }
+          return res.json({
+            status: "success",
+            contact,
+            reply: "Access granted. Node 04 unlocked.",
+            action: "unlock_node04"
+          });
+        }
       }
 
       const t = message.trim().toUpperCase();
