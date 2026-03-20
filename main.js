@@ -31,3 +31,5 @@ window.firestore = {
   setDoc: () => Promise.resolve(),
   updateDoc: () => Promise.resolve()
 };
+
+
