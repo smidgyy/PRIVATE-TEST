@@ -746,15 +746,51 @@ async function startServer() {
         return res.status(400).json({ error: "Missing required fields" });
       }
 
-      const t = message.trim().toUpperCase();
-      let reply = "I'm sorry, I can't help with that right now.";
-      let action = null;
+      let normalized = message.trim().toLowerCase();
+      if (normalized === "depth") normalized = "death";
 
       // Get database instance
       let db: any = null;
       try {
         db = await getDb();
       } catch (e: any) {}
+
+      // FIX: Stage 3 specific overrides with immediate return
+      if (contact === 'archive') {
+        if (normalized === "greed") {
+          if (db) {
+            await db.collection("users").doc(userId).set({
+              stage3_greed: true,
+              messenger_step: 1
+            }, { merge: true });
+          }
+          return res.json({
+            status: "success",
+            contact,
+            reply: "You chose greed... Check the recycle bin.",
+            action: "unlock_recycle_bin"
+          });
+        }
+
+        if (normalized === "death") {
+          if (db) {
+            await db.collection("users").doc(userId).set({
+              stage3_death: true,
+              messenger_step: 2
+            }, { merge: true });
+          }
+          return res.json({
+            status: "success",
+            contact,
+            reply: "Death is inevitable... Use the terminal.",
+            action: "unlock_terminal"
+          });
+        }
+      }
+
+      const t = message.trim().toUpperCase();
+      let reply = "I'm sorry, I can't help with that right now.";
+      let action = null;
 
       if (contact === 'unknown') {
         const unknownReplies = [
@@ -783,8 +819,6 @@ async function startServer() {
         ];
         reply = eliasReplies[Math.floor(Math.random() * eliasReplies.length)];
       } else if (contact === 'archive') {
-        const normalized = message.trim().toLowerCase();
-        
         if (t === 'THE ARCHIVE REMEMBERS') {
           if (db) {
             await db.collection('users').doc(userId).set({ 
@@ -796,19 +830,6 @@ async function startServer() {
           }
           reply = "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.";
           action = "unlock_archive";
-        } else if (normalized === "greed") {
-          if (db) {
-            await db.collection("users").doc(userId).set({
-              stage3_greed: true,
-              messenger_step: 1
-            }, { merge: true });
-          }
-          return res.json({
-            status: "success",
-            contact,
-            reply: "You chose greed... Check the recycle bin.",
-            action: "unlock_recycle"
-          });
         } else {
           reply = "INVALID INPUT. AWAITING COMMAND.";
         }
