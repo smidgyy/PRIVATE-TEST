@@ -1169,11 +1169,11 @@
         </div>
       </div>
       <div class="window-content" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
-        <p>[FRAGMENT RECOVERED]</p>
-        <p>Subject: MONEY</p>
-        <p>The mask is the only currency that matters. He followed the wealth, but found only the void. The pattern is incomplete without the next step.</p>
-        <p>SYSTEM_LOG: 0x54 0x48 0x45 0x5F 0x53 0x55 0x4E 0x53 0x5F 0x54 0x45 0x41 0x52 0x53</p>
-        <p>-- END OF LOG --</p>
+        <p>[FRAGMENT RECOVERY LOG - 03]</p>
+        <p>Source: Node 03 Archive</p>
+        <p>Status: Partially Decrypted</p>
+        <p>The Sun's Tears... they aren't just a metaphor. It's a frequency. A relay. The ledger entry #13151405 was just the beginning. The real value is hidden in the casefiles. Look for the reference code.</p>
+        <p>Relay Frequency: 0x47 0x4f 0x4c 0x44</p>
       </div>
     </div>
 
@@ -1185,11 +1185,11 @@
         </div>
       </div>
       <div class="window-content" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
-        <p>[FRAGMENT RECOVERED]</p>
-        <p>Subject: GOLD</p>
-        <p>Power reveals the truth. The Architect didn't leave; he was absorbed. The system has a rhythm, a frequency that resonates with the archive.</p>
-        <p>Listen to the relay. The final word is buried in the metadata of the machine's pulse.</p>
-        <p>-- END OF LOG --</p>
+        <p>[FRAGMENT RECOVERY LOG - 04]</p>
+        <p>Source: Node 03 Archive</p>
+        <p>Status: Decrypted</p>
+        <p>The rhythm of the machine... it's not just noise. It's a transmission. The second pulse holds the key. Look beneath the label of the second transmission in the music player. The metadata of the rhythm will reveal the final frequency.</p>
+        <p>Hint: 0x47 0x52 0x4f 0x55 0x4e 0x44</p>
       </div>
     </div>
 
@@ -1467,11 +1467,13 @@ Something is hidden there.
             <p style="margin: 2px 0;"><strong>Status:</strong> Record Incomplete</p>
             <p style="margin: 2px 0;"><strong>Last Seen Location:</strong> Sector 3 Archive Node</p>
             <p style="margin: 2px 0;"><strong>Last Seen Date:</strong> [REDACTED]</p>
+            <p style="margin: 2px 0; font-size: 0.8rem; opacity: 0.5;"><strong>Ref:</strong> 0x47 0x4f 0x4c 0x44</p>
           </div>
         </div>
         <div>
           <h3 style="margin: 0 0 5px 0; font-size: 1.2rem;">Investigation Notes:</h3>
           <p style="margin: 0; line-height: 1.4;">"This record appeared in the archive but I cannot find any real-world evidence that this person ever existed. The subject was last seen investigating the anomalous data structures in sector 4. All physical records have been expunged. Only digital traces remain." - A. Vale</p>
+          <p style="margin: 10px 0 0 0; font-size: 0.9rem; font-style: italic; color: #555;">Note: The subject was obsessed with the 'Sun's Tears'. A relay frequency was found in their personal logs, but the signal was too weak to decrypt without a secondary key.</p>
         </div>
       </div>
     </div>
@@ -3288,12 +3290,9 @@ Something is hidden there.
               printTerminal("");
               printTerminal("encoded string:");
               printTerminal("kwws://dufklyh.orfdo/qrgh03/vhfuhw");
+              printTerminal("");
+              printTerminal("ARCHIVE ROUTE ACCESSIBLE.");
               localStorage.setItem('aurora_stage3_token1', btoa('true|AURORA_OS_SECRET'));
-              
-              // Open browser to the secret page automatically
-              setTimeout(() => {
-                openBrowserUrl('http://archive.local/node03/secret');
-              }, 2000);
             }
           } else {
             if (baseCmd === 'decrypt') {
@@ -3432,7 +3431,9 @@ Something is hidden there.
         localStorage.setItem("stage3_gold", "true");
       } else if (response.action === "unlock_stage4") {
         currentStage = 4;
-        localStorage.setItem("currentStage", currentStage);
+        localStorage.setItem("aurora_stage", "4");
+        localStorage.setItem("stage4_unlocked", "true");
+        localStorage.setItem("stage3_ground", "true");
         openWindow("browser");
         setTimeout(() => {
           const frame = document.getElementById("browser-frame");
@@ -3795,9 +3796,9 @@ Something is hidden there.
 
     // --- Music Player Logic ---
     const playlist = [
-      { title: "1. Cybernetic Groove", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", meta: "0x41 0x55 0x52 0x4f 0x52 0x41" },
-      { title: "2. Neon Nights", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", meta: "0x47 0x52 0x4f 0x55 0x4e 0x44" },
-      { title: "3. Synthwave Drift", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", meta: "0x56 0x41 0x4c 0x45" }
+      { title: "1. Cybernetic Groove", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+      { title: "2. Neon Nights", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+      { title: "3. Synthwave Drift", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
     ];
     let currentTrackIndex = 0;
     let isMusicPlaying = false;
@@ -3857,8 +3858,20 @@ Something is hidden there.
     }
 
     function updateTrackDisplay() {
-      document.getElementById('music-track-name').innerText = playlist[currentTrackIndex].title;
-      document.getElementById('music-track-name').dataset.meta = playlist[currentTrackIndex].meta;
+      const trackName = document.getElementById('music-track-name');
+      trackName.innerText = playlist[currentTrackIndex].title;
+      
+      // Subtle anomaly for the second track (index 1)
+      if (currentTrackIndex === 1) {
+        trackName.dataset.id = "47-52-4f-55-4e-44";
+        trackName.style.textShadow = "0 0 10px #0f0, 0 0 20px #0f0";
+        trackName.title = "SYSTEM_PULSE_02";
+      } else {
+        delete trackName.dataset.id;
+        delete trackName.title;
+        trackName.style.textShadow = "0 0 5px #0f0";
+      }
+
       // Highlight playlist item
       const items = document.querySelectorAll('.playlist-item');
       items.forEach((item, index) => {
@@ -3877,6 +3890,19 @@ Something is hidden there.
     function playTrack(index) {
       currentTrackIndex = index;
       audioPlayer.src = playlist[currentTrackIndex].src;
+      
+      // Update track name display
+      const trackNameEl = document.getElementById('music-track-name');
+      if (trackNameEl) {
+        let title = playlist[currentTrackIndex].title;
+        // If it's the second track and GOLD is unlocked, show the GROUND clue in metadata style
+        if (index === 1 && localStorage.getItem('stage3_gold')) {
+          trackNameEl.innerHTML = `${title} <span style="font-size: 0.7rem; opacity: 0.7; margin-left: 5px;">[0x47 0x52 0x4f 0x55 0x4e 0x44]</span>`;
+        } else {
+          trackNameEl.innerText = title;
+        }
+      }
+      
       playMusic();
     }
 

@@ -806,13 +806,11 @@ Use the terminal.`,
         if (input === "money") {
           return res.json({
             status: "success",
-            reply: `You found the mask.
+            reply: `The mask of exchange.
 
-Money is the surface.
+Vale was obsessed with the value we place on things.
 
-Beneath it lies the true ambition.
-
-Something far more dangerous.
+He left a trace in the system logs.
 
 Check fragment_3.log.`,
             action: "unlock_fragment_3"
@@ -822,15 +820,13 @@ Check fragment_3.log.`,
         if (input === "gold") {
           return res.json({
             status: "success",
-            reply: `Closer.
+            reply: `The final ambition.
 
-Vale didn’t follow wealth.
+Power is the only currency that doesn't depreciate.
 
-He followed power.
+But power has a frequency.
 
-And power always leaves a mark.
-
-Listen carefully to the system's rhythm.`,
+Listen to the system's pulse.`,
             action: "unlock_fragment_4"
           });
         }
