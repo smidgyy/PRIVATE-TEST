@@ -768,7 +768,15 @@ async function startServer() {
           }
           return res.json({
             status: "success",
-            reply: "You chose greed... Check the recycle bin.",
+            reply: `So you solved Vale’s second lock.
+
+Greed was only the beginning.
+
+Greed leaves traces.
+
+Vale tried to erase one of them.
+
+Check the trash.`,
             action: "unlock_recycle_fragment"
           });
         }
@@ -782,7 +790,15 @@ async function startServer() {
           }
           return res.json({
             status: "success",
-            reply: "Death is inevitable... Use the terminal.",
+            reply: `Correct.
+
+Vale encrypted the next fragment.
+
+He knew someone would follow.
+
+Not out of curiosity — but obsession.
+
+Use the terminal.`,
             action: "unlock_terminal_fragment"
           });
         }
@@ -790,7 +806,15 @@ async function startServer() {
         if (input === "money") {
           return res.json({
             status: "success",
-            reply: "No money, only the mask. Look deeper.",
+            reply: `No.
+
+Money is only the mask.
+
+It hides something deeper.
+
+Something far more dangerous.
+
+Look again.`,
             action: "unlock_fragment_3"
           });
         }
@@ -798,7 +822,15 @@ async function startServer() {
         if (input === "gold") {
           return res.json({
             status: "success",
-            reply: "Closer now. Power reveals truth.",
+            reply: `Closer.
+
+Vale didn’t follow wealth.
+
+He followed power.
+
+And power always leaves a mark.
+
+Listen carefully.`,
             action: "unlock_fragment_4"
           });
         }
@@ -813,7 +845,18 @@ async function startServer() {
           }
           return res.json({
             status: "success",
-            reply: "You see it now. The pattern is complete.",
+            reply: `You are beginning to see the pattern.
+
+Greed becomes wealth.
+Wealth becomes power.
+
+Vale reached this point.
+
+But he went further.
+
+And whatever he found...
+
+it changed everything.`,
             action: "unlock_stage4"
           });
         }

@@ -780,15 +780,15 @@
       <span>Music</span>
     </div>
 
-    <div class="icon hidden" id="terminal_fragment" ondblclick="openWindow('terminal-fragment-log')">
+    <div class="icon hidden" id="terminal_fragment" ondblclick="openWindow('terminal_fragment')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
       <span>terminal_fragment.log</span>
     </div>
-    <div class="icon hidden" id="fragment_3" ondblclick="openWindow('fragment-3-log')">
+    <div class="icon hidden" id="fragment_3" ondblclick="openWindow('fragment3')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
       <span>fragment_3.log</span>
     </div>
-    <div class="icon hidden" id="fragment_4" ondblclick="openWindow('fragment-4-log')">
+    <div class="icon hidden" id="fragment_4" ondblclick="openWindow('fragment4')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
       <span>fragment_4.log</span>
     </div>
@@ -893,7 +893,7 @@
           <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
           <span style="color:#000; background:transparent;">deleted_user.log</span>
         </div>
-        <div class="icon hidden" id="recycle_fragment" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('recycle-fragment-log')">
+        <div class="icon hidden" id="recycle_fragment" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('recycle_fragment')">
           <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
           <span style="color:#000; background:transparent;">recycle_fragment.log</span>
         </div>
@@ -1130,27 +1130,26 @@
       <div class="explorer-status">18 object(s)</div>
     </div>
 
-    <div class="window" id="win-recycle-fragment-log" style="top: 180px; left: 280px; width: 400px; height: 300px;">
-      <div class="title-bar" onmousedown="dragWindow(event, 'win-recycle-fragment-log')">
+    <div class="window" id="win-recycle_fragment" style="top: 180px; left: 280px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-recycle_fragment')">
         <div class="title-bar-text">recycle_fragment.log</div>
         <div class="title-bar-controls">
-          <div class="control-btn" onclick="closeWindow('recycle-fragment-log')">X</div>
+          <div class="control-btn" onclick="closeWindow('recycle_fragment')">X</div>
         </div>
       </div>
       <div class="window-content" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
-        <p>[FRAGMENT RECOVERED]</p>
-        <p>Subject: GREED</p>
-        <p>The hunger never ends. It consumes the host until nothing but the void remains. We saw it in the early tests. They wanted more. More processing power. More memory. More control.</p>
-        <p>But the system... it doesn't just give. It takes.</p>
-        <p>-- END OF LOG --</p>
+        <p>[FRAGMENT RECOVERY LOG]</p>
+        <p>Source: Recycle Bin</p>
+        <p>Status: Fragment moved to deleted_user.log</p>
+        <p>Trace: 0x8829 -> 0x445A</p>
       </div>
     </div>
 
-    <div class="window" id="win-terminal-fragment-log" style="top: 190px; left: 290px; width: 400px; height: 300px;">
-      <div class="title-bar" onmousedown="dragWindow(event, 'win-terminal-fragment-log')">
+    <div class="window" id="win-terminal_fragment" style="top: 190px; left: 290px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-terminal_fragment')">
         <div class="title-bar-text">terminal_fragment.log</div>
         <div class="title-bar-controls">
-          <div class="control-btn" onclick="closeWindow('terminal-fragment-log')">X</div>
+          <div class="control-btn" onclick="closeWindow('terminal_fragment')">X</div>
         </div>
       </div>
       <div class="window-content" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
@@ -1158,6 +1157,36 @@
         <p>Subject: DEATH</p>
         <p>The final state. Not an end, but a transition. The data doesn't disappear; it just changes form. We are all just sequences waiting to be overwritten.</p>
         <p>Aurora isn't a savior. It's a reaper.</p>
+        <p>-- END OF LOG --</p>
+      </div>
+    </div>
+
+    <div class="window" id="win-fragment3" style="top: 200px; left: 300px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-fragment3')">
+        <div class="title-bar-text">fragment_3.log</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="closeWindow('fragment3')">X</div>
+        </div>
+      </div>
+      <div class="window-content" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
+        <p>[FRAGMENT RECOVERED]</p>
+        <p>Subject: MONEY</p>
+        <p>The mask is the only currency that matters. He followed the wealth, but found only the void. The pattern is incomplete without the crown.</p>
+        <p>-- END OF LOG --</p>
+      </div>
+    </div>
+
+    <div class="window" id="win-fragment4" style="top: 210px; left: 310px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-fragment4')">
+        <div class="title-bar-text">fragment_4.log</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="closeWindow('fragment4')">X</div>
+        </div>
+      </div>
+      <div class="window-content" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
+        <p>[FRAGMENT RECOVERED]</p>
+        <p>Subject: GOLD</p>
+        <p>Power reveals the truth. The Architect didn't leave; he was absorbed. The system is the crown, and the crown is the system.</p>
         <p>-- END OF LOG --</p>
       </div>
     </div>
@@ -1408,9 +1437,13 @@ Something is hidden there.
           <div class="control-btn" onclick="closeWindow('deleted-log')">X</div>
         </div>
       </div>
-      <div class="window-content" style="font-family: 'VT323', monospace; font-size: 1.2rem;">user archive deletion attempt detected
-recovery incomplete
-fragment remains</div>
+      <div class="window-content" style="font-family: 'VT323', monospace; font-size: 1.2rem; padding: 10px; background: #000; color: #0f0; overflow-y: auto;">
+        <p>[FRAGMENT RECOVERED]</p>
+        <p>Subject: GREED</p>
+        <p>The hunger never ends. It consumes the host until nothing but the void remains. We saw it in the early tests. They wanted more. More processing power. More memory. More control.</p>
+        <p>But the system... it doesn't just give. It takes.</p>
+        <p>-- END OF LOG --</p>
+      </div>
     </div>
 
     <div class="window" id="win-casefile-01" style="width: 450px; height: 350px;">
@@ -1807,6 +1840,10 @@ fragment remains</div>
       'audio-log': 'Audio Log',
       'system-term': 'System Terminal',
       'deleted-log': 'deleted_user.log',
+      'recycle_fragment': 'recycle_fragment.log',
+      'terminal_fragment': 'terminal_fragment.log',
+      'fragment3': 'fragment_3.log',
+      'fragment4': 'fragment_4.log',
       'casefile-01': 'casefile_01.txt',
       'casefile-02': 'casefile_02.txt',
       'casefile-03': 'casefile_03.txt',
@@ -1897,6 +1934,7 @@ fragment remains</div>
     }
 
     async function openWindow(id) {
+      console.log("Opening fragment:", id);
       // Progression Validation
       const userId = getUserId();
       const restrictedTargets = ['observer-folder', 'vale-folder', 'resonance', 'node02', 'node04', 'forum'];
@@ -3358,22 +3396,41 @@ fragment remains</div>
       console.log("Stage 3:", response);
 
       if (response.action === "unlock_recycle_fragment") {
-        document.getElementById("recycle_fragment").classList.remove("hidden");
+        const frag = document.getElementById("recycle_fragment");
+        if (frag) {
+          frag.style.display = "flex";
+          frag.classList.remove("hidden");
+        }
         localStorage.setItem("stage3_greed", "true");
       } else if (response.action === "unlock_terminal_fragment") {
-        document.getElementById("terminal_fragment").classList.remove("hidden");
+        const frag = document.getElementById("terminal_fragment");
+        if (frag) {
+          frag.style.display = "flex";
+          frag.classList.remove("hidden");
+        }
         localStorage.setItem("stage3_death", "true");
       } else if (response.action === "unlock_fragment_3") {
         const frag = document.getElementById("fragment_3");
-        if (frag) frag.classList.remove("hidden");
+        if (frag) {
+          frag.style.display = "flex";
+          frag.classList.remove("hidden");
+        }
         localStorage.setItem("stage3_money", "true");
       } else if (response.action === "unlock_fragment_4") {
         const frag = document.getElementById("fragment_4");
-        if (frag) frag.classList.remove("hidden");
+        if (frag) {
+          frag.style.display = "flex";
+          frag.classList.remove("hidden");
+        }
         localStorage.setItem("stage3_gold", "true");
       } else if (response.action === "unlock_stage4") {
         currentStage = 4;
         localStorage.setItem("currentStage", currentStage);
+        openWindow("browser");
+        setTimeout(() => {
+          const frame = document.getElementById("browser-frame");
+          if (frame) frame.src = "/archive";
+        }, 500);
         if (typeof startStage4 === 'function') startStage4();
       } else if (response.action === "update_messenger_step") {
         if (typeof setProgressStep === 'function') {
@@ -3426,19 +3483,31 @@ fragment remains</div>
       // Stage 3 Persistence
       if (localStorage.getItem("stage3_greed") === "true") {
         const frag = document.getElementById("recycle_fragment");
-        if (frag) frag.classList.remove("hidden");
+        if (frag) {
+          frag.style.display = "flex";
+          frag.classList.remove("hidden");
+        }
       }
       if (localStorage.getItem("stage3_death") === "true") {
         const frag = document.getElementById("terminal_fragment");
-        if (frag) frag.classList.remove("hidden");
+        if (frag) {
+          frag.style.display = "flex";
+          frag.classList.remove("hidden");
+        }
       }
       if (localStorage.getItem("stage3_money") === "true") {
         const frag = document.getElementById("fragment_3");
-        if (frag) frag.classList.remove("hidden");
+        if (frag) {
+          frag.style.display = "flex";
+          frag.classList.remove("hidden");
+        }
       }
       if (localStorage.getItem("stage3_gold") === "true") {
         const frag = document.getElementById("fragment_4");
-        if (frag) frag.classList.remove("hidden");
+        if (frag) {
+          frag.style.display = "flex";
+          frag.classList.remove("hidden");
+        }
       }
 
       // Local sync
