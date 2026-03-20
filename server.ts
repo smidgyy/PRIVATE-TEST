@@ -806,15 +806,15 @@ Use the terminal.`,
         if (input === "money") {
           return res.json({
             status: "success",
-            reply: `No.
+            reply: `You found the mask.
 
-Money is only the mask.
+Money is the surface.
 
-It hides something deeper.
+Beneath it lies the true ambition.
 
 Something far more dangerous.
 
-Look again.`,
+Check fragment_3.log.`,
             action: "unlock_fragment_3"
           });
         }
@@ -830,25 +830,26 @@ He followed power.
 
 And power always leaves a mark.
 
-Listen carefully.`,
+Listen carefully to the system's rhythm.`,
             action: "unlock_fragment_4"
           });
         }
 
-        if (input === "crown") {
+        if (input === "ground") {
           if (db) {
             await db.collection("users").doc(userId).set({
-              stage3_crown: true,
+              stage3_ground: true,
               stage: 4,
               stage4_unlocked: true
             }, { merge: true });
           }
           return res.json({
             status: "success",
-            reply: `You are beginning to see the pattern.
+            reply: `The pattern is complete.
 
 Greed becomes wealth.
 Wealth becomes power.
+Power returns to the ground.
 
 Vale reached this point.
 

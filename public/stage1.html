@@ -1171,7 +1171,8 @@
       <div class="window-content" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
         <p>[FRAGMENT RECOVERED]</p>
         <p>Subject: MONEY</p>
-        <p>The mask is the only currency that matters. He followed the wealth, but found only the void. The pattern is incomplete without the crown.</p>
+        <p>The mask is the only currency that matters. He followed the wealth, but found only the void. The pattern is incomplete without the next step.</p>
+        <p>SYSTEM_LOG: 0x54 0x48 0x45 0x5F 0x53 0x55 0x4E 0x53 0x5F 0x54 0x45 0x41 0x52 0x53</p>
         <p>-- END OF LOG --</p>
       </div>
     </div>
@@ -1186,7 +1187,8 @@
       <div class="window-content" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
         <p>[FRAGMENT RECOVERED]</p>
         <p>Subject: GOLD</p>
-        <p>Power reveals the truth. The Architect didn't leave; he was absorbed. The system is the crown, and the crown is the system.</p>
+        <p>Power reveals the truth. The Architect didn't leave; he was absorbed. The system has a rhythm, a frequency that resonates with the archive.</p>
+        <p>Listen to the relay. The final word is buried in the metadata of the machine's pulse.</p>
         <p>-- END OF LOG --</p>
       </div>
     </div>
@@ -2937,7 +2939,7 @@ Something is hidden there.
       let targetUrl = url;
       if (url === 'http://archive.local/' + 'stage' + '2.html') {
         targetUrl = 'archive://node/02';
-      } else if (url === 'archive.local/' + atob('bm9kZTAzL3NlY3JldA==') || url === 'http://archive.local/' + atob('bm9kZTAzL3NlY3JldA==')) {
+      } else if (url === 'archive.local/' + atob('bm9kZTAzL3NlY3JldA==') || url === 'http://archive.local/' + atob('bm9kZTAzL3NlY3JldA==') || url === 'archive.local/node03/secrets' || url === 'http://archive.local/node03/secrets') {
         targetUrl = 'archive://node/03/secret';
       }
       
@@ -3287,6 +3289,11 @@ Something is hidden there.
               printTerminal("encoded string:");
               printTerminal("kwws://dufklyh.orfdo/qrgh03/vhfuhw");
               localStorage.setItem('aurora_stage3_token1', btoa('true|AURORA_OS_SECRET'));
+              
+              // Open browser to the secret page automatically
+              setTimeout(() => {
+                openBrowserUrl('http://archive.local/node03/secret');
+              }, 2000);
             }
           } else {
             if (baseCmd === 'decrypt') {
@@ -3788,9 +3795,9 @@ Something is hidden there.
 
     // --- Music Player Logic ---
     const playlist = [
-      { title: "1. Cybernetic Groove", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-      { title: "2. Neon Nights", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-      { title: "3. Synthwave Drift", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
+      { title: "1. Cybernetic Groove", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", meta: "0x41 0x55 0x52 0x4f 0x52 0x41" },
+      { title: "2. Neon Nights", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", meta: "0x47 0x52 0x4f 0x55 0x4e 0x44" },
+      { title: "3. Synthwave Drift", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", meta: "0x56 0x41 0x4c 0x45" }
     ];
     let currentTrackIndex = 0;
     let isMusicPlaying = false;
@@ -3851,7 +3858,7 @@ Something is hidden there.
 
     function updateTrackDisplay() {
       document.getElementById('music-track-name').innerText = playlist[currentTrackIndex].title;
-      
+      document.getElementById('music-track-name').dataset.meta = playlist[currentTrackIndex].meta;
       // Highlight playlist item
       const items = document.querySelectorAll('.playlist-item');
       items.forEach((item, index) => {
