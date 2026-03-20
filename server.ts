@@ -965,7 +965,7 @@ it changed everything.`,
   app.get(protectedRoutes, async (req: any, res: any) => {
     const userId = req.query.userId;
     if (!userId && req.path !== "/stage1.html" && req.path !== "/article.html" && req.path !== "/node03/index.html" && req.path !== "/archive/index.html") {
-      return res.status(403).send("ACCESS DENIED: Missing userId");
+      return res.status(403).json({ error: "ACCESS DENIED: Missing userId" });
     }
     
     let db: any = null;
@@ -976,7 +976,7 @@ it changed everything.`,
     }
     
     let userData: any = {};
-    if (db) {
+    if (db && userId) {
       const userDoc = await db.collection('users').doc(userId).get();
       userData = userDoc.data() || {};
       if (_db instanceof MockFirestore) {

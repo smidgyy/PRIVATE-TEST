@@ -1172,8 +1172,8 @@
         <p>[FRAGMENT RECOVERY LOG - 03]</p>
         <p>Source: Node 03 Archive</p>
         <p>Status: Partially Decrypted</p>
-        <p>The Sun's Tears... they aren't just a metaphor. It's a frequency. A relay. The ledger entry #13151405 was just the beginning. The real value is hidden in the casefiles. Look for the reference code.</p>
-        <p>Relay Frequency: 0x47 0x4f 0x4c 0x44</p>
+        <p>The Sun's Tears... they aren't just a metaphor. It's a frequency. A relay. The ledger entry #13151405 was just the beginning. The real value is hidden in the casefiles. The subject's obsession holds the key.</p>
+        <p>Relay Frequency: [CORRUPTED]</p>
       </div>
     </div>
 
@@ -1188,8 +1188,8 @@
         <p>[FRAGMENT RECOVERY LOG - 04]</p>
         <p>Source: Node 03 Archive</p>
         <p>Status: Decrypted</p>
-        <p>The rhythm of the machine... it's not just noise. It's a transmission. The second pulse holds the key. Look beneath the label of the second transmission in the music player. The metadata of the rhythm will reveal the final frequency.</p>
-        <p>Hint: 0x47 0x52 0x4f 0x55 0x4e 0x44</p>
+        <p>The rhythm of the machine... it's not just noise. It's a transmission. The second pulse holds the key. Look closely at the second transmission in the music player. The rhythm will reveal the final frequency.</p>
+        <p>Hint: [CORRUPTED]</p>
       </div>
     </div>
 
@@ -1467,7 +1467,7 @@ Something is hidden there.
             <p style="margin: 2px 0;"><strong>Status:</strong> Record Incomplete</p>
             <p style="margin: 2px 0;"><strong>Last Seen Location:</strong> Sector 3 Archive Node</p>
             <p style="margin: 2px 0;"><strong>Last Seen Date:</strong> [REDACTED]</p>
-            <p style="margin: 2px 0; font-size: 0.8rem; opacity: 0.5;"><strong>Ref:</strong> 0x47 0x4f 0x4c 0x44</p>
+            <p style="margin: 2px 0; font-size: 0.8rem; opacity: 0.5;"><strong>Obsession:</strong> 0x47 0x4f 0x4c 0x44</p>
           </div>
         </div>
         <div>
@@ -1941,11 +1941,16 @@ Something is hidden there.
       console.log("Opening fragment:", id);
       // Progression Validation
       const userId = getUserId();
+      if (!userId) {
+        console.warn("User ID missing, waiting to open window...");
+        setTimeout(() => openWindow(id), 500);
+        return;
+      }
       const restrictedTargets = ['observer-folder', 'vale-folder', 'resonance', 'node02', 'node04', 'forum'];
       
       if (restrictedTargets.includes(id)) {
         try {
-          const res = await fetch('/api/validateCommand?userId=' + getUserId(), {
+          const res = await fetch('/api/validateCommand?userId=' + userId, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ type: 'check_access', target: id, userId, SECRET_KEY: 'RESILIENT_BOOT' })
@@ -1973,9 +1978,8 @@ Something is hidden there.
       
       // Stage 4 tracking
       if (id.startsWith('observer-log-')) {
-        const userId = getUserId();
         if (userId) {
-          fetch('/api/validateCommand?userId=' + getUserId(), {
+          fetch('/api/validateCommand?userId=' + userId, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ type: 'update_stage4_progress', step: getStage4Progress(), flag: 'stage4_observer_logs_opened', userId, SECRET_KEY: 'RESILIENT_BOOT' })
@@ -1983,9 +1987,8 @@ Something is hidden there.
         }
       }
       if (id === 'network-trace') {
-        const userId = getUserId();
         if (userId) {
-          fetch('/api/validateCommand?userId=' + getUserId(), {
+          fetch('/api/validateCommand?userId=' + userId, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ type: 'update_stage4_progress', step: Math.max(getStage4Progress(), 3), flag: 'stage4_network_trace_viewed', userId, SECRET_KEY: 'RESILIENT_BOOT' })
@@ -2949,7 +2952,14 @@ Something is hidden there.
       if (spinner) spinner.style.display = 'block';
       if (page) page.style.opacity = '0.5';
       
-      setTimeout(() => {
+      const checkAndLoad = () => {
+        const userId = getUserId();
+        if (!userId && (targetUrl.includes('node/02') || targetUrl.includes('resonance') || targetUrl.includes('node/03/secret') || targetUrl.includes('node/04') || targetUrl.includes('forum') || targetUrl.includes('records'))) {
+          console.warn("User ID missing, waiting to load protected route...");
+          setTimeout(checkAndLoad, 500);
+          return;
+        }
+        
         if (spinner) spinner.style.display = 'none';
         if (page) {
           page.style.opacity = '1';
@@ -3096,7 +3106,9 @@ Something is hidden there.
             page.style.padding = '20px';
           }
         }
-      }, 800);
+      };
+      
+      setTimeout(checkAndLoad, 800);
     }
 
     // --- Terminal ---
@@ -3434,11 +3446,33 @@ Something is hidden there.
         localStorage.setItem("aurora_stage", "4");
         localStorage.setItem("stage4_unlocked", "true");
         localStorage.setItem("stage3_ground", "true");
-        openWindow("browser");
+        localStorage.setItem("aurora_stage3_token_complete", btoa("true|AURORA_OS_SECRET"));
+        
+        // Trigger Unknown User message immediately
+        if (typeof updateStage3Clues === 'function') {
+          updateStage3Clues();
+        }
+        
+        // Open messenger to show the message
+        openWindow('messenger');
         setTimeout(() => {
-          const frame = document.getElementById("browser-frame");
-          if (frame) frame.src = "/archive";
-        }, 500);
+          const contactItems = document.querySelectorAll('.contact-item');
+          let unknownElement = null;
+          contactItems.forEach(item => {
+            if (item.innerText === 'Unknown User') {
+              unknownElement = item;
+            }
+          });
+          if (typeof loadChat === 'function') {
+            loadChat('unknown', unknownElement);
+          }
+        }, 100);
+        
+        // Wait a bit before opening the browser to Node 04
+        setTimeout(() => {
+          openBrowserUrl('archive://node/04');
+        }, 3000);
+        
         if (typeof startStage4 === 'function') startStage4();
       } else if (response.action === "update_messenger_step") {
         if (typeof setProgressStep === 'function') {
@@ -3859,17 +3893,24 @@ Something is hidden there.
 
     function updateTrackDisplay() {
       const trackName = document.getElementById('music-track-name');
-      trackName.innerText = playlist[currentTrackIndex].title;
+      let title = playlist[currentTrackIndex].title;
       
       // Subtle anomaly for the second track (index 1)
       if (currentTrackIndex === 1) {
         trackName.dataset.id = "47-52-4f-55-4e-44";
         trackName.style.textShadow = "0 0 10px #0f0, 0 0 20px #0f0";
         trackName.title = "SYSTEM_PULSE_02";
+        
+        if (localStorage.getItem('stage3_gold')) {
+          trackName.innerHTML = `${title} <span style="font-size: 0.7rem; opacity: 0.7; margin-left: 5px;">[0x47 0x52 0x4f 0x55 0x4e 0x44]</span>`;
+        } else {
+          trackName.innerText = title;
+        }
       } else {
         delete trackName.dataset.id;
         delete trackName.title;
         trackName.style.textShadow = "0 0 5px #0f0";
+        trackName.innerText = title;
       }
 
       // Highlight playlist item
@@ -3890,19 +3931,6 @@ Something is hidden there.
     function playTrack(index) {
       currentTrackIndex = index;
       audioPlayer.src = playlist[currentTrackIndex].src;
-      
-      // Update track name display
-      const trackNameEl = document.getElementById('music-track-name');
-      if (trackNameEl) {
-        let title = playlist[currentTrackIndex].title;
-        // If it's the second track and GOLD is unlocked, show the GROUND clue in metadata style
-        if (index === 1 && localStorage.getItem('stage3_gold')) {
-          trackNameEl.innerHTML = `${title} <span style="font-size: 0.7rem; opacity: 0.7; margin-left: 5px;">[0x47 0x52 0x4f 0x55 0x4e 0x44]</span>`;
-        } else {
-          trackNameEl.innerText = title;
-        }
-      }
-      
       playMusic();
     }
 
@@ -4243,6 +4271,10 @@ Something is hidden there.
               uStr += String.fromCharCode(parseInt(uHex.substr(i, 2), 16) ^ uKey.charCodeAt((i/2) % uKey.length));
           }
           const uMsg = decodeURIComponent(escape(uStr));
+          
+          if (!chats['unknown']) {
+            chats['unknown'] = [];
+          }
           
           const hasMsg = chats['unknown'].some(m => m.text === uMsg);
           if (!hasMsg) {
