@@ -1704,6 +1704,7 @@ fragment remains</div>
   <script src="/sound-manager.js?v=2"></script>
   <script>
     let chats = {};
+    let currentStage = parseInt(localStorage.getItem("currentStage")) || 1;
     function getUserId() {
       return localStorage.getItem("userId");
     }
@@ -3412,6 +3413,7 @@ fragment remains</div>
       if (typeof arrangeIcons === 'function') {
         setTimeout(arrangeIcons, 50);
       }
+      localStorage.setItem("currentStage", currentStage);
     }
 
     function syncProgression() {
@@ -3503,6 +3505,7 @@ fragment remains</div>
       if (typeof arrangeIcons === 'function') {
         arrangeIcons();
       }
+      localStorage.setItem("currentStage", currentStage);
     }
 
     // Call sync on load
@@ -3981,6 +3984,7 @@ fragment remains</div>
       const token = btoa(step + '|' + SECRET_KEY);
       localStorage.setItem('aurora_stage4_token', token);
       currentStage = 4;
+      localStorage.setItem("currentStage", currentStage);
       startStage4();
       
       const userId = getUserId();
