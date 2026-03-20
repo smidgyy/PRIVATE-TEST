@@ -3351,22 +3351,11 @@ fragment remains</div>
             reconstructChatHistory();
           }
         }
-      } else if (response.action === "unlock_recycle_fragment") {
+      } else if (response.action === "unlock_recycle") {
         const frag = document.getElementById("recycle-fragment");
         if (frag) {
           frag.classList.remove("hidden");
           localStorage.setItem("stage3_greed", "true");
-        }
-        // Also update step if provided
-        if (response.step && typeof setProgressStep === 'function') {
-          setProgressStep(response.step);
-          if (typeof reconstructChatHistory === 'function') reconstructChatHistory();
-        }
-      } else if (response.action === "unlock_terminal_fragment") {
-        const frag = document.getElementById("terminal-fragment");
-        if (frag) {
-          frag.classList.remove("hidden");
-          localStorage.setItem("stage3_death", "true");
         }
         // Also update step if provided
         if (response.step && typeof setProgressStep === 'function') {

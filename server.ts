@@ -784,106 +784,31 @@ async function startServer() {
         reply = eliasReplies[Math.floor(Math.random() * eliasReplies.length)];
       } else if (contact === 'archive') {
         const normalized = message.trim().toLowerCase();
-        const stage3Answers = ["greed", "depth", "money", "gold", "crown"];
-        const aliases: { [key: string]: string } = { "death": "depth" };
-        const canonicalInput = aliases[normalized] || normalized;
         
-        // Get user data for stage gating and step tracking
-        let userData: any = {};
-        if (db) {
-          const userDoc = await db.collection('users').doc(userId).get();
-          userData = userDoc.data() || {};
-        }
-        
-        const currentStep = userData.messenger_step || 0;
-        const userStage = userData.stage || 0;
-
         if (t === 'THE ARCHIVE REMEMBERS') {
           if (db) {
             await db.collection('users').doc(userId).set({ 
               stage1_archive_unlocked: true,
               archive_unlocked: true,
               stage2_unlocked: true,
-              stage: 3 // Ensure stage is set to 3 when archive is unlocked
+              stage: 3
             }, { merge: true });
           }
           reply = "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.";
           action = "unlock_archive";
         } else if (normalized === "greed") {
-          // Restore ORIGINAL Stage 3 behavior for 'greed'
-          if (userStage === 3 || userData.stage1_archive_unlocked) {
-            if (currentStep === 0) {
-              if (db) {
-                await db.collection("users").doc(userId).set({
-                  stage3_greed: true,
-                  messenger_step: 1
-                }, { merge: true });
-              }
-              console.log("Stage 3 matched:", normalized);
-              console.log("Action sent: unlock_recycle_fragment");
-              return res.json({
-                status: "success",
-                contact,
-                reply: "You chose greed... Check the recycle bin.",
-                action: "unlock_recycle_fragment",
-                step: 1
-              });
-            } else {
-              reply = "ERROR: SEQUENTIAL ACCESS REQUIRED. FRAGMENT 1 IS ALREADY DECRYPTED.";
-            }
-          } else {
-            reply = "ERROR: SYSTEM STAGE MISMATCH. ACCESS DENIED.";
+          if (db) {
+            await db.collection("users").doc(userId).set({
+              stage3_greed: true,
+              messenger_step: 1
+            }, { merge: true });
           }
-        } else if (normalized === "death" || normalized === "depth") {
-          // Restore ORIGINAL Stage 3 behavior for 'death'
-          if (userStage === 3 || userData.stage1_archive_unlocked) {
-            if (currentStep === 1) {
-              if (db) {
-                await db.collection("users").doc(userId).set({
-                  stage3_death: true,
-                  messenger_step: 2
-                }, { merge: true });
-              }
-              console.log("Stage 3 matched:", normalized);
-              console.log("Action sent: unlock_terminal_fragment");
-              return res.json({
-                status: "success",
-                contact,
-                reply: "Death is inevitable... Use the terminal.",
-                action: "unlock_terminal_fragment",
-                step: 2
-              });
-            } else {
-              reply = "ERROR: SEQUENTIAL ACCESS REQUIRED. FRAGMENT 2 IS NEXT.";
-            }
-          } else {
-            reply = "ERROR: SYSTEM STAGE MISMATCH. ACCESS DENIED.";
-          }
-        } else if (stage3Answers.includes(canonicalInput)) {
-          // Stage 3 Answer Validation for other answers
-          if (userStage === 3 || userData.stage1_archive_unlocked) {
-            if (canonicalInput === stage3Answers[currentStep]) {
-              const nextStep = currentStep + 1;
-              if (db) {
-                await db.collection('users').doc(userId).set({ 
-                  messenger_step: nextStep 
-                }, { merge: true });
-              }
-              reply = `RECOVERY SUCCESSFUL. ARCHIVE FRAGMENT ${nextStep} DECRYPTED.`;
-              action = "update_messenger_step";
-              return res.json({ 
-                status: "success",
-                contact, 
-                reply, 
-                action,
-                step: nextStep
-              });
-            } else {
-              reply = "ERROR: SEQUENTIAL ACCESS REQUIRED. FRAGMENT " + (currentStep + 1) + " IS NEXT.";
-            }
-          } else {
-            reply = "ERROR: SYSTEM STAGE MISMATCH. ACCESS DENIED.";
-          }
+          return res.json({
+            status: "success",
+            contact,
+            reply: "You chose greed... Check the recycle bin.",
+            action: "unlock_recycle"
+          });
         } else {
           reply = "INVALID INPUT. AWAITING COMMAND.";
         }
