@@ -17,6 +17,6 @@ export async function loginAnonymously() {
   }
 }
 
-export function onAuthReady(callback: (user: any) => void) {
+export function onAuthReady(callback) {
   return onAuthStateChanged(auth, callback);
 }

@@ -1751,7 +1751,7 @@ Something is hidden there.
     let chats = {};
     let currentStage = parseInt(localStorage.getItem("currentStage")) || 1;
     function getUserId() {
-      return localStorage.getItem("userId");
+      return window.userId || localStorage.getItem("aurora_userId");
     }
     function arrangeIcons() {
       const icons = Array.from(document.querySelectorAll('#desktop > .icon:not(.hidden)'));
@@ -1939,13 +1939,20 @@ Something is hidden there.
 
     async function openWindow(id) {
       console.log("Opening fragment:", id);
-      // Progression Validation
-      const userId = getUserId();
+      
+      // Wait for userId to be ready
+      let userId = window.userId;
+      if (!userId && window.userIdReady) {
+        console.warn("User ID not ready, waiting...");
+        userId = await window.userIdReady;
+      }
+      
       if (!userId) {
-        console.warn("User ID missing, waiting to open window...");
-        setTimeout(() => openWindow(id), 500);
+        console.error("CRITICAL: User ID initialization failed.");
+        printTerminal("System Error: Session initialization failed.");
         return;
       }
+      
       const restrictedTargets = ['observer-folder', 'vale-folder', 'resonance', 'node02', 'node04', 'forum'];
       
       if (restrictedTargets.includes(id)) {
@@ -2952,11 +2959,17 @@ Something is hidden there.
       if (spinner) spinner.style.display = 'block';
       if (page) page.style.opacity = '0.5';
       
-      const checkAndLoad = () => {
-        const userId = getUserId();
+      const checkAndLoad = async () => {
+        let userId = window.userId;
+        if (!userId && window.userIdReady) {
+          console.warn("User ID not ready, waiting...");
+          userId = await window.userIdReady;
+        }
+        
         if (!userId && (targetUrl.includes('node/02') || targetUrl.includes('resonance') || targetUrl.includes('node/03/secret') || targetUrl.includes('node/04') || targetUrl.includes('forum') || targetUrl.includes('records'))) {
-          console.warn("User ID missing, waiting to load protected route...");
-          setTimeout(checkAndLoad, 500);
+          console.error("CRITICAL: User ID missing for protected route.");
+          page.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f00;font-family:monospace;text-align:center;"><div><h1>SYSTEM ERROR</h1><p>Session initialization failed.</p></div></div>';
+          if (spinner) spinner.style.display = 'none';
           return;
         }
         
@@ -2979,22 +2992,12 @@ Something is hidden there.
             }
             
             if (targetUrl === 'archive://node/02') {
-              const userId = getUserId();
-              if (!userId) {
-                console.error("User ID missing");
-                return;
-              }
               console.log("Loading node02 with userId:", userId);
               unlocked = true; // Let the backend handle access check
               fetchPath = '/api/getNode02?userId=' + userId;
               finishLoad();
               return;
             } else if (targetUrl === 'archive://node02/resonance.html' || targetUrl === 'archive://node/02/resonance.html') {
-              const userId = getUserId();
-              if (!userId) {
-                console.error("User ID missing");
-                return;
-              }
               fetch('/api/getUserState?userId=' + userId)
                 .then(res => res.json())
                 .then(data => {
@@ -3006,11 +3009,6 @@ Something is hidden there.
                 });
               return;
             } else if (targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://' + atob('bm9kZTAzL3NlY3JldA==')) {
-              const userId = getUserId();
-              if (!userId) {
-                console.error("User ID missing");
-                return;
-              }
               fetch('/api/validateCommand?userId=' + userId, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node03_secret', userId: userId, SECRET_KEY: 'RESILIENT_BOOT' }) })
                 .then(res => res.json())
                 .then(data => {
@@ -3022,11 +3020,6 @@ Something is hidden there.
                 });
               return;
             } else if (targetUrl === 'archive://node/04') {
-              const userId = getUserId();
-              if (!userId) {
-                console.error("User ID missing");
-                return;
-              }
               fetch('/api/validateCommand?userId=' + userId, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node04', userId: userId, SECRET_KEY: 'RESILIENT_BOOT' }) })
                 .then(res => res.json())
                 .then(data => {
@@ -3038,11 +3031,6 @@ Something is hidden there.
                 });
               return;
             } else if (targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt')) {
-              const userId = getUserId();
-              if (!userId) {
-                console.error("User ID missing");
-                return;
-              }
               fetch('/api/validateCommand?userId=' + userId, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'forum', userId: userId, SECRET_KEY: 'RESILIENT_BOOT' }) })
                 .then(res => res.json())
                 .then(data => {
@@ -3519,7 +3507,7 @@ Something is hidden there.
       localStorage.setItem("currentStage", currentStage);
     }
 
-    function syncProgression() {
+    async function syncProgression() {
       console.log('>>> [SYNC] Checking local progression...');
       
       // Stage 3 Persistence
@@ -3579,7 +3567,11 @@ Something is hidden there.
       }
       
       // Server sync
-      const userId = getUserId();
+      let userId = window.userId;
+      if (!userId && window.userIdReady) {
+        userId = await window.userIdReady;
+      }
+      
       if (userId) {
         fetch('/api/validateCommand?userId=' + userId, {
           method: 'POST',
@@ -3648,19 +3640,10 @@ Something is hidden there.
     }
 
     async function waitForAuth() {
-      return new Promise((resolve) => {
-        const check = () => {
-          const id = getUserId();
-          if (id && !id.startsWith('session_')) {
-            resolve(id);
-          } else {
-            setTimeout(check, 100);
-          }
-        };
-        check();
-        // Timeout after 3 seconds
-        setTimeout(() => resolve(getUserId()), 3000);
-      });
+      if (window.userIdReady) {
+        return await window.userIdReady;
+      }
+      return getUserId();
     }
 
     function saveChats() {
@@ -4093,11 +4076,15 @@ Something is hidden there.
       localStorage.removeItem('aurora_stage3_token');
       return 0;
     }
-    function setProgressStep(step) {
+    async function setProgressStep(step) {
       const token = btoa(step + '|' + SECRET_KEY);
       localStorage.setItem('aurora_stage3_token', token);
       
-      const userId = getUserId();
+      let userId = window.userId;
+      if (!userId && window.userIdReady) {
+        userId = await window.userIdReady;
+      }
+      
       if (userId) {
         fetch('/api/validateCommand', {
           method: 'POST',
@@ -4122,14 +4109,18 @@ Something is hidden there.
       return 0;
     }
 
-    function setStage4Progress(step) {
+    async function setStage4Progress(step) {
       const token = btoa(step + '|' + SECRET_KEY);
       localStorage.setItem('aurora_stage4_token', token);
       currentStage = 4;
       localStorage.setItem("currentStage", currentStage);
       startStage4();
       
-      const userId = getUserId();
+      let userId = window.userId;
+      if (!userId && window.userIdReady) {
+        userId = await window.userIdReady;
+      }
+      
       if (userId) {
         fetch('/api/validateCommand', {
           method: 'POST',
@@ -4146,7 +4137,11 @@ Something is hidden there.
     }
 
     async function syncProgression() {
-      const userId = getUserId();
+      let userId = window.userId;
+      if (!userId && window.userIdReady) {
+        userId = await window.userIdReady;
+      }
+      
       if (!userId) return;
       
       try {
@@ -4206,13 +4201,14 @@ Something is hidden there.
     }
     
     // Fallback sync if auth takes too long or is blocked
-    setTimeout(() => {
-      const fallbackId = getUserId();
-      if (fallbackId) {
-        console.log('Syncing progression with ID:', fallbackId);
-        syncProgression();
-      }
-    }, 1000);
+    if (window.userIdReady) {
+      window.userIdReady.then((id) => {
+        if (id) {
+          console.log('Syncing progression with ID:', id);
+          syncProgression();
+        }
+      });
+    }
 
     // Restore icons from localStorage on load
     (function() {
