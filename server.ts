@@ -65,7 +65,6 @@ async function getDb() {
   try {
     if (_db) return _db;
 
-    console.log(">>> [DB] Initializing database getter...");
     const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
     const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
     
@@ -431,10 +430,12 @@ async function startServer() {
 
   // API Routes
   app.get("/api/health", (req: any, res: any) => {
+    console.log("HIT: GET /api/health");
     res.json({ status: "ok" });
   });
 
   app.get("/api/debug-db", async (req: any, res: any) => {
+    console.log("HIT: GET /api/debug-db");
     try {
       const filesInDir = fs.readdirSync(process.cwd());
       const db = await getDb();
@@ -929,6 +930,7 @@ async function startServer() {
   });
 
   app.post("/api/sendMessage", async (req: any, res: any) => {
+    console.log("HIT: POST /api/sendMessage");
     try {
       const { message, contact } = req.body;
       const userId = req.body.userId || req.query.userId;
@@ -1162,6 +1164,7 @@ Stage 4 unlocked. Messenger updated.`,
 
   // Content Security: Secure content retrieval endpoint
   app.post('/api/getContent', async (req: any, res: any) => {
+    console.log("HIT: POST /api/getContent");
     try {
       const { target, userId } = req.body;
       if (!userId) return res.status(400).json({ status: "error", message: "User ID required" });
@@ -1304,15 +1307,13 @@ Stage 4 unlocked. Messenger updated.`,
 
       const userId = req.query.userId || "anonymous_" + Date.now();
       const origin = req.get('origin') || req.get('referer') || 'unknown';
-      console.log(`>>> [DEBUG] /protectedRoute | Path: ${req.path} | Origin: ${origin} | UserId: ${userId}`);
-
+      
       let userData: any = null;
       try {
         userData = await getOrCreateUserData(userId);
         if (_db instanceof MockFirestore && userData) {
           userData.isMock = true;
         }
-        console.log(`>>> [ROUTING] User state for ${userId}:`, userData);
       } catch (e: any) {
         console.error("!!! [ROUTING] Database error:", e.message);
       }
@@ -1322,9 +1323,6 @@ Stage 4 unlocked. Messenger updated.`,
       
       // Check if we are in Mock mode
       const isMock = _db instanceof MockFirestore;
-      if (isMock) {
-        console.warn(`>>> [ROUTING] Running in Mock mode for ${req.path}. Persistence is disabled.`);
-      }
       
       if (target === "stage1.html" || target === "article.html") {
         hasAccess = true; // Publicly accessible but served through backend
@@ -1341,7 +1339,6 @@ Stage 4 unlocked. Messenger updated.`,
       }
       
       if (!hasAccess) {
-        console.log(`>>> [ROUTING] Access DENIED for ${req.path} | UserId: ${userId}. Returning LOCKED state.`);
         // For HTML routes, return the locked page instead of 403
         return res.send(LOCKED_HTML);
       }
@@ -1380,7 +1377,7 @@ Stage 4 unlocked. Messenger updated.`,
   }
 
   // 4. LAST: CATCH-ALL (FALLBACK HANDLER)
-  app.get("*", (req: any, res: any) => {
+  app.get("/*", (req: any, res: any) => {
     try {
       // Only handle HTML navigation, not assets or API
       if (req.path.includes('.') || req.path.startsWith('/api/')) return res.status(404).end();
@@ -1390,15 +1387,15 @@ Stage 4 unlocked. Messenger updated.`,
       } else {
         res.redirect("/stage1.html" + (req.query.userId ? "?userId=" + req.query.userId : ""));
       }
-    } catch (error) {
-      console.error("Catch-all error:", error);
+    } catch (error: any) {
+      console.error("Catch-all error:", error.stack || error);
       res.status(500).send("Server Error");
     }
   });
 
   // 5. GLOBAL ERROR HANDLER (CRITICAL)
   app.use((err: any, req: any, res: any, next: any) => {
-    console.error("SERVER ERROR:", err);
+    console.error("SERVER ERROR (Global Handler):", err.stack || err);
     res.status(500).json({ error: "Internal Server Error" });
   });
 }
