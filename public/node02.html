@@ -481,11 +481,17 @@ async function dissolveAndRespond() {
 
     if (success) {
       msg = data.msg;
-      if (data.action === 'phase1_success') {
+      if (data.action === 'open_article') {
         if (window.soundManager) window.soundManager.playSuccess();
         currentStep = 2;
         localStorage.setItem('node02_step', '2');
-        response.textContent = data.msg || "The earth opens. Seek the marginalia.";
+        // Automatically advance to the article as requested via backend route
+        if (window.parent && window.parent.openBrowserUrl) {
+          window.parent.openBrowserUrl('archive://node/02/article');
+        } else {
+          // Fallback if not in iframe
+          window.location.href = '/api/getArticle?userId=' + userId;
+        }
       } else if (data.action === 'phase2_success') {
         if (window.soundManager) {
           window.soundManager.playSuccess();

@@ -465,6 +465,34 @@ async function startServer() {
     }
   });
 
+  app.get("/api/getArticle", async (req: any, res: any) => {
+    console.log("HIT: GET /api/getArticle");
+    try {
+      const userId = req.query.userId;
+      if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+      const db = await getDb();
+      const userDoc = await db.collection("users").doc(userId).get();
+      const userData = userDoc.data() || {};
+
+      const hasAccess = !!userData.stage2_phase1_complete;
+      
+      if (!hasAccess) {
+        return res.status(403).send(LOCKED_HTML);
+      }
+
+      const filePath = path.join(process.cwd(), baseDir, "article.html");
+      if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+      } else {
+        res.status(404).send("Article content not found");
+      }
+    } catch (error) {
+      console.error("Error in /api/getArticle:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+
   app.get("/api/debug-db", async (req: any, res: any) => {
     console.log("HIT: GET /api/debug-db");
     try {
@@ -852,24 +880,21 @@ async function startServer() {
       const hash = crypto.createHash('sha256').update(t.toLowerCase()).digest('hex');
       
       if (step === '1' && hash === '76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22') {
-        if (userData.stage2_phase1_complete) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
         if (db) await db.collection('users').doc(effectiveUserId).set({ stage2_phase1_complete: true }, { merge: true });
-        return res.json({ status: 'success', action: 'phase1_success', msg: "The earth opens. Seek the marginalia." });
+        return res.json({ status: 'success', success: true, action: 'open_article', msg: "The earth opens. Seek the marginalia." });
       }
       if (step === '2' && hash === 'ba6f8ed6d0d150b2a2ab2bebe99540f8c00cafb0ebdbf71a6f0b768c45425ca7') {
         if (!userData.stage2_phase1_complete) return res.json({ status: 'error', message: 'COMMAND INVALID' });
-        if (userData.stage2_phase2_complete) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
         if (db) await db.collection('users').doc(effectiveUserId).set({ stage2_phase2_complete: true }, { merge: true });
-        return res.json({ status: 'success', action: 'phase2_success', msg: "The flame is extinguished." });
+        return res.json({ status: 'success', success: true, action: 'phase2_success', msg: "The flame is extinguished." });
       }
       if (step === '3' && hash === '90b7b8654171c04a5e5de1eae884cfd86952739d50d09d9bb7680763e31faee8') {
         if (!userData.stage2_phase2_complete) return res.json({ status: 'error', message: 'COMMAND INVALID' });
-        if (userData.stage2_phase3_complete) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
         if (db) await db.collection('users').doc(effectiveUserId).set({ 
           stage2_phase3_complete: true,
           stage: 3 
         }, { merge: true });
-        return res.json({ status: 'success', action: 'phase3_success', msg: String.fromCharCode(71, 82, 69, 69, 68) });
+        return res.json({ status: 'success', success: true, action: 'phase3_success', msg: String.fromCharCode(71, 82, 69, 69, 68) });
       }
       
       return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
@@ -1359,8 +1384,10 @@ Stage 4 unlocked. Messenger updated.`,
       // Check if we are in Mock mode
       const isMock = _db instanceof MockFirestore;
       
-      if (target === "stage1.html" || target === "article.html") {
+      if (target === "stage1.html") {
         hasAccess = true; // Publicly accessible but served through backend
+      } else if (target === "article.html") {
+        hasAccess = !!userData?.stage2_phase1_complete;
       } else if (target === "stage2.html" || target === "resonance.html" || target === "node02.html") {
         hasAccess = !!userData?.stage2_unlocked || !!userData?.archive_unlocked || !!userData?.stage1_archive_unlocked;
       } else if (target === "node04.html" || target === "node04/index.html") {
