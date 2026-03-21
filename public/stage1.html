@@ -2969,6 +2969,12 @@ Something is hidden there.
             page.style.position = 'relative';
             page.style.overflow = 'hidden';
             page.style.background = '#000';
+            page.style.display = 'block';
+
+            const offline = document.getElementById("offline-screen") || document.getElementById("offline-overlay");
+            if (offline) {
+              offline.style.display = "none";
+            }
             
             let unlocked = false;
             let fetchPath = '';
@@ -3068,6 +3074,8 @@ Something is hidden there.
                 iframe.style.left = '0';
                 iframe.style.width = '100%';
                 iframe.style.height = '100%';
+                iframe.style.display = 'block';
+                iframe.style.visibility = 'visible';
                 page.appendChild(iframe);
                 
                 if (dynamicHtml) {
