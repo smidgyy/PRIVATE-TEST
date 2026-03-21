@@ -1735,22 +1735,7 @@ Something is hidden there.
   <script src="/sound-manager.js?v=2"></script>
   <script>
     let chats = {};
-    let currentStage = 1;
-    let userId = new URLSearchParams(window.location.search).get('userId') || window.firebaseAuth?.currentUser?.uid || 'anonymous';
-    window.userState = {};
-
-    async function fetchUserState() {
-      try {
-        const res = await fetch('/api/userState?userId=' + userId);
-        const data = await res.json();
-        window.userState = data;
-        currentStage = data.currentStage || 1;
-        return data;
-      } catch (e) {
-        console.error("Failed to fetch user state:", e);
-        return {};
-      }
-    }
+    let currentStage = parseInt(localStorage.getItem("currentStage")) || 1;
     function arrangeIcons() {
       const icons = Array.from(document.querySelectorAll('#desktop > .icon:not(.hidden)'));
       let startX = 10;
@@ -1823,9 +1808,8 @@ Something is hidden there.
       }
     }
 
-    document.getElementById('boot-start-btn').addEventListener('click', async () => {
+    document.getElementById('boot-start-btn').addEventListener('click', () => {
       document.getElementById('boot-start-btn').style.display = 'none';
-      await fetchUserState();
       if (window.soundManager) window.soundManager.startComputerHum();
       playBootSound();
       setTimeout(nextBootStep, 1000);
@@ -2945,28 +2929,11 @@ Something is hidden there.
           stage4Audio.play().catch(e => console.error("Audio play failed:", e));
         }
         
-            async function openBrowserUrl(url) {
-      if (!window.userState) {
-        console.error("User state not loaded");
-        return;
+        startSystemAliveEffects();
       }
+    }
 
-      // Define required stages for different URLs
-      const requiredStages = {
-        "archive://node/02": 2,
-        "http://archive.local/stage2.html": 2,
-        "node04.html": 4,
-        "node03/secret.html": 3
-      };
-
-      // Check if URL is restricted
-      for (const [key, stage] of Object.entries(requiredStages)) {
-        if (url.includes(key) && window.userState.currentStage < stage) {
-          alert("ACCESS DENIED");
-          return;
-        }
-      }
-
+    function openBrowserUrl(url) {
       if (url === "archive://node/02") {
         openWindow('browser');
         const page = document.getElementById("browser-page");
@@ -3553,35 +3520,35 @@ Something is hidden there.
       if (typeof arrangeIcons === 'function') {
         setTimeout(arrangeIcons, 50);
       }
+      localStorage.setItem("currentStage", currentStage);
     }
 
     async function syncProgression() {
-      console.log('>>> [SYNC] Checking backend progression...');
-      const state = await fetchUserState();
+      console.log('>>> [SYNC] Checking local progression...');
       
       // Stage 3 Persistence
-      if (state.stage3_greed === true) {
+      if (localStorage.getItem("stage3_greed") === "true") {
         const frag = document.getElementById("recycle_fragment");
         if (frag) {
           frag.style.display = "flex";
           frag.classList.remove("hidden");
         }
       }
-      if (state.stage3_death === true) {
+      if (localStorage.getItem("stage3_death") === "true") {
         const frag = document.getElementById("terminal_fragment");
         if (frag) {
           frag.style.display = "flex";
           frag.classList.remove("hidden");
         }
       }
-      if (state.stage3_money === true) {
+      if (localStorage.getItem("stage3_money") === "true") {
         const frag = document.getElementById("fragment_3");
         if (frag) {
           frag.style.display = "flex";
           frag.classList.remove("hidden");
         }
       }
-      if (state.stage3_gold === true) {
+      if (localStorage.getItem("stage3_gold") === "true") {
         const frag = document.getElementById("fragment_4");
         if (frag) {
           frag.style.display = "flex";
@@ -3589,36 +3556,80 @@ Something is hidden there.
         }
       }
 
-      // Sync
-      if (state.aurora_archive_unlocked === true) {
+      // Local sync
+      if (localStorage.getItem("aurora_archive_unlocked") === "true") {
         const icon = document.getElementById("icon-archive");
         if (icon) icon.classList.remove("hidden");
         currentStage = Math.max(currentStage, 2);
       }
-      if (state.stage2_unlocked === true) {
+      if (localStorage.getItem("stage2_unlocked") === "true") {
         unlockStage2UI();
         currentStage = Math.max(currentStage, 2);
       }
-      if (state.aurora_vale_unlocked === true) {
+      if (localStorage.getItem("aurora_vale_unlocked") === "true") {
         const icon = document.getElementById("icon-vale");
         if (icon) icon.classList.remove("hidden");
         currentStage = Math.max(currentStage, 4);
       }
-      if (state.stage1_complete === true) {
+      if (localStorage.getItem("aurora_stage1_complete") === "true") {
         const icon = document.getElementById("icon-archive");
         if (icon) icon.classList.remove("hidden");
         currentStage = Math.max(currentStage, 2);
       }
       
-      if (state.stage4_progress > 0) {
+      if (getStage4Progress() > 0) {
         currentStage = 4;
         startStage4();
       }
       
-      if (typeof arrangeIcons === 'function') {
-        arrangeIcons();
+      // Server sync
+      const userId = window.ensureUserId();
+      
+      if (userId) {
+        fetch('/api/validateCommand?userId=' + userId, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'get_progression', userId })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'success') {
+            console.log('>>> [SYNC] Server state:', data);
+            if (data.stage1_archive_unlocked || data.stage2_unlocked) {
+              const icon = document.getElementById("icon-archive");
+              if (icon) icon.classList.remove("hidden");
+              localStorage.setItem("aurora_archive_unlocked", "true");
+              localStorage.setItem("aurora_stage1_complete", "true");
+              currentStage = Math.max(currentStage, 2);
+            }
+            if (data.stage2_unlocked) {
+              localStorage.setItem("stage2_unlocked", "true");
+              unlockStage2UI();
+              currentStage = Math.max(currentStage, 2);
+            }
+            if (data.stage1_vale_unlocked) {
+              const icon = document.getElementById("icon-vale");
+              if (icon) icon.classList.remove("hidden");
+              localStorage.setItem("aurora_vale_unlocked", "true");
+              currentStage = Math.max(currentStage, 4);
+            }
+            if (data.stage4_forum_unlocked) {
+              localStorage.setItem('aurora_stage4_forum_unlocked', 'true');
+              currentStage = Math.max(currentStage, 4);
+            }
+            if (data.stage4_progress > 0) {
+              currentStage = 4;
+              startStage4();
+            }
+            
+            if (typeof arrangeIcons === 'function') {
+              arrangeIcons();
+            }
+          }
+        })
+        .catch(err => console.error('>>> [SYNC] Error:', err));
       }
-    }
+      
       if (typeof arrangeIcons === 'function') {
         arrangeIcons();
       }

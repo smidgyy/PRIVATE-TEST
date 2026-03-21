@@ -437,42 +437,6 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
-  app.get("/api/userState", async (req: any, res: any) => {
-    console.log("HIT: GET /api/userState");
-    try {
-      const userId = req.query.userId;
-      if (!userId) return res.status(400).json({ error: "Missing userId" });
-
-      const db = await getDb();
-      const userDoc = await db.collection("users").doc(userId).get();
-      const userData = userDoc.data() || { stage: 1, node02_step: 1 };
-
-      res.json({
-        currentStage: userData.stage || 1,
-        node02_step: userData.node02_step || 1,
-        stage1_vale_unlocked: !!userData.stage1_vale_unlocked,
-        stage1_complete: !!userData.stage1_complete,
-        stage2_unlocked: !!userData.stage2_unlocked,
-        stage3_greed: !!userData.stage3_greed,
-        stage3_death: !!userData.stage3_death,
-        stage3_money: !!userData.stage3_money,
-        stage3_gold: !!userData.stage3_gold,
-        stage3_ground: !!userData.stage3_ground,
-        stage3_messenger_complete: !!userData.stage3_messenger_complete,
-        stage4_unlocked: !!userData.stage4_unlocked,
-        stage4_forum_unlocked: !!userData.stage4_forum_unlocked,
-        stage4_observer_logs_opened: !!userData.stage4_observer_logs_opened,
-        stage4_network_trace_viewed: !!userData.stage4_network_trace_viewed,
-        stage4_complete: !!userData.stage4_complete,
-        stage4_progress: userData.stage4_progress || 0,
-        aurora_archive_unlocked: !!userData.aurora_archive_unlocked
-      });
-    } catch (error) {
-      console.error("Error in /api/userState:", error);
-      res.status(500).send("Internal Server Error");
-    }
-  });
-
   app.get("/api/getNode02", async (req: any, res: any) => {
     console.log("HIT: GET /api/getNode02");
     try {
@@ -1421,23 +1385,18 @@ Stage 4 unlocked. Messenger updated.`,
       const isMock = _db instanceof MockFirestore;
       
       if (target === "stage1.html") {
-        hasAccess = true; 
+        hasAccess = true; // Publicly accessible but served through backend
       } else if (target === "article.html") {
         hasAccess = !!userData?.stage2_phase1_complete;
       } else if (target === "stage2.html" || target === "resonance.html" || target === "node02.html") {
-        if ((userData.stage || 1) < 2) return res.send(LOCKED_HTML);
         hasAccess = !!userData?.stage2_unlocked || !!userData?.archive_unlocked || !!userData?.stage1_archive_unlocked;
       } else if (target === "node04.html" || target === "node04/index.html") {
-        if ((userData.stage || 1) < 4) return res.send(LOCKED_HTML);
         hasAccess = !!userData?.stage4_unlocked;
       } else if (target === "node03/secret.html" || target === "node03/secret/index.html") {
-        if ((userData.stage || 1) < 3) return res.send(LOCKED_HTML);
         hasAccess = !!userData?.stage3_secret_unlocked;
       } else if (target === "archive/index.html") {
-        if ((userData.stage || 1) < 4) return res.send(LOCKED_HTML);
         hasAccess = (!!userData?.stage4_progress && userData?.stage4_progress >= 3); 
       } else if (target === "node03/index.html") {
-        if ((userData.stage || 1) < 3) return res.send(LOCKED_HTML);
         hasAccess = !!userData?.stage2_unlocked;
       }
       

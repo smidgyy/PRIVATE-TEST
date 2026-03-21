@@ -2,12 +2,12 @@
 // This module runs after auth-init.js
 
 // SINGLE SOURCE OF TRUTH
-const userId = window.userId;
+const userId = window.userId || localStorage.getItem('aurora_user_id');
 if (userId) {
   window.userId = userId;
 }
 
-window.getUserId = () => window.userId;
+window.getUserId = () => window.userId || (typeof window.ensureUserId === 'function' ? window.ensureUserId() : localStorage.getItem('aurora_user_id'));
 
 // Expose for compatibility
 window.userIdReady = Promise.resolve(window.userId);
