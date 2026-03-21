@@ -304,6 +304,15 @@ async function startServer() {
     credentials: true
   }));
   app.use(express.json());
+  
+  // JSON Parsing Error Handler
+  app.use((err: any, req: any, res: any, next: any) => {
+    if (err instanceof SyntaxError && 'status' in err && err.status === 400 && 'body' in err) {
+      console.error(">>> [SERVER] JSON Parse Error:", err.message);
+      return res.status(400).json({ error: "Invalid JSON payload" });
+    }
+    next(err);
+  });
 
   const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.join(process.cwd(), 'dist'));
   const baseDir = isProduction ? 'dist' : 'public';
@@ -377,21 +386,26 @@ async function startServer() {
   // 1. FIRST: STATIC FILES (MANDATORY - MUST BE FIRST)
   // We wrap express.static to ensure it handles assets but skips protected HTML routes
   app.use((req: any, res: any, next: any) => {
-    // 0. API BYPASS: Never serve API routes as static files
-    if (req.path.startsWith("/api")) {
-      return next();
+    try {
+      // 0. API BYPASS: Never serve API routes as static files
+      if (req.path.startsWith("/api")) {
+        return next();
+      }
+      
+      // If it's a protected HTML route, skip static serving so it hits the protection logic later
+      if (protectedRoutes.includes(req.path)) {
+        return next();
+      }
+      
+      // Force MIME types for critical assets if needed, though express.static usually handles this
+      if (req.path.endsWith('.js')) res.setHeader('Content-Type', 'application/javascript');
+      if (req.path.endsWith('.css')) res.setHeader('Content-Type', 'text/css');
+      
+      return express.static(baseDir)(req, res, next);
+    } catch (err) {
+      console.error("STATIC FILE MIDDLEWARE ERROR:", err);
+      next();
     }
-    
-    // If it's a protected HTML route, skip static serving so it hits the protection logic later
-    if (protectedRoutes.includes(req.path)) {
-      return next();
-    }
-    
-    // Force MIME types for critical assets if needed, though express.static usually handles this
-    if (req.path.endsWith('.js')) res.setHeader('Content-Type', 'application/javascript');
-    if (req.path.endsWith('.css')) res.setHeader('Content-Type', 'text/css');
-    
-    return express.static(baseDir)(req, res, next);
   });
 
   // 2. SECOND: API ROUTES
@@ -616,7 +630,7 @@ async function startServer() {
 
   app.post("/api/validateCommand", async (req: any, res: any) => {
     try {
-    const { input, type, step, SECRET_KEY } = req.body;
+      const { input, type, step, SECRET_KEY } = req.body;
     const userId = req.body.userId || req.query.userId;
     const origin = req.get('origin') || req.get('referer') || 'unknown';
     
@@ -907,13 +921,10 @@ async function startServer() {
     }
 
     return res.status(400).json({ error: "Invalid type" });
-    } catch (err: any) {
-      console.error("!!! [API ERROR] validateCommand crashed:", err);
-      return res.status(500).json({ 
-        status: 'error', 
-        message: 'Internal Server Error',
-        details: err.message 
-      });
+    } catch (err) {
+      console.error("VALIDATE COMMAND ERROR:", err);
+      // ALWAYS return JSON (NOT HTML)
+      return res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
@@ -1274,6 +1285,7 @@ Stage 4 unlocked. Messenger updated.`,
   // 3. THIRD: PROTECTED ROUTES LOGIC (MANDATORY)
   app.get(protectedRoutes, async (req: any, res: any, next: any) => {
     try {
+      // BYPASS API + ASSETS (MANDATORY)
       if (
         req.path.startsWith("/api") ||
         req.path.includes(".js") ||
@@ -1286,7 +1298,10 @@ Stage 4 unlocked. Messenger updated.`,
       ) {
         return next();
       }
-      
+
+      // ONLY handle HTML
+      if (!req.path.endsWith(".html")) return next();
+
       const userId = req.query.userId || "anonymous_" + Date.now();
       const origin = req.get('origin') || req.get('referer') || 'unknown';
       console.log(`>>> [DEBUG] /protectedRoute | Path: ${req.path} | Origin: ${origin} | UserId: ${userId}`);
@@ -1340,8 +1355,9 @@ Stage 4 unlocked. Messenger updated.`,
       } else {
         res.status(404).sendFile(path.join(process.cwd(), 'index.html'));
       }
-    } catch (error) {
-      console.error("protectedRoutes error:", error);
+    } catch (err) {
+      console.error("PROTECTED ROUTE ERROR:", err);
+      // ALWAYS send response to prevent 503
       return res.status(500).send("Server Error");
     }
   });
