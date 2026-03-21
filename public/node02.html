@@ -221,15 +221,18 @@ const subtitle = document.getElementById('subtitle');
 let busy = false;
 
 let currentStep = 1;
-const savedStep = localStorage.getItem("node02_step");
+let userId = new URLSearchParams(window.location.search).get('userId') || window.firebaseAuth?.currentUser?.uid || 'anonymous';
 
-if (savedStep !== null) {
-  currentStep = parseInt(savedStep);
-} else {
-  currentStep = 1;
+async function fetchUserState() {
+  try {
+    const res = await fetch('/api/userState?userId=' + userId);
+    const data = await res.json();
+    return data.node02_step || 1;
+  } catch (e) {
+    console.error("Failed to fetch user state:", e);
+    return 1;
+  }
 }
-
-console.log("Node02 currentStep:", currentStep);
 
 function playBlowSound() {
   if (window.soundManager) {
@@ -439,8 +442,6 @@ function startBlackFire() {
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, fireWidth, fireHeight);
       
-      localStorage.setItem('aurora_stage3_token1', btoa('true|AURORA_OS_SECRET'));
-      
       const userId = new URLSearchParams(window.location.search).get('userId') || window.firebaseAuth?.currentUser?.uid || 'anonymous';
       fetch('/api/validateCommand?userId=' + userId, {
         method: 'POST',
@@ -507,7 +508,6 @@ async function dissolveAndRespond() {
       if (data.action === 'open_article') {
         if (window.soundManager) window.soundManager.playSuccess();
         currentStep = 2;
-        localStorage.setItem('node02_step', '2');
         // Automatically advance to the article as requested via backend route
         if (window.parent && window.parent.openBrowserUrl) {
           window.parent.openBrowserUrl('archive://node/02/article');
@@ -521,7 +521,6 @@ async function dissolveAndRespond() {
           window.soundManager.stopFireCrackling();
         }
         currentStep = 3;
-        localStorage.setItem('node02_step', '3');
         
         // Extinguish the flame immediately
         document.body.classList.remove('phase-2');
@@ -530,12 +529,12 @@ async function dissolveAndRespond() {
         
         // Smooth fade out of text after reading it
         setTimeout(() => {
-          title.style.transition = 'opacity 1.5s ease';
-          subtitle.style.transition = 'opacity 1.5s ease';
-          response.style.transition = 'opacity 1.5s ease';
-          title.style.opacity = '0';
-          subtitle.style.opacity = '0';
-          response.style.opacity = '0';
+          if (title) title.style.transition = 'opacity 1.5s ease';
+          if (subtitle) subtitle.style.transition = 'opacity 1.5s ease';
+          if (response) response.style.transition = 'opacity 1.5s ease';
+          if (title) title.style.opacity = '0';
+          if (subtitle) subtitle.style.opacity = '0';
+          if (response) response.style.opacity = '0';
         }, 2000);
 
         setTimeout(() => { startPhase3(true); }, 4500);
@@ -550,13 +549,13 @@ async function dissolveAndRespond() {
 
     if (!success && window.soundManager) window.soundManager.playError();
 
-    response.textContent = msg;
-    response.style.opacity = '1';
+    if (response) response.textContent = msg;
+    if (response) response.style.opacity = '1';
 
     setTimeout(() => {
       charLayer.remove();
       if (!success) {
-        response.style.opacity = '0';
+        if (response) response.style.opacity = '0';
         input.value = '';
         input.classList.remove('hidden');
         input.focus();
@@ -606,8 +605,11 @@ function startPhase3(isTransition = false) {
   
   let btn = null;
   document.addEventListener('mousemove', (e) => {
-    document.getElementById('flashlight-overlay').style.setProperty('--x', e.clientX + 'px');
-    document.getElementById('flashlight-overlay').style.setProperty('--y', e.clientY + 'px');
+    const flashlight = document.getElementById('flashlight-overlay');
+    if (flashlight) {
+      flashlight.style.setProperty('--x', e.clientX + 'px');
+      flashlight.style.setProperty('--y', e.clientY + 'px');
+    }
 
     if (!dotActive || currentStep !== 3) return;
     
@@ -675,12 +677,12 @@ function startPhase3(isTransition = false) {
   });
 
   setTimeout(() => {
-    title.textContent = "The Void.";
-    subtitle.textContent = "Find the spark.";
-    title.style.transition = 'opacity 3s ease';
-    subtitle.style.transition = 'opacity 3s ease';
-    title.style.opacity = '1';
-    subtitle.style.opacity = '1';
+    if (title) title.textContent = "The Void.";
+    if (subtitle) subtitle.textContent = "Find the spark.";
+    if (title) title.style.transition = 'opacity 3s ease';
+    if (subtitle) subtitle.style.transition = 'opacity 3s ease';
+    if (title) title.style.opacity = '1';
+    if (subtitle) subtitle.style.opacity = '1';
     
     // Add random glitch sounds in the void
     const glitchInterval = setInterval(() => {
@@ -700,7 +702,8 @@ setTimeout(() => {
   console.log('%c[TEST]%c initialized', 'color:#8b7355;font-weight:bold;', 'color:#444;');
 }, 2000);
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  currentStep = await fetchUserState();
   initPhase();
   if (!input.classList.contains('hidden')) input.focus();
 });
@@ -708,7 +711,6 @@ document.addEventListener('click', () => {
   if (!input.classList.contains('hidden')) input.focus();
 });
 </script>
-<button onclick="let a = localStorage.getItem('aurora_stage1_complete'); localStorage.clear(); if(a) localStorage.setItem('aurora_stage1_complete', a); window.location.reload();" style="position: fixed; bottom: 10px; right: 10px; font-size: 10px; color: #666; background: transparent; border: 1px solid #666; padding: 4px; cursor: pointer; z-index: 9999;">[DEV] Reset Progress</button>
 <script src="/sound-manager.js?v=2"></script>
 </div>
 </body>

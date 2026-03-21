@@ -437,6 +437,28 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  app.get("/api/userState", async (req: any, res: any) => {
+    console.log("HIT: GET /api/userState");
+    try {
+      const userId = req.query.userId;
+      if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+      const db = await getDb();
+      const userDoc = await db.collection("users").doc(userId).get();
+      const userData = userDoc.data() || { stage: 1, node02_step: 1 };
+
+      res.json({
+        currentStage: userData.stage || 1,
+        node02_step: userData.node02_step || 1,
+        stage1_vale_unlocked: !!userData.stage1_vale_unlocked,
+        stage4_progress: userData.stage4_progress || 0
+      });
+    } catch (error) {
+      console.error("Error in /api/userState:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+
   app.get("/api/getNode02", async (req: any, res: any) => {
     console.log("HIT: GET /api/getNode02");
     try {
