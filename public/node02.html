@@ -12,8 +12,8 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; background: #000; color: #d4d0c8; font-family: 'Pixelify Sans', sans-serif; overflow: hidden; }
-body { display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 1s ease, color 1s ease; }
-#content { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; }
+body { display: block; transition: background 1s ease, color 1s ease; }
+#content { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100vh; }
 
 .title { font-size: clamp(1.2rem, 4vh, 1.6rem); letter-spacing: 0.04em; margin-bottom: 1.5rem; opacity: 0; animation: fadeIn 2s ease forwards; }
 .subtitle { font-size: clamp(0.7rem, 2vh, 0.8rem); color: #666; letter-spacing: 0.06em; margin-bottom: 2.5rem; opacity: 0; animation: fadeIn 2s ease 2s forwards; text-align: center; }
@@ -677,10 +677,10 @@ setTimeout(() => {
   console.log('%c[TEST]%c initialized', 'color:#8b7355;font-weight:bold;', 'color:#444;');
 }, 2000);
 
-window.onload = () => {
+document.addEventListener("DOMContentLoaded", () => {
   initPhase();
   if (!input.classList.contains('hidden')) input.focus();
-};
+});
 document.addEventListener('click', () => {
   if (!input.classList.contains('hidden')) input.focus();
 });
