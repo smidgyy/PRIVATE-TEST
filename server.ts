@@ -402,6 +402,7 @@ async function startServer() {
       if (req.path.endsWith('.js')) res.setHeader('Content-Type', 'application/javascript');
       if (req.path.endsWith('.css')) res.setHeader('Content-Type', 'text/css');
       
+      console.log(`>>> [STATIC] Attempting to serve: ${req.path} from ${baseDir}`);
       return express.static(baseDir)(req, res, next);
     } catch (err) {
       console.error("STATIC FILE MIDDLEWARE ERROR:", err);
