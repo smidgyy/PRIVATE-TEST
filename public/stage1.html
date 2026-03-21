@@ -2945,11 +2945,28 @@ Something is hidden there.
           stage4Audio.play().catch(e => console.error("Audio play failed:", e));
         }
         
-        startSystemAliveEffects();
+            async function openBrowserUrl(url) {
+      if (!window.userState) {
+        console.error("User state not loaded");
+        return;
       }
-    }
 
-    function openBrowserUrl(url) {
+      // Define required stages for different URLs
+      const requiredStages = {
+        "archive://node/02": 2,
+        "http://archive.local/stage2.html": 2,
+        "node04.html": 4,
+        "node03/secret.html": 3
+      };
+
+      // Check if URL is restricted
+      for (const [key, stage] of Object.entries(requiredStages)) {
+        if (url.includes(key) && window.userState.currentStage < stage) {
+          alert("ACCESS DENIED");
+          return;
+        }
+      }
+
       if (url === "archive://node/02") {
         openWindow('browser');
         const page = document.getElementById("browser-page");
