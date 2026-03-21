@@ -460,14 +460,10 @@ function startBlackFire() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'unlock_node03_secret', userId })
-      }).then(() => {
-        setTimeout(() => {
-          if (window.parent && typeof window.parent.openBrowserUrl === 'function') {
-            window.parent.openBrowserUrl('archive://node/03/secret');
-          } else {
-            window.location.href = '/node03/secret.html?userId=' + userId;
-          }
-        }, 1000);
+      }).then(res => res.json()).then(data => {
+        if (data.message) {
+          response.textContent = data.message;
+        }
       });
     }
   }, 33);
@@ -526,7 +522,7 @@ async function dissolveAndRespond() {
         if (window.soundManager) window.soundManager.playSuccess();
         currentStep = 2;
         localStorage.setItem('node02_step', '2');
-        setTimeout(() => { window.location.href = '/article.html?userId=' + userId; }, 3000);
+        response.textContent = data.msg || "The earth opens. Seek the marginalia.";
       } else if (data.action === 'phase2_success') {
         if (window.soundManager) {
           window.soundManager.playSuccess();

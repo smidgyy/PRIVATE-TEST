@@ -1138,11 +1138,8 @@
           <div class="control-btn" onclick="closeWindow('recycle_fragment')">X</div>
         </div>
       </div>
-      <div class="window-content" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
-        <p>[FRAGMENT RECOVERY LOG]</p>
-        <p>Source: Recycle Bin</p>
-        <p>Status: Fragment moved to deleted_user.log</p>
-        <p>Trace: 0x8829 -> 0x445A</p>
+      <div class="window-content" id="content-recycle_fragment" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
+        <p>Loading fragment data...</p>
       </div>
     </div>
 
@@ -1153,12 +1150,8 @@
           <div class="control-btn" onclick="closeWindow('terminal_fragment')">X</div>
         </div>
       </div>
-      <div class="window-content" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
-        <p>[FRAGMENT RECOVERED]</p>
-        <p>Subject: DEATH</p>
-        <p>The final state. Not an end, but a transition. The data doesn't disappear; it just changes form. We are all just sequences waiting to be overwritten.</p>
-        <p>Aurora isn't a savior. It's a reaper.</p>
-        <p>-- END OF LOG --</p>
+      <div class="window-content" id="content-terminal_fragment" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
+        <p>Loading fragment data...</p>
       </div>
     </div>
 
@@ -1169,12 +1162,8 @@
           <div class="control-btn" onclick="closeWindow('fragment3')">X</div>
         </div>
       </div>
-      <div class="window-content" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
-        <p>[FRAGMENT RECOVERY LOG - 03]</p>
-        <p>Source: Node 03 Archive</p>
-        <p>Status: Partially Decrypted</p>
-        <p>The Sun's Tears... they aren't just a metaphor. It's a frequency. A relay. The ledger entry #13151405 was just the beginning. The real value is hidden in the casefiles. The subject's obsession holds the key.</p>
-        <p>Relay Frequency: [CORRUPTED]</p>
+      <div class="window-content" id="content-fragment3" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
+        <p>Loading fragment data...</p>
       </div>
     </div>
 
@@ -1185,12 +1174,8 @@
           <div class="control-btn" onclick="closeWindow('fragment4')">X</div>
         </div>
       </div>
-      <div class="window-content" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
-        <p>[FRAGMENT RECOVERY LOG - 04]</p>
-        <p>Source: Node 03 Archive</p>
-        <p>Status: Decrypted</p>
-        <p>The rhythm of the machine... it's not just noise. It's a transmission. The second pulse holds the key. Look closely at the second transmission in the music player. The rhythm will reveal the final frequency.</p>
-        <p>Hint: [CORRUPTED]</p>
+      <div class="window-content" id="content-fragment4" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
+        <p>Loading fragment data...</p>
       </div>
     </div>
 
@@ -1548,7 +1533,7 @@ Something is hidden there.
       <div class="window-content" style="display: flex; justify-content: center; align-items: center; background: #333; position: relative; overflow: hidden;">
         <canvas id="corrupted-photo-canvas" width="380" height="340" style="width: 100%; height: 100%; object-fit: cover;"></canvas>
         <!-- archive -->
-        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAATXRFWHRDb21tZW50AEFyY2hpdmUgTm9kZTogMDMKQ29vcmRpbmF0ZXM6IDQxLjQwMzM4LCAyLjE3NDAzCktleSBGcmFnbWVudDogQVJDSElWRVGxz7wAAAALSURBVHjaY2T4DwABBQEBJxjjZgAAAABJRU5ErkJggg==" alt="photo_fragment.png" style="display: none;" id="hidden-photo-data">
+        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="photo_fragment.png" style="display: none;" id="hidden-photo-data">
       </div>
     </div>
 
@@ -1899,39 +1884,48 @@ Something is hidden there.
       typeChar();
     }
 
-    function populateStage4Content(id) {
-      if (id === 'observer-log-01') {
-        typeWriterEffect(document.getElementById('content-observer-log-01'), atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxMjozMTxicj5Ob2RlIGFjY2VzcyByZWNvcmRlZC48YnI+PGJyPlVzZXIgY2xhc3NpZmljYXRpb246IEludmVzdGlnYXRvcjxicj5QYXR0ZXJuIG1hdGNoOiBWQUxFPGJyPjxicj5Nb25pdG9yaW5nIGVzY2FsYXRpb24gZW5hYmxlZC48YnI+PGJyPkZyYWdtZW50OiBkZWNvZGVf'), 30);
-      } else if (id === 'observer-log-02') {
-        typeWriterEffect(document.getElementById('content-observer-log-02'), atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxNTowMjxicj5TdWJqZWN0IGJlaGF2aW9yIGFub21hbG91cy48YnI+PGJyPkZyYWdtZW50OiB2YWxlXw=='), 30);
-      } else if (id === 'observer-log-03') {
-        typeWriterEffect(document.getElementById('content-observer-log-03'), atob('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxODo0NDxicj5BcmNoaXZlIGludGVncml0eSBjb21wcm9taXNlZC48YnI+PGJyPkZyYWdtZW50OiBhcmNoaXZl'), 30);
-      } else if (id === 'journal-day01') {
-        document.getElementById('title-journal-day01').innerText = 'VALE INVESTIGATION LOG';
-        document.getElementById('content-journal-day01').innerHTML = '<div class="journal-date">Day 01</div><p>Started investigating the archive system today. It\'s more complex than I thought. The architecture seems to have layers of hidden nodes.</p><p>Node 03 required multiple encoding layers. Someone intentionally hid the internal structure.</p>';
-      } else if (id === 'journal-day03') {
-        document.getElementById('title-journal-day03').innerText = 'VALE INVESTIGATION LOG';
-        document.getElementById('content-journal-day03').innerHTML = '<div class="journal-date">Day 03</div><p>There are references to something called "Subjects". A storage system should not track subjects.</p><p>Something about this Archive feels wrong. The system is fighting back. Every time I access a node, the encryption keys rotate.</p>';
-      } else if (id === 'journal-day05') {
-        document.getElementById('title-journal-day05').innerText = 'VALE INVESTIGATION LOG';
-        document.getElementById('content-journal-day05').innerHTML = '<div class="journal-date">Day 05</div><p>Noticed anomalies. Someone else was here before me. There are traces of a previous investigator, but their logs were scrubbed.</p><p>Node 04 is heavily restricted. Whatever is stored there is clearly important.</p>';
-      } else if (id === 'journal-day09') {
-        document.getElementById('title-journal-day09').innerText = 'VALE INVESTIGATION LOG';
-        document.getElementById('content-journal-day09').innerHTML = '<div class="journal-date">Day 09</div><p>The anomalies are increasing. Fragments of deleted conversations are appearing in the terminal buffer. \'archivist404040\'... who is that?</p><p>Something inside the system noticed me. New log files appeared automatically. The Archive might be monitoring investigators.</p>';
-      } else if (id === 'journal-day12') {
-        document.getElementById('title-journal-day12').innerText = 'VALE INVESTIGATION LOG';
-        document.getElementById('content-journal-day12').innerHTML = '<div class="journal-date">Day 12</div><p>The logs now reference my name. I never entered it anywhere. The system shouldn\'t know who I am.</p><p>I\'m not the only one being tracked. There\'s a whole list of us. We\'re all part of the archive now. We\'re the data.</p>';
-      } else if (id === 'journal-day16') {
-        document.getElementById('title-journal-day16').innerText = 'VALE INVESTIGATION LOG';
-        document.getElementById('content-journal-day16').innerHTML = '<div class="journal-date">Day 16</div><p>The Archive isn\'t storage. It\'s an observer. Investigators who go too deep become entries.</p><p>If anyone finds this... look me up in the archive. The forum holds the final piece. Good luck, investigator.</p>';
-      } else if (id === 'terminal-dump') {
-        document.getElementById('content-terminal-dump').innerHTML = atob('W1NZU10gQ09OTkVDVElPTiBURVJNSU5BVEVEPGJyPltTWVNdIEZPUkNFRCBESVNDT05ORUNUPGJyPltTWVNdIEFSQ0hJVkUgTE9DSyBJTklUSUFURUQ=');
-      } else if (id === 'network-trace') {
-        document.getElementById('content-network-trace').innerHTML = atob('VFJBQ0UgUk9VVEU6PGJyPjxicj42MTcyNjM2ODY5NzY2NTNBMkYyRjY2NkY3MjE1NkQ=') + '<br><br>' + atob('TkVUV09SSyBUUkFDRSBMT0cgLSBOT0RFXzA0X09VVEJPVU5EPGJyPi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLTxicj5QQUNLRVRfSUQ6IDB4ODgyOTxicj5TT1VSQ0U6IElOVEVSTkFMX05PREVfMDQ8YnI+REVTVElOQVRJT046IEVYVEVSTkFMX0FSQ0hJVklTVF9SRUxBWTxicj5QQVlMT0FEIChIRVgpOjxicj40MyA0ZiA0ZSA1NCA0MSA0MyA1NCAyMCA0MSA1MiA0MyA0OCA0OSA1NiA0OSA1MyA1NCAyMCA0NiA0ZiA1MiAyMCA0MyA0ZiA0NCA0NSAzYSAyMCAzOCAzNCAzMCAzMiAzOSAzMTxicj4tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS08YnI+VFJBQ0UgQ09NUExFVEUu');
-      } else if (id === 'memory-scan-log') {
-        document.getElementById('content-memory-scan-log').innerHTML = 'Memory block recovery successful.<br><br>Recovered archive fragment:<br>' + atob('Tk9ERV8wMw==');
-      } else if (id === 'resonance') {
-        document.getElementById('title-resonance').innerText = atob('Tk9ERV8wMw==');
+    async function populateStage4Content(id) {
+      const userId = window.ensureUserId();
+      const contentTargets = [
+        'observer-log-01', 'observer-log-02', 'observer-log-03',
+        'journal-day01', 'journal-day03', 'journal-day05', 'journal-day09', 'journal-day12', 'journal-day16',
+        'terminal-dump', 'network-trace', 'memory-scan-log', 'resonance',
+        'recycle_fragment', 'terminal_fragment', 'fragment3', 'fragment4', 'vale-photo-data'
+      ];
+
+      if (contentTargets.includes(id)) {
+        try {
+          const res = await fetch('/api/getContent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target: id, userId })
+          });
+          const data = await res.json();
+          if (data.status === 'success') {
+            const contentEl = document.getElementById('content-' + id);
+            const titleEl = document.getElementById('title-' + id);
+            
+            if (titleEl && data.title) {
+              titleEl.innerText = data.title;
+            }
+
+            if (contentEl) {
+              if (id.startsWith('observer-log-')) {
+                typeWriterEffect(contentEl, data.content, 30);
+              } else {
+                contentEl.innerHTML = data.content;
+              }
+            }
+
+            if (id === 'vale-photo-data') {
+              // This is a special case for the photo fragment hidden data
+              const hiddenImg = document.getElementById('hidden-photo-data');
+              if (hiddenImg) hiddenImg.title = data.content; // Store it in title instead of alt to avoid leaks
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch content:", err);
+        }
       }
     }
 
@@ -1996,7 +1990,11 @@ Something is hidden there.
         }
       }
       
-      populateStage4Content(id);
+      if (id === 'photo-fragment') {
+        populateStage4Content('vale-photo-data');
+      } else {
+        populateStage4Content(id);
+      }
 
       if (!openWindows.has(id)) {
         openWindows.add(id);
@@ -3020,16 +3018,15 @@ Something is hidden there.
                 });
               return;
             } else if (targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt')) {
-              fetch('/api/validateCommand?userId=' + userId, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'forum', userId: userId, SECRET_KEY: 'RESILIENT_BOOT' }) })
+              fetch('/api/getContent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target: 'forum', userId: userId }) })
                 .then(res => res.json())
                 .then(data => {
                   if (data.status === 'success') {
                     unlocked = true;
                     if (getStage4Progress() < 4) setStage4Progress(4);
-                    dynamicHtml = atob('PGRpdiBzdHlsZT0iY29sb3I6IzBjMDtmb250LWZhbWlseTptb25vc3BhY2U7cGFkZGluZzozMHB4O2JhY2tncm91bmQ6IzA1MDUwNTtoZWlnaHQ6MTAwJTtvdmVyZmxvdy15OmF1dG87Ym94LXNpemluZzpib3JkZXItYm94OyI+CiAgPGRpdiBzdHlsZT0iYm9yZGVyOiAxcHggc29saWQgIzBjMDsgcGFkZGluZzogMjBweDsgbWF4LXdpZHRoOiA4MDBweDsgbWFyZ2luOiAwIGF1dG87IGJhY2tncm91bmQ6ICMwMDA7Ij4KICAgIDxoMiBzdHlsZT0ibWFyZ2luLXRvcDogMDsgbGV0dGVyLXNwYWNpbmc6IDFweDsgY29sb3I6ICMwZjA7Ij5JTlRFUk5BTCBBUkNISVZFIEZPUlVNIFtSRUFELU9OTFldPC9oMj4KICAgIDxkaXYgc3R5bGU9ImJvcmRlci1ib3R0b206IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy1ib3R0b206IDE1cHg7IG1hcmdpbi1ib3R0b206IDIwcHg7IGxpbmUtaGVpZ2h0OiAxLjY7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPlRvcGljOjwvc3Ryb25nPiBUaGUgQW5vbWFseTwvcD4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPkF1dGhvcjo8L3N0cm9uZz4gYXJjaGl2aXN0NDA0MDQwPC9wPgogICAgICA8cCBzdHlsZT0ibWFyZ2luOiA1cHggMDsiPjxzdHJvbmc+RGF0ZTo8L3N0cm9uZz4gMTk5OC0wNC0xMiAwMzoxNCBBTTwvcD4KICAgIDwvZGl2PgogICAgPGRpdiBzdHlsZT0ibGluZS1oZWlnaHQ6IDEuODsgZm9udC1zaXplOiAxNXB4OyI+CiAgICAgIDxwPkkndmUgZm91bmQgc29tZXRoaW5nIGluIHRoZSBsb2dzLiBJdCdzIG5vdCBqdXN0IGRhdGEgY29ycnVwdGlvbi4gSXQncyBsb29raW5nIGJhY2sgYXQgdXMuPC9wPgogICAgICA8cD5JJ3ZlIGhpZGRlbiB0aGUgZmluYWwga2V5IGluIHRoZSBzeXN0ZW0gbmV0d29yayB0cmFjZS4gSWYgYW55b25lIGZpbmRzIHRoaXMsIHlvdSBrbm93IHdoZXJlIHRvIHJlYWNoIG1lLiBMb29rIGF0IG5ldHdvcmtfdHJhY2Uuc3lzLjwvcD4KICAgICAgPHAgPkV4dGVybmFsIGNvbnRhY3QgcHJvdG9jb2wgaW5pdGlhdGVkLiBUaGV5IGFyZSB3YXRjaGluZyB0aGUgbmV0d29yay48L3A+CiAgICA8L2Rpdj4KICAgIDxkaXYgc3R5bGU9Im1hcmdpbi10b3A6IDMwcHg7IGJvcmRlci10b3A6IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy10b3A6IDE1cHg7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogMDsiPltFbmQgb2YgdGhyZWFkXTwvcD4KICAgIDwvZGl2PgogIDwvZGl2Pgo8L2Rpdj4=');
+                    dynamicHtml = data.content;
                     if (getStage4Progress() < 5) {
                       setStage4Progress(5);
-                      // triggerEndingSequence(); // Disabled old ending branch
                     }
                   } else {
                     accessDeniedMsg = 'Archive forum locked.';
@@ -3038,13 +3035,17 @@ Something is hidden there.
                 });
               return;
             } else if (targetUrl === atob('YXJjaGl2ZTovL3JlY29yZHM=')) {
-              if (getStage4Progress() >= 6) {
-                unlocked = true;
-                dynamicHtml = atob('PGRpdiBzdHlsZT0iY29sb3I6IzBmMDtmb250LWZhbWlseTptb25vc3BhY2U7cGFkZGluZzoyMHB4O2JhY2tncm91bmQ6IzAwMDtoZWlnaHQ6MTAwJTtvdmVyZmxvdy15OmF1dG87Ij4KICA8aDI+QVJDSElWRSBSRUNPUkRTIFtSRVNUT1JFRF08L2gyPgogIDxociBzdHlsZT0iYm9yZGVyLWNvbG9yOiMwZjA7Ij4KICA8cD48c3Ryb25nPlN0YXR1czo8L3N0cm9uZz4gQUxMIFNZU1RFTVMgTk9NSU5BTDwvcD4KICA8cD48c3Ryb25nPk1lc3NhZ2U6PC9zdHJvbmc+IFRoZSBhcmNoaXZlIGhhcyBiZWVuIGZ1bGx5IHJlc3RvcmVkLjwvcD4KICA8cD5UaGFuayB5b3UgZm9yIHlvdXIgYXNzaXN0YW5jZSwgSW52ZXN0aWdhdG9yLjwvcD4KICA8YnI+CiAgPHAgc3R5bGU9ImNvbG9yOiNmZmY7dGV4dC1zaGFkb3c6MCAwIDVweCAjZmZmOyI+VEhFIEVORC48L3A+CjwvZGl2Pg==');
-              } else {
-                accessDeniedMsg = 'Archive records locked.';
-              }
-              finishLoad();
+              fetch('/api/getContent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target: 'records', userId: userId }) })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.status === 'success') {
+                    unlocked = true;
+                    dynamicHtml = data.content;
+                  } else {
+                    accessDeniedMsg = 'Archive records locked.';
+                  }
+                  finishLoad();
+                });
               return;
             }
             
@@ -3246,7 +3247,7 @@ Something is hidden there.
                   setTimeout(() => {
                     printTerminal("Accessing root archive...");
                     setTimeout(() => {
-                      window.location.href = window.location.origin + '/archive';
+                      printTerminal("Root archive accessed. Manual navigation required to /archive");
                     }, 2000);
                   }, 1500);
                 }, 1500);
@@ -3254,13 +3255,13 @@ Something is hidden there.
             } else if (data.action === 'open_vale_archive') {
               printTerminal(data.reply || "Decoding archive...");
               setTimeout(() => {
-                openWindow('vale-folder');
+                printTerminal("Archive decoded. /vale/ directory unlocked.");
                 if (window.soundManager) window.soundManager.playSuccess();
               }, 1000);
             } else if (data.action === 'open_final_archive_page') {
               printTerminal(data.reply || "Archive entry accepted.");
               setTimeout(() => {
-                window.location.href = window.location.origin + '/archive_entry.html';
+                printTerminal("Final subject record finalized. Access granted to /archive_entry.html");
               }, 2000);
             } else if (data.action === 'unlock_vale') {
               printTerminal("Decoding archive...");
@@ -3441,26 +3442,7 @@ Something is hidden there.
           updateStage3Clues();
         }
         
-        // Open messenger to show the message
-        openWindow('messenger');
-        setTimeout(() => {
-          const contactItems = document.querySelectorAll('.contact-item');
-          let unknownElement = null;
-          contactItems.forEach(item => {
-            if (item.innerText === 'Unknown User') {
-              unknownElement = item;
-            }
-          });
-          if (typeof loadChat === 'function') {
-            loadChat('unknown', unknownElement);
-          }
-        }, 100);
-        
-        // Wait a bit before opening the browser to Node 04
-        setTimeout(() => {
-          openBrowserUrl('archive://node/04');
-        }, 3000);
-        
+        printTerminal("Stage 4 unlocked. Messenger updated.");
         if (typeof startStage4 === 'function') startStage4();
       } else if (response.action === "update_messenger_step") {
         if (typeof setProgressStep === 'function') {

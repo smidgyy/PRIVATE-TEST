@@ -633,16 +633,23 @@ async function startServer() {
     }
 
     if (type === 'terminal') {
+      let userData: any = {};
+      if (db) {
+        const userDoc = await db.collection('users').doc(effectiveUserId).get();
+        userData = userDoc.data() || {};
+      }
+
+      // Stage-based Command Locking
+      const currentStage = userData.stage || 1;
+
       if (fullCmd.toLowerCase() === 'decode_vale_archive') {
-        let userData: any = {};
-        if (db) {
-          const userDoc = await db.collection('users').doc(effectiveUserId).get();
-          userData = userDoc.data() || {};
+        if (currentStage < 4 || !userData.stage3_ground) {
+          return res.json({ status: 'error', message: 'ACCESS DENIED: Required progression not detected.' });
         }
         
-        // The user said: "return a structured success response with an action that opens the Vale logs / Vale journal view."
-        // "reply: a short confirmation message"
-        // "action: open the existing Vale archive / logs window"
+        if (userData.stage1_vale_unlocked) {
+          return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+        }
         
         if (db) await db.collection('users').doc(effectiveUserId).set({ 
           stage1_vale_unlocked: true, 
@@ -651,69 +658,63 @@ async function startServer() {
         
         return res.json({ 
           status: 'success', 
-          reply: 'Vale archive decryption sequence initiated... Success.',
-          action: 'open_vale_archive' 
+          reply: 'Vale archive decryption sequence initiated... Success. /vale/ directory unlocked.',
+          action: 'unlock_vale'
         });
       }
       if (baseCmd === 'decrypt' && args.length > 1 && args[1] === '840291') {
+        if (currentStage < 4) return res.json({ status: 'error', message: 'ACCESS DENIED' });
         return res.json({ 
           status: 'success', 
           reply: 'Network trace 840291 verified. External relay active.' 
         });
       }
       if (baseCmd === 'archive_entry' && args.length > 1 && args[1].toUpperCase() === 'K7-4419') {
+        if (!userData.stage4_forum_unlocked) {
+          return res.json({ status: 'error', message: 'ACCESS DENIED: Forum authentication required.' });
+        }
+        if (userData.stage4_complete) {
+          return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+        }
         if (db) await db.collection('users').doc(effectiveUserId).set({ 
           stage4_complete: true,
           stage4_progress: 7
         }, { merge: true });
         return res.json({ 
           status: 'success', 
-          reply: 'Archive entry K7-4419 accepted. Finalizing subject record...',
-          action: 'open_final_archive_page' 
+          reply: 'Archive entry K7-4419 accepted. Finalizing subject record... Access granted to /archive_entry.html',
+          action: 'open_final_archive_page'
         });
       }
-      if (baseCmd === 'decode' && args.length > 1 && args[1].toLowerCase() === 'vale_archive.enc') {
-        let userData: any = {};
-        if (db) {
-          const userDoc = await db.collection('users').doc(effectiveUserId).get();
-          userData = userDoc.data() || {};
-        }
-        if (userData.stage4_progress >= 1 || SECRET_KEY === 'RESILIENT_BOOT') {
-          if (db) await db.collection('users').doc(effectiveUserId).set({ stage1_vale_unlocked: true, stage4_progress: 2 }, { merge: true });
-          return res.json({ status: 'success', action: 'unlock_vale' });
-        } else {
-          return res.json({ status: 'error', message: 'Bad command or file name.' });
-        }
-      }
       if (baseCmd === 'archive' && args.length > 1 && args[1].toLowerCase() === 'vale') {
-        let userData: any = {};
-        if (db) {
-          const userDoc = await db.collection('users').doc(effectiveUserId).get();
-          userData = userDoc.data() || {};
+        if (!userData.stage1_vale_unlocked) {
+          return res.json({ status: 'error', message: 'ACCESS DENIED: Vale archive decryption required.' });
         }
-        if (userData.stage1_vale_unlocked || SECRET_KEY === 'RESILIENT_BOOT') {
-          if (db) await db.collection('users').doc(effectiveUserId).set({ stage4_forum_unlocked: true }, { merge: true });
-          return res.json({ status: 'success', action: 'unlock_forum' });
-        } else {
-          return res.json({ status: 'error', message: 'Access denied.' });
+        if (userData.stage4_forum_unlocked) {
+          return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
         }
+        if (db) await db.collection('users').doc(effectiveUserId).set({ stage4_forum_unlocked: true }, { merge: true });
+        return res.json({ status: 'success', action: 'unlock_forum' });
       }
       if (baseCmd === 'archive' && args.length === 1) {
+        if (currentStage > 1) return res.json({ status: 'error', message: 'COMMAND INVALID' });
         return res.json({ status: 'success', action: 'require_password' });
       }
       if (baseCmd === 'decrypt' && args.length > 1 && args[1].toLowerCase() === 'depth') {
-        let userData: any = {};
-        if (db) {
-          const userDoc = await db.collection('users').doc(effectiveUserId).get();
-          userData = userDoc.data() || {};
-        }
+        if (currentStage !== 3) return res.json({ status: 'error', message: 'ACCESS DENIED' });
         const currentStep = userData.messenger_step || 0;
-        if (currentStep >= 2 || SECRET_KEY === 'RESILIENT_BOOT') {
-          if (db) await db.collection('users').doc(effectiveUserId).set({ stage3_secret_unlocked: true }, { merge: true });
-          return res.json({ status: 'success', action: 'show_caesar_clue' });
-        } else {
-          return res.json({ status: 'error', message: 'Bad command or file name.' });
+        if (currentStep < 2) {
+          return res.json({ status: 'error', message: 'COMMAND INVALID: Sequence incomplete.' });
         }
+        if (userData.stage3_secret_unlocked) {
+          return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+        }
+        if (db) await db.collection('users').doc(effectiveUserId).set({ stage3_secret_unlocked: true }, { merge: true });
+        return res.json({ 
+          status: 'success', 
+          reply: 'Fragment decrypted. Algorithm: Caesar. Key: THE ARCHIVE REMEMBERS',
+          action: 'show_caesar_clue' 
+        });
       }
       return res.json({ status: 'error', message: 'Bad command or file name.' });
     }
@@ -725,18 +726,25 @@ async function startServer() {
         userData = userDoc.data() || {};
       }
       
+      const currentStage = userData.stage || 1;
+      if (currentStage > 1 && fullCmd.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
+        return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+      }
+
       if (fullCmd.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
         if (db) {
           await db.collection('users').doc(effectiveUserId).set({ 
             stage1_archive_unlocked: true,
             archive_unlocked: true,
-            stage2_unlocked: true
+            stage2_unlocked: true,
+            stage: 2
           }, { merge: true });
         }
         return res.json({ status: 'success', action: 'unlock_archive' });
       }
       if (fullCmd.toUpperCase() === 'VALE') {
         if (userData.stage1_vale_unlocked || SECRET_KEY === 'RESILIENT_BOOT') {
+          if (userData.stage4_forum_unlocked) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
           if (db) await db.collection('users').doc(effectiveUserId).set({ stage4_forum_unlocked: true }, { merge: true });
           return res.json({ status: 'success', action: 'unlock_forum' });
         } else {
@@ -747,31 +755,36 @@ async function startServer() {
     }
 
     if (type === 'node02_answer') {
-      const hash = crypto.createHash('sha256').update(t.toLowerCase()).digest('hex');
-      
       let userData: any = {};
       if (db) {
         const userDoc = await db.collection('users').doc(effectiveUserId).get();
         userData = userDoc.data() || {};
       }
       
+      const currentStage = userData.stage || 1;
+      if (currentStage !== 2) return res.json({ status: 'error', message: 'ACCESS DENIED' });
+
+      const hash = crypto.createHash('sha256').update(t.toLowerCase()).digest('hex');
+      
       if (step === '1' && hash === '76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22') {
+        if (userData.stage2_phase1_complete) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
         if (db) await db.collection('users').doc(effectiveUserId).set({ stage2_phase1_complete: true }, { merge: true });
         return res.json({ status: 'success', action: 'phase1_success', msg: "The earth opens. Seek the marginalia." });
       }
       if (step === '2' && hash === 'ba6f8ed6d0d150b2a2ab2bebe99540f8c00cafb0ebdbf71a6f0b768c45425ca7') {
-        if (userData.stage2_phase1_complete || SECRET_KEY === 'RESILIENT_BOOT') {
-          if (db) await db.collection('users').doc(effectiveUserId).set({ stage2_phase2_complete: true }, { merge: true });
-          return res.json({ status: 'success', action: 'phase2_success', msg: "The flame is extinguished." });
-        }
-        return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
+        if (!userData.stage2_phase1_complete) return res.json({ status: 'error', message: 'COMMAND INVALID' });
+        if (userData.stage2_phase2_complete) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+        if (db) await db.collection('users').doc(effectiveUserId).set({ stage2_phase2_complete: true }, { merge: true });
+        return res.json({ status: 'success', action: 'phase2_success', msg: "The flame is extinguished." });
       }
       if (step === '3' && hash === '90b7b8654171c04a5e5de1eae884cfd86952739d50d09d9bb7680763e31faee8') {
-        if (userData.stage2_phase2_complete || SECRET_KEY === 'RESILIENT_BOOT') {
-          if (db) await db.collection('users').doc(effectiveUserId).set({ stage2_phase3_complete: true }, { merge: true });
-          return res.json({ status: 'success', action: 'phase3_success', msg: String.fromCharCode(71, 82, 69, 69, 68) });
-        }
-        return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
+        if (!userData.stage2_phase2_complete) return res.json({ status: 'error', message: 'COMMAND INVALID' });
+        if (userData.stage2_phase3_complete) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+        if (db) await db.collection('users').doc(effectiveUserId).set({ 
+          stage2_phase3_complete: true,
+          stage: 3 
+        }, { merge: true });
+        return res.json({ status: 'success', action: 'phase3_success', msg: String.fromCharCode(71, 82, 69, 69, 68) });
       }
       
       return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
@@ -779,7 +792,7 @@ async function startServer() {
 
     if (type === 'unlock_node03_secret') {
       if (db) await db.collection('users').doc(effectiveUserId).set({ stage3_secret_unlocked: true }, { merge: true });
-      return res.json({ status: 'success' });
+      return res.json({ status: 'success', message: 'Node 03 secret relay active at /node03/secret.html' });
     }
 
     if (type === 'update_messenger_step') {
@@ -887,7 +900,23 @@ async function startServer() {
       if (contact === 'archive') {
         const input = message.toLowerCase().trim();
 
+        let userData: any = {};
+        if (db) {
+          const userDoc = await db.collection('users').doc(userId).get();
+          userData = userDoc.data() || {};
+        }
+        
+        const currentStep = userData.messenger_step || 0;
+        const currentStage = userData.stage || 1;
+
+        if (currentStage < 3) {
+          return res.json({ status: "error", reply: "ACCESS DENIED: Signal alignment required." });
+        }
+
         if (input === "greed") {
+          if (userData.stage3_greed) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
+          if (currentStep !== 0) return res.json({ status: "error", reply: "COMMAND INVALID" });
+          
           if (db) {
             await db.collection("users").doc(userId).set({
               stage3_greed: true,
@@ -910,6 +939,9 @@ Check the trash.`,
         }
 
         if (input === "depth") {
+          if (userData.stage3_death) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
+          if (currentStep !== 1) return res.json({ status: "error", reply: "COMMAND INVALID" });
+
           if (db) {
             await db.collection("users").doc(userId).set({
               stage3_death: true,
@@ -932,6 +964,15 @@ Use the terminal.`,
         }
 
         if (input === "money") {
+          if (userData.stage3_money) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
+          if (currentStep !== 2) return res.json({ status: "error", reply: "COMMAND INVALID" });
+
+          if (db) {
+            await db.collection("users").doc(userId).set({
+              stage3_money: true,
+              messenger_step: 3
+            }, { merge: true });
+          }
           return res.json({
             status: "success",
             reply: `The mask of exchange.
@@ -946,6 +987,15 @@ Check fragment_3.log.`,
         }
 
         if (input === "gold") {
+          if (userData.stage3_gold) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
+          if (currentStep !== 3) return res.json({ status: "error", reply: "COMMAND INVALID" });
+
+          if (db) {
+            await db.collection("users").doc(userId).set({
+              stage3_gold: true,
+              messenger_step: 4
+            }, { merge: true });
+          }
           return res.json({
             status: "success",
             reply: `The final ambition.
@@ -960,6 +1010,9 @@ Listen to the system's pulse.`,
         }
 
         if (input === "ground") {
+          if (userData.stage3_ground) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
+          if (currentStep !== 4) return res.json({ status: "error", reply: "COMMAND INVALID" });
+
           if (db) {
             await db.collection("users").doc(userId).set({
               stage3_ground: true,
@@ -981,7 +1034,9 @@ But he went further.
 
 And whatever he found...
 
-it changed everything.`,
+it changed everything.
+
+Stage 4 unlocked. Messenger updated.`,
             action: "unlock_stage4"
           });
         }
@@ -1018,17 +1073,26 @@ it changed everything.`,
         ];
         reply = eliasReplies[Math.floor(Math.random() * eliasReplies.length)];
       } else if (contact === 'archive') {
+        let userData: any = {};
+        if (db) {
+          const userDoc = await db.collection('users').doc(userId).get();
+          userData = userDoc.data() || {};
+        }
+        const currentStage = userData.stage || 1;
+
         if (t === 'THE ARCHIVE REMEMBERS') {
-          if (db) {
+          if (currentStage > 1) {
+            reply = "COMMAND ALREADY USED";
+          } else if (db) {
             await db.collection('users').doc(userId).set({ 
               stage1_archive_unlocked: true,
               archive_unlocked: true,
               stage2_unlocked: true,
-              stage: 3
+              stage: 2
             }, { merge: true });
+            reply = "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.";
+            action = "unlock_archive";
           }
-          reply = "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.";
-          action = "unlock_archive";
         } else {
           reply = "INVALID INPUT. AWAITING COMMAND.";
         }
@@ -1211,6 +1275,127 @@ it changed everything.`,
       res.json(userData);
     } catch (err: any) {
       console.error(">>> [API] getUserState error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Content Security: Secure content retrieval endpoint
+  app.post('/api/getContent', async (req: any, res: any) => {
+    try {
+      const { target, userId } = req.body;
+      if (!userId) return res.status(400).json({ status: "error", message: "User ID required" });
+
+      let db: any = null;
+      try {
+        db = await getDb();
+      } catch (e: any) {}
+
+      let userData: any = {};
+      if (db) {
+        const userDoc = await db.collection('users').doc(userId).get();
+        userData = userDoc.data() || {};
+      }
+
+      const stage4_unlocked = userData.stage4_unlocked || false;
+
+      const contentMap: { [key: string]: { content: string, title?: string, access: boolean } } = {
+        'recycle_fragment': {
+          access: userData.stage1_recycle_unlocked || false,
+          content: `<p>[FRAGMENT RECOVERY LOG]</p><p>Source: Recycle Bin</p><p>Status: Fragment moved to deleted_user.log</p><p>Trace: 0x8829 -> 0x445A</p>`
+        },
+        'terminal_fragment': {
+          access: userData.stage1_terminal_unlocked || false,
+          content: `<p>[FRAGMENT RECOVERED]</p><p>Subject: DEATH</p><p>The final state. Not an end, but a transition. The data doesn't disappear; it just changes form. We are all just sequences waiting to be overwritten.</p><p>Aurora isn't a savior. It's a reaper.</p><p>-- END OF LOG --</p>`
+        },
+        'fragment3': {
+          access: userData.stage1_fragment3_unlocked || false,
+          content: `<p>[FRAGMENT RECOVERY LOG - 03]</p><p>Source: Node 03 Archive</p><p>Status: Partially Decrypted</p><p>The Sun's Tears... they aren't just a metaphor. It's a frequency. A relay. The ledger entry #13151405 was just the beginning. The real value is hidden in the casefiles. The subject's obsession holds the key.</p><p>Relay Frequency: [CORRUPTED]</p>`
+        },
+        'fragment4': {
+          access: userData.stage1_fragment4_unlocked || false,
+          content: `<p>[FRAGMENT RECOVERY LOG - 04]</p><p>Source: Node 03 Archive</p><p>Status: Decrypted</p><p>The rhythm of the machine... it's not just noise. It's a transmission. The second pulse holds the key. Look closely at the second transmission in the music player. The rhythm will reveal the final frequency.</p><p>Hint: [CORRUPTED]</p>`
+        },
+        'observer-log-01': {
+          access: stage4_unlocked,
+          content: Buffer.from('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxMjozMTxicj5Ob2RlIGFjY2VzcyByZWNvcmRlZC48YnI+PGJyPlVzZXIgY2xhc3NpZmljYXRpb246IEludmVzdGlnYXRvcjxicj5QYXR0ZXJuIG1hdGNoOiBWQUxFPGJyPjxicj5Nb25pdG9yaW5nIGVzY2FsYXRpb24gZW5hYmxlZC48YnI+PGJyPkZyYWdtZW50OiBkZWNvZGVf', 'base64').toString()
+        },
+        'observer-log-02': {
+          access: stage4_unlocked,
+          content: Buffer.from('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxNTowMjxicj5TdWJqZWN0IGJlaGF2aW9yIGFub21hbG91cy48YnI+PGJyPkZyYWdtZW50OiB2YWxlXw==', 'base64').toString()
+        },
+        'observer-log-03': {
+          access: stage4_unlocked,
+          content: Buffer.from('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxODo0NDxicj5BcmNoaXZlIGludGVncml0eSBjb21wcm9taXNlZC48YnI+PGJyPkZyYWdtZW50OiBhcmNoaXZl', 'base64').toString()
+        },
+        'journal-day01': {
+          access: stage4_unlocked,
+          title: 'VALE INVESTIGATION LOG',
+          content: '<div class="journal-date">Day 01</div><p>Started investigating the archive system today. It\'s more complex than I thought. The architecture seems to have layers of hidden nodes.</p><p>Node 03 required multiple encoding layers. Someone intentionally hid the internal structure.</p>'
+        },
+        'journal-day03': {
+          access: stage4_unlocked,
+          title: 'VALE INVESTIGATION LOG',
+          content: '<div class="journal-date">Day 03</div><p>There are references to something called "Subjects". A storage system should not track subjects.</p><p>Something about this Archive feels wrong. The system is fighting back. Every time I access a node, the encryption keys rotate.</p>'
+        },
+        'journal-day05': {
+          access: stage4_unlocked,
+          title: 'VALE INVESTIGATION LOG',
+          content: '<div class="journal-date">Day 05</div><p>Noticed anomalies. Someone else was here before me. There are traces of a previous investigator, but their logs were scrubbed.</p><p>Node 04 is heavily restricted. Whatever is stored there is clearly important.</p>'
+        },
+        'journal-day09': {
+          access: stage4_unlocked,
+          title: 'VALE INVESTIGATION LOG',
+          content: '<div class="journal-date">Day 09</div><p>The anomalies are increasing. Fragments of deleted conversations are appearing in the terminal buffer. \'archivist404040\'... who is that?</p><p>Something inside the system noticed me. New log files appeared automatically. The Archive might be monitoring investigators.</p>'
+        },
+        'journal-day12': {
+          access: stage4_unlocked,
+          title: 'VALE INVESTIGATION LOG',
+          content: '<div class="journal-date">Day 12</div><p>The logs now reference my name. I never entered it anywhere. The system shouldn\'t know who I am.</p><p>I\'m not the only one being tracked. There\'s a whole list of us. We\'re all part of the archive now. We\'re the data.</p>'
+        },
+        'journal-day16': {
+          access: stage4_unlocked,
+          title: 'VALE INVESTIGATION LOG',
+          content: '<div class="journal-date">Day 16</div><p>The Archive isn\'t storage. It\'s an observer. Investigators who go too deep become entries.</p><p>If anyone finds this... look me up in the archive. The forum holds the final piece. Good luck, investigator.</p>'
+        },
+        'terminal-dump': {
+          access: stage4_unlocked,
+          content: Buffer.from('W1NZU10gQ09OTkVDVElPTiBURVJNSU5BVEVEPGJyPltTWVNdIEZPUkNFRCBESVNDT05ORUNUPGJyPltTWVNdIEFSQ0hJVkUgTE9DSyBJTklUSUFURUQ=', 'base64').toString()
+        },
+        'network-trace': {
+          access: stage4_unlocked,
+          content: Buffer.from('VFJBQ0UgUk9VVEU6PGJyPjxicj42MTcyNjM2ODY5NzY2NTNBMkYyRjY2NkY3MjE1NkQ=', 'base64').toString() + '<br><br>' + Buffer.from('TkVUV09SSyBUUkFDRSBMT0cgLSBOT0RFXzA0X09VVEJPVU5EPGJyPi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLTxicj5QQUNLRVRfSUQ6IDB4ODgyOTxicj5TT1VSQ0U6IElOVEVSTkFMX05PREVfMDQ8YnI+REVTVElOQVRJT046IEVYVEVSTkFMX0FSQ0hJVklTVF9SRUxBWTxicj5QQVlMT0FEIChIRVgpOjxicj40MyA0ZiA0ZSA1NCA0MSA0MyA1NCAyMCA0MSA1MiA0MyA0OCA0OSA1NiA0OSA1MyA1NCAyMCA0NiA0ZiA1MiAyMCA0MyA0ZiA0NCA0NSAzYSAyMCAzOCAzNCAzMCAzMiAzOSAzMTxicj4tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS08YnI+VFJBQ0UgQ09NUExFVEUu', 'base64').toString()
+        },
+        'memory-scan-log': {
+          access: stage4_unlocked,
+          content: 'Memory block recovery successful.<br><br>Recovered archive fragment:<br>' + Buffer.from('Tk9ERV8wMw==', 'base64').toString()
+        },
+        'resonance': {
+          access: stage4_unlocked,
+          title: Buffer.from('Tk9ERV8wMw==', 'base64').toString(),
+          content: ''
+        },
+        'vale-photo-data': {
+          access: userData.stage1_vale_photo_unlocked || false,
+          content: 'Coordinates: 42.3601° N, 71.0589° W | Fragment: 0x445A'
+        },
+        'forum': {
+          access: userData.stage4_unlocked || false,
+          content: Buffer.from('PGRpdiBzdHlsZT0iY29sb3I6IzBjMDtmb250LWZhbWlseTptb25vc3BhY2U7cGFkZGluZzozMHB4O2JhY2tncm91bmQ6IzA1MDUwNTtoZWlnaHQ6MTAwJTtvdmVyZmxvdy15OmF1dG87Ym94LXNpemluZzpib3JkZXItYm94OyI+CiAgPGRpdiBzdHlsZT0iYm9yZGVyOiAxcHggc29saWQgIzBjMDsgcGFkZGluZzogMjBweDsgbWF4LXdpZHRoOiA4MDBweDsgbWFyZ2luOiAwIGF1dG87IGJhY2tncm91bmQ6ICMwMDA7Ij4KICAgIDxoMiBzdHlsZT0ibWFyZ2luLXRvcDogMDsgbGV0dGVyLXNwYWNpbmc6IDFweDsgY29sb3I6ICMwZjA7Ij5JTlRFUk5BTCBBUkNISVZFIEZPUlVNIFtSRUFELU9OTFldPC9oMj4KICAgIDxkaXYgc3R5bGU9ImJvcmRlci1ib3R0b206IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy1ib3R0b206IDE1cHg7IG1hcmdpbi1ib3R0b206IDIwcHg7IGxpbmUtaGVpZ2h0OiAxLjY7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPlRvcGljOjwvc3Ryb25nPiBUaGUgQW5vbWFseTwvcD4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPkF1dGhvcjo8L3N0cm9uZz4gYXJjaGl2aXN0NDA0MDQwPC9wPgogICAgICA8cCBzdHlsZT0ibWFyZ2luOiA1cHggMDsiPjxzdHJvbmc+RGF0ZTo8L3N0cm9uZz4gMTk5OC0wNC0xMiAwMzoxNCBBTTwvcD4KICAgIDwvZGl2PgogICAgPGRpdiBzdHlsZT0ibGluZS1oZWlnaHQ6IDEuODsgZm9udC1zaXplOiAxNXB4OyI+CiAgICAgIDxwPkkndmUgZm91bmQgc29tZXRoaW5nIGluIHRoZSBsb2dzLiBJdCdzIG5vdCBqdXN0IGRhdGEgY29ycnVwdGlvbi4gSXQncyBsb29raW5nIGJhY2sgYXQgdXMuPC9wPgogICAgICA8cD5JJ3ZlIGhpZGRlbiB0aGUgZmluYWwga2V5IGluIHRoZSBzeXN0ZW0gbmV0d29yayB0cmFjZS4gSWYgYW55b25lIGZpbmRzIHRoaXMsIHlvdSBrbm93IHdoZXJlIHRvIHJlYWNoIG1lLiBMb29rIGF0IG5ldHdvcmtfdHJhY2Uuc3lzLjwvcD4KICAgICAgPHAgPkV4dGVybmFsIGNvbnRhY3QgcHJvdG9jb2wgaW5pdGlhdGVkLiBUaGV5IGFyZSB3YXRjaGluZyB0aGUgbmV0d29yay48L3A+CiAgICA8L2Rpdj4KICAgIDxkaXYgc3R5bGU9Im1hcmdpbi10b3A6IDMwcHg7IGJvcmRlci10b3A6IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy10b3A6IDE1cHg7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogMDsiPltFbmQgb2YgdGhyZWFkXTwvcD4KICAgIDwvZGl2PgogIDwvZGl2Pgo8L2Rpdj4=', 'base64').toString()
+        },
+        'records': {
+          access: userData.stage4_unlocked || false,
+          content: Buffer.from('PGRpdiBzdHlsZT0iY29sb3I6IzBmMDtmb250LWZhbWlseTptb25vc3BhY2U7cGFkZGluZzoyMHB4O2JhY2tncm91bmQ6IzAwMDtoZWlnaHQ6MTAwJTtvdmVyZmxvdy15OmF1dG87Ij4KICA8aDI+QVJDSElWRSBSRUNPUkRTIFtSRVNUT1JFRF08L2gyPgogIDxociBzdHlsZT0iYm9yZGVyLWNvbG9yOiMwZjA7Ij4KICA8cD48c3Ryb25nPlN0YXR1czo8L3N0cm9uZz4gQUxMIFNZU1RFTVMgTk9NSU5BTDwvcD4KICA8cD48c3Ryb25nPk1lc3NhZ2U6PC9zdHJvbmc+IFRoZSBhcmNoaXZlIGhhcyBiZWVuIGZ1bGx5IHJlc3RvcmVkLjwvcD4KICA8cD5UaGFuayB5b3UgZm9yIHlvdXIgYXNzaXN0YW5jZSwgSW52ZXN0aWdhdG9yLjwvcD4KICA8YnI+CiAgPHAgc3R5bGU9ImNvbG9yOiNmZmY7dGV4dC1zaGFkb3c6MCAwIDVweCAjZmZmOyI+VEhFIEVORC48L3A+CjwvZGl2Pg==', 'base64').toString()
+        }
+      };
+
+      const item = contentMap[target];
+      if (item && item.access) {
+        return res.json({ status: "success", content: item.content, title: item.title });
+      } else {
+        return res.status(403).json({ status: "error", message: "Access denied" });
+      }
+    } catch (err: any) {
+      console.error(">>> [API] getContent error:", err.message);
       res.status(500).json({ error: "Internal server error" });
     }
   });
