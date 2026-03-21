@@ -249,9 +249,32 @@ function initPhase() {
   // Ensure we start fresh
   document.body.classList.remove('phase-2', 'phase-3', 'light-mode');
   
+  // Fallback for elements
+  let titleEl = document.getElementById('main-title');
+  let subtitleEl = document.getElementById('subtitle');
+  
+  if (!titleEl || !subtitleEl) {
+      console.log("Missing UI elements, but continuing");
+      const container = document.getElementById('content');
+      if (container) {
+          container.innerHTML = `
+            <div class="title" id="main-title">The First Trial.</div>
+            <div class="subtitle" id="subtitle">Many have tried. The door remains sealed.</div>
+            <div class="field-wrap">
+              <div class="textarea-container">
+                <input type="text" id="puzzle-input" autocomplete="off" spellcheck="false" placeholder="">
+                <div class="response" id="response"></div>
+              </div>
+            </div>
+          `;
+          titleEl = document.getElementById('main-title');
+          subtitleEl = document.getElementById('subtitle');
+      }
+  }
+
   if (currentStep === 2) {
-    title.textContent = "The Voynich Marginalia.";
-    subtitle.textContent = "The Frenchman holds the key.";
+    if (titleEl) titleEl.textContent = "The Voynich Marginalia.";
+    if (subtitleEl) subtitleEl.textContent = "The Frenchman holds the key.";
     document.body.classList.add('phase-2');
     if (window.soundManager) window.soundManager.startFireCrackling();
   } else if (currentStep === 3) {
@@ -259,8 +282,8 @@ function initPhase() {
     startPhase3();
   } else {
     // Default to Step 1
-    title.textContent = "The First Trial.";
-    subtitle.textContent = "Many have tried. The door remains sealed.";
+    if (titleEl) titleEl.textContent = "The First Trial.";
+    if (subtitleEl) subtitleEl.textContent = "Many have tried. The door remains sealed.";
   }
 }
 
