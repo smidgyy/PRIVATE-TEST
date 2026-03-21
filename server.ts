@@ -305,6 +305,23 @@ async function startServer() {
   }));
   app.use(express.json());
 
+  const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.join(process.cwd(), 'dist'));
+  const baseDir = isProduction ? 'dist' : 'public';
+
+  const protectedRoutes = [
+    "/stage1.html", 
+    "/stage2.html", 
+    "/resonance.html", 
+    "/node02.html",
+    "/node04.html", 
+    "/node04/index.html",
+    "/node03/secret.html", 
+    "/node03/secret/index.html",
+    "/article.html", 
+    "/node03/index.html",
+    "/archive/index.html"
+  ];
+
   const LOCKED_HTML = `
 <!DOCTYPE html>
 <html>
@@ -322,6 +339,7 @@ async function startServer() {
             margin: 0;
             text-transform: uppercase;
             overflow: hidden;
+            text-align: center;
         }
         .box { 
             border: 1px solid #f00; 
@@ -349,14 +367,30 @@ async function startServer() {
     </style>
 </head>
 <body>
-    <div class="box">
-        <h1 class="glitch">ACCESS DENIED</h1>
-        <p>NODE STATUS: LOCKED</p>
-        <p style="margin-top: 10px; font-size: 0.8rem;">REQUIRED PROGRESSION NOT DETECTED</p>
+    <div class="box glitch">
+        <h1>ARCHIVE ACCESS DENIED</h1>
+        <p>Node authentication required.</p>
     </div>
 </body>
-</html>
-`;
+</html>`;
+
+  // 1. FIRST: STATIC FILES (MANDATORY - MUST BE FIRST)
+  // We wrap express.static to ensure it handles assets but skips protected HTML routes
+  app.use((req: any, res: any, next: any) => {
+    // If it's a protected HTML route, skip static serving so it hits the protection logic later
+    if (protectedRoutes.includes(req.path)) {
+      return next();
+    }
+    
+    // Force MIME types for critical assets if needed, though express.static usually handles this
+    if (req.path.endsWith('.js')) res.setHeader('Content-Type', 'application/javascript');
+    if (req.path.endsWith('.css')) res.setHeader('Content-Type', 'text/css');
+    
+    return express.static(baseDir)(req, res, next);
+  });
+
+  // 2. SECOND: API ROUTES
+  // (API routes are defined below and will be reached if static serving falls through)
 
   async function getOrCreateUserData(userId: string) {
     if (!userId) return null;
@@ -1110,175 +1144,6 @@ Stage 4 unlocked. Messenger updated.`,
     }
   });
 
-  // Protected HTML routes
-  const protectedRoutes = [
-    "/stage1.html", 
-    "/stage2.html", 
-    "/resonance.html", 
-    "/node04.html", 
-    "/node04/index.html",
-    "/node03/secret.html", 
-    "/node03/secret/index.html",
-    "/article.html", 
-    "/node03/index.html",
-    "/archive/index.html"
-  ];
-  
-  app.get("/api/getNode02", async (req: any, res: any) => {
-    const userId = req.query.userId || "anonymous_" + Date.now();
-    const origin = req.get('origin') || req.get('referer') || 'unknown';
-
-    console.log(`>>> [DEBUG] /api/getNode02 | Origin: ${origin} | UserId: ${userId}`);
-
-    try {
-      const userData = await getOrCreateUserData(userId);
-
-      console.log(">>> [API] getNode02: User state:", userData);
-
-      // Progression check: Node 02 requires archive/stage2 unlock
-      const hasAccess = !!userData?.archive_unlocked || !!userData?.stage2_unlocked || !!userData?.stage1_archive_unlocked;
-      
-      if (!hasAccess) {
-        console.log(`>>> [API] getNode02: Access DENIED for ${userId}. Returning LOCKED state.`);
-        return res.send(LOCKED_HTML);
-      }
-
-      console.log(">>> [API] getNode02: Serving Node02 to:", userId);
-      res.sendFile(path.join(process.cwd(), "public/node02.html"));
-    } catch (err: any) {
-      console.error(">>> [API] getNode02 error:", err);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
-  app.get("/api/getNode03", async (req: any, res: any) => {
-    const userId = req.query.userId || "anonymous_" + Date.now();
-    const origin = req.get('origin') || req.get('referer') || 'unknown';
-    console.log(`>>> [DEBUG] /api/getNode03 | Origin: ${origin} | UserId: ${userId}`);
-    
-    try {
-      const userData = await getOrCreateUserData(userId);
-      // Node 03 secret check
-      const hasAccess = !!userData?.stage3_secret_unlocked;
-      
-      if (!hasAccess) {
-        console.log(`>>> [API] getNode03: Access DENIED for ${userId}. Returning LOCKED state.`);
-        return res.send(LOCKED_HTML);
-      }
-      
-      res.sendFile(path.join(process.cwd(), "public/node03/secret.html"));
-    } catch (err: any) {
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
-  app.get("/api/getNode04", async (req: any, res: any) => {
-    const userId = req.query.userId || "anonymous_" + Date.now();
-    const origin = req.get('origin') || req.get('referer') || 'unknown';
-    console.log(`>>> [DEBUG] /api/getNode04 | Origin: ${origin} | UserId: ${userId}`);
-    
-    try {
-      const userData = await getOrCreateUserData(userId);
-      // Node 04 check
-      const hasAccess = !!userData?.stage4_unlocked;
-      
-      if (!hasAccess) {
-        console.log(`>>> [API] getNode04: Access DENIED for ${userId}. Returning LOCKED state.`);
-        return res.send(LOCKED_HTML);
-      }
-      
-      res.sendFile(path.join(process.cwd(), "public/node04.html"));
-    } catch (err: any) {
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
-  app.get(protectedRoutes, async (req: any, res: any) => {
-    const userId = req.query.userId || "anonymous_" + Date.now();
-    const origin = req.get('origin') || req.get('referer') || 'unknown';
-    console.log(`>>> [DEBUG] /protectedRoute | Path: ${req.path} | Origin: ${origin} | UserId: ${userId}`);
-
-    let userData: any = null;
-    try {
-      userData = await getOrCreateUserData(userId);
-      if (_db instanceof MockFirestore && userData) {
-        userData.isMock = true;
-      }
-      console.log(`>>> [ROUTING] User state for ${userId}:`, userData);
-    } catch (e: any) {
-      console.error("!!! [ROUTING] Database error:", e.message);
-    }
-    
-    const target = req.path.substring(1); // remove leading slash
-    let hasAccess = false;
-    
-    // Check if we are in Mock mode
-    const isMock = _db instanceof MockFirestore;
-    if (isMock) {
-      console.warn(`>>> [ROUTING] Running in Mock mode for ${req.path}. Persistence is disabled.`);
-    }
-    
-    if (target === "stage1.html" || target === "article.html" || target === "node03/index.html" || target === "archive/index.html") {
-      hasAccess = true; // Publicly accessible but served through backend
-    } else if (target === "stage2.html" || target === "resonance.html" || target === "node02.html") {
-      hasAccess = !!userData?.stage2_unlocked || !!userData?.archive_unlocked || !!userData?.stage1_archive_unlocked;
-    } else if (target === "node04.html" || target === "node04/index.html") {
-      hasAccess = !!userData?.stage4_unlocked;
-    } else if (target === "node03/secret.html" || target === "node03/secret/index.html") {
-      hasAccess = !!userData?.stage3_secret_unlocked;
-    } else if (target === "archive/index.html") {
-      hasAccess = (!!userData?.stage4_progress && userData?.stage4_progress >= 3); 
-    }
-    
-    if (!hasAccess) {
-      console.log(`>>> [ROUTING] Access DENIED for ${req.path} | UserId: ${userId}. Returning LOCKED state.`);
-      // For HTML routes, return the locked page instead of 403
-      return res.send(LOCKED_HTML);
-    }
-    
-    const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.join(process.cwd(), 'dist'));
-    const baseDir = isProduction ? 'dist' : 'public';
-    const filePath = path.join(process.cwd(), baseDir, target);
-    
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).sendFile(path.join(process.cwd(), 'index.html'));
-    }
-  });
-
-  app.get("/", (req: any, res: any) => {
-    res.redirect("/stage1.html" + (req.query.userId ? "?userId=" + req.query.userId : ""));
-  });
-
-  app.get("/api/getUserState", async (req: any, res: any) => {
-    try {
-      const userId = req.query.userId;
-      if (!userId) {
-        return res.status(400).json({ error: "Missing userId" });
-      }
-      
-      let db: any = null;
-      try {
-        db = await getDb();
-      } catch (e: any) {}
-      
-      let userData: any = {};
-      if (db) {
-        const userDoc = await db.collection('users').doc(userId).get();
-        userData = userDoc.data() || {};
-        if (_db instanceof MockFirestore) {
-          userData.isMock = true;
-        }
-      }
-      
-      res.json(userData);
-    } catch (err: any) {
-      console.error(">>> [API] getUserState error:", err.message);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
   // Content Security: Secure content retrieval endpoint
   app.post('/api/getContent', async (req: any, res: any) => {
     try {
@@ -1400,9 +1265,65 @@ Stage 4 unlocked. Messenger updated.`,
     }
   });
 
-  // Vite middleware for development
-  const isProduction = process.env.NODE_ENV === "production" || process.argv[1]?.endsWith('server.js') || fs.existsSync(path.join(process.cwd(), 'dist'));
-  
+
+  // 3. THIRD: PROTECTED ROUTES LOGIC (MANDATORY)
+  app.get(protectedRoutes, async (req: any, res: any) => {
+    const userId = req.query.userId || "anonymous_" + Date.now();
+    const origin = req.get('origin') || req.get('referer') || 'unknown';
+    console.log(`>>> [DEBUG] /protectedRoute | Path: ${req.path} | Origin: ${origin} | UserId: ${userId}`);
+
+    let userData: any = null;
+    try {
+      userData = await getOrCreateUserData(userId);
+      if (_db instanceof MockFirestore && userData) {
+        userData.isMock = true;
+      }
+      console.log(`>>> [ROUTING] User state for ${userId}:`, userData);
+    } catch (e: any) {
+      console.error("!!! [ROUTING] Database error:", e.message);
+    }
+    
+    const target = req.path.substring(1); // remove leading slash
+    let hasAccess = false;
+    
+    // Check if we are in Mock mode
+    const isMock = _db instanceof MockFirestore;
+    if (isMock) {
+      console.warn(`>>> [ROUTING] Running in Mock mode for ${req.path}. Persistence is disabled.`);
+    }
+    
+    if (target === "stage1.html" || target === "article.html") {
+      hasAccess = true; // Publicly accessible but served through backend
+    } else if (target === "stage2.html" || target === "resonance.html" || target === "node02.html") {
+      hasAccess = !!userData?.stage2_unlocked || !!userData?.archive_unlocked || !!userData?.stage1_archive_unlocked;
+    } else if (target === "node04.html" || target === "node04/index.html") {
+      hasAccess = !!userData?.stage4_unlocked;
+    } else if (target === "node03/secret.html" || target === "node03/secret/index.html") {
+      hasAccess = !!userData?.stage3_secret_unlocked;
+    } else if (target === "archive/index.html") {
+      hasAccess = (!!userData?.stage4_progress && userData?.stage4_progress >= 3); 
+    } else if (target === "node03/index.html") {
+      hasAccess = !!userData?.stage2_unlocked;
+    }
+    
+    if (!hasAccess) {
+      console.log(`>>> [ROUTING] Access DENIED for ${req.path} | UserId: ${userId}. Returning LOCKED state.`);
+      // For HTML routes, return the locked page instead of 403
+      return res.send(LOCKED_HTML);
+    }
+    
+    // If stage2.html is requested, we can serve node02.html directly if they have access
+    const actualTarget = target === "stage2.html" ? "node02.html" : target;
+    const filePath = path.join(process.cwd(), baseDir, actualTarget);
+    
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).sendFile(path.join(process.cwd(), 'index.html'));
+    }
+  });
+
+  // Vite middleware for development (MOVED TO END)
   if (!isProduction) {
     console.log("Starting Vite in development mode...");
     try {
@@ -1417,16 +1338,19 @@ Stage 4 unlocked. Messenger updated.`,
     }
   } else {
     console.log("Starting in production mode...");
-    const distPath = path.join(process.cwd(), 'dist');
-    if (fs.existsSync(distPath)) {
-      app.use(express.static(distPath));
-      app.get('*all', (req: any, res: any) => {
-        res.sendFile(path.join(distPath, 'index.html'));
-      });
-    } else {
-      console.warn("Warning: 'dist' directory not found. Static files will not be served.");
-    }
   }
+
+  // 4. LAST: CATCH-ALL (FALLBACK HANDLER)
+  app.get("*", (req: any, res: any) => {
+    // Only handle HTML navigation, not assets or API
+    if (req.path.includes('.') || req.path.startsWith('/api/')) return res.status(404).end();
+    
+    if (isProduction) {
+      res.sendFile(path.join(process.cwd(), 'dist', 'index.html'));
+    } else {
+      res.redirect("/stage1.html" + (req.query.userId ? "?userId=" + req.query.userId : ""));
+    }
+  });
 
   // Remove the old listen call at the bottom
 }

@@ -163,10 +163,10 @@ svg { max-width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(139, 115,
 
   <p class="void-text">You are looking too closely at the darkness. The answer is already yours.</p>
 
-  <a id="return-link" href="stage2.html" class="return-link">[ Return to the threshold ]</a>
+  <a id="return-link" onclick="if(window.parent && window.parent.closeWindow) window.parent.closeWindow('browser'); else window.location.href='stage2.html';" class="return-link">[ Return to the threshold ]</a>
 </div>
 
-<button onclick="localStorage.clear(); window.location.href='stage2.html';" style="position: fixed; bottom: 10px; right: 10px; font-size: 10px; color: #666; background: transparent; border: 1px solid #666; padding: 4px; cursor: pointer; z-index: 9999;">[DEV] Reset Progress</button>
+<button onclick="localStorage.clear(); if(window.parent && window.parent.location) window.parent.location.reload(); else window.location.reload();" style="position: fixed; bottom: 10px; right: 10px; font-size: 10px; color: #666; background: transparent; border: 1px solid #666; padding: 4px; cursor: pointer; z-index: 9999;">[DEV] Reset Progress</button>
 <script src="/sound-manager.js?v=2"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {

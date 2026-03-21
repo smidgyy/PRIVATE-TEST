@@ -3,43 +3,6 @@
 <head>
 <script src="/auth-init.js"></script>
 <script type="module" src="/main.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const checkAccess = async () => {
-    const userId = window.ensureUserId();
-    try {
-      const res = await fetch('/api/validateCommand?userId=' + userId, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'get_progression', userId })
-      });
-      const data = await res.json();
-      // REMOVED: Auto-progression from server data that was overriding initial state
-      
-      const resAccess = await fetch('/api/validateCommand?userId=' + userId, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'check_access', target: 'node02', userId })
-      });
-      const dataAccess = await resAccess.json();
-      if (dataAccess.status !== 'success') {
-        document.documentElement.innerHTML = '<body style="background:#000;color:#f00;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;margin:0;"><div><h1>ARCHIVE ACCESS DENIED</h1><p>Node authentication required.</p></div></body>';
-        showErrorWindow("ACCESS DENIED");
-      } else {
-        document.getElementById('content').style.display = 'flex';
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-  
-  function showErrorWindow(msg) {
-    alert(msg);
-  }
-  
-  checkAccess();
-});
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The First Trial.</title>
@@ -50,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; background: #000; color: #d4d0c8; font-family: 'Pixelify Sans', sans-serif; overflow: hidden; }
 body { display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 1s ease, color 1s ease; }
-#content { display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; }
+#content { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; }
 
 .title { font-size: clamp(1.2rem, 4vh, 1.6rem); letter-spacing: 0.04em; margin-bottom: 1.5rem; opacity: 0; animation: fadeIn 2s ease forwards; }
 .subtitle { font-size: clamp(0.7rem, 2vh, 0.8rem); color: #666; letter-spacing: 0.06em; margin-bottom: 2.5rem; opacity: 0; animation: fadeIn 2s ease 2s forwards; text-align: center; }

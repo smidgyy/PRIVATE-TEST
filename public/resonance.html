@@ -3,34 +3,6 @@
 <head>
 <script src="/auth-init.js"></script>
 <script type="module" src="/main.js"></script>
-<script>
-if (window === window.top) {
-  window.location.href = 'stage1.html';
-} else {
-  document.addEventListener('DOMContentLoaded', () => {
-    const checkAccess = async () => {
-      const userId = window.ensureUserId();
-      try {
-        const res = await fetch('/api/validateCommand?userId=' + userId, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'check_access', target: 'resonance', userId })
-        });
-        const data = await res.json();
-        if (data.status !== 'success') {
-          document.documentElement.innerHTML = '<body style="background:#000;color:#f00;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;margin:0;"><div><h1>ACCESS DENIED</h1><p>Node authentication required.</p></div></body>';
-          setTimeout(function(){ window.top.location.href = 'stage1.html'; }, 3000);
-        } else {
-          document.getElementById('content').style.display = 'flex';
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    checkAccess();
-  });
-}
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Resonance Data</title>
@@ -48,7 +20,7 @@ if (window === window.top) {
     overflow: hidden;
     position: relative;
   }
-  #content { display: none; flex-direction: column; width: 100%; height: 100%; }
+  #content { display: flex; flex-direction: column; width: 100%; height: 100%; }
 
   /* Scanlines effect */
   body::before {
