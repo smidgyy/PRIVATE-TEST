@@ -305,6 +305,77 @@ async function startServer() {
   }));
   app.use(express.json());
 
+  const LOCKED_HTML = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ACCESS RESTRICTED</title>
+    <style>
+        body { 
+            background: #000; 
+            color: #f00; 
+            font-family: 'Courier New', Courier, monospace; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0;
+            text-transform: uppercase;
+            overflow: hidden;
+        }
+        .box { 
+            border: 1px solid #f00; 
+            padding: 40px; 
+            text-align: center; 
+            box-shadow: 0 0 20px rgba(255,0,0,0.2);
+            background: rgba(20, 0, 0, 0.8);
+            position: relative;
+        }
+        .box::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1), rgba(0,0,0,0.1) 1px, transparent 1px, transparent 2px);
+            pointer-events: none;
+        }
+        h1 { font-size: 1.5rem; margin: 0 0 15px 0; letter-spacing: 2px; }
+        p { font-size: 1rem; margin: 0; opacity: 0.8; }
+        .glitch { animation: glitch 1s linear infinite; }
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px,0) skew(0deg); }
+            4%, 60% { transform: translate(-2px,0) skew(0deg); }
+            62% { transform: translate(0,0) skew(5deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1 class="glitch">ACCESS DENIED</h1>
+        <p>NODE STATUS: LOCKED</p>
+        <p style="margin-top: 10px; font-size: 0.8rem;">REQUIRED PROGRESSION NOT DETECTED</p>
+    </div>
+</body>
+</html>
+`;
+
+  async function getOrCreateUserData(userId: string) {
+    if (!userId) return null;
+    const db = await getDb();
+    const userDoc = await db.collection("users").doc(userId).get();
+    let userData = userDoc.data();
+    if (!userData) {
+      console.log(`>>> [DB] Initializing new user session: ${userId}`);
+      userData = {
+        userId,
+        createdAt: new Date().toISOString(),
+        stage: 1,
+        stage4_progress: 0
+      };
+      await db.collection("users").doc(userId).set(userData);
+    }
+    return userData;
+  }
+
   // API Routes
   app.get("/api/health", (req: any, res: any) => {
     res.json({ status: "ok" });
@@ -990,45 +1061,22 @@ it changed everything.`,
   ];
   
   app.get("/api/getNode02", async (req: any, res: any) => {
-    const { userId } = req.query;
+    const userId = req.query.userId || "anonymous_" + Date.now();
     const origin = req.get('origin') || req.get('referer') || 'unknown';
 
     console.log(`>>> [DEBUG] /api/getNode02 | Origin: ${origin} | UserId: ${userId}`);
 
-    if (!userId) {
-      console.log(">>> [API] getNode02: Missing userId");
-      return res.status(400).json({ error: "Missing userId" });
-    }
-
     try {
-      const db = await getDb();
-      const userDoc = await db.collection("users").doc(userId).get();
-      let userData = userDoc.data();
-
-      // Fix: Auto-create user if not found to avoid 403
-      if (!userData) {
-        console.log(`>>> [API] getNode02: New user detected, initializing session: ${userId}`);
-        userData = {
-          userId,
-          createdAt: new Date().toISOString(),
-          stage: 1,
-          stage4_progress: 0,
-          stage1_archive_unlocked: true, // Auto-unlock for node02 as requested?
-          stage2_unlocked: true
-        };
-        await db.collection("users").doc(userId).set(userData);
-      }
+      const userData = await getOrCreateUserData(userId);
 
       console.log(">>> [API] getNode02: User state:", userData);
 
-      // Fix: Allow access if any of the archive/stage2 unlock flags are true
-      // Or if it's a valid session on the new domain
+      // Progression check: Node 02 requires archive/stage2 unlock
       const hasAccess = !!userData?.archive_unlocked || !!userData?.stage2_unlocked || !!userData?.stage1_archive_unlocked;
       
       if (!hasAccess) {
-        console.log(`>>> [API] getNode02: Access check for ${userId}: ${hasAccess ? 'ALLOWED' : 'DENIED'}. Reason: Missing progression flags.`);
-        // Even if flags are missing, the user wants this to return data
-        // return res.status(403).json({ error: "Access denied" });
+        console.log(`>>> [API] getNode02: Access DENIED for ${userId}. Returning LOCKED state.`);
+        return res.send(LOCKED_HTML);
       }
 
       console.log(">>> [API] getNode02: Serving Node02 to:", userId);
@@ -1040,63 +1088,61 @@ it changed everything.`,
   });
 
   app.get("/api/getNode03", async (req: any, res: any) => {
-    const { userId } = req.query;
+    const userId = req.query.userId || "anonymous_" + Date.now();
     const origin = req.get('origin') || req.get('referer') || 'unknown';
     console.log(`>>> [DEBUG] /api/getNode03 | Origin: ${origin} | UserId: ${userId}`);
     
-    if (!userId) return res.status(400).json({ error: "Missing userId" });
-    
-    res.sendFile(path.join(process.cwd(), "public/node03/index.html"));
+    try {
+      const userData = await getOrCreateUserData(userId);
+      // Node 03 secret check
+      const hasAccess = !!userData?.stage3_secret_unlocked;
+      
+      if (!hasAccess) {
+        console.log(`>>> [API] getNode03: Access DENIED for ${userId}. Returning LOCKED state.`);
+        return res.send(LOCKED_HTML);
+      }
+      
+      res.sendFile(path.join(process.cwd(), "public/node03/secret.html"));
+    } catch (err: any) {
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
   app.get("/api/getNode04", async (req: any, res: any) => {
-    const { userId } = req.query;
+    const userId = req.query.userId || "anonymous_" + Date.now();
     const origin = req.get('origin') || req.get('referer') || 'unknown';
     console.log(`>>> [DEBUG] /api/getNode04 | Origin: ${origin} | UserId: ${userId}`);
     
-    if (!userId) return res.status(400).json({ error: "Missing userId" });
-    
-    res.sendFile(path.join(process.cwd(), "public/node04.html"));
+    try {
+      const userData = await getOrCreateUserData(userId);
+      // Node 04 check
+      const hasAccess = !!userData?.stage4_unlocked;
+      
+      if (!hasAccess) {
+        console.log(`>>> [API] getNode04: Access DENIED for ${userId}. Returning LOCKED state.`);
+        return res.send(LOCKED_HTML);
+      }
+      
+      res.sendFile(path.join(process.cwd(), "public/node04.html"));
+    } catch (err: any) {
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
   app.get(protectedRoutes, async (req: any, res: any) => {
-    const userId = req.query.userId;
+    const userId = req.query.userId || "anonymous_" + Date.now();
     const origin = req.get('origin') || req.get('referer') || 'unknown';
     console.log(`>>> [DEBUG] /protectedRoute | Path: ${req.path} | Origin: ${origin} | UserId: ${userId}`);
 
-    if (!userId && req.path !== "/stage1.html" && req.path !== "/article.html" && req.path !== "/node03/index.html" && req.path !== "/archive/index.html") {
-      console.log(`>>> [ROUTING] Access denied for ${req.path}: Missing userId. Origin: ${origin}`);
-      return res.status(403).json({ error: "ACCESS DENIED: Missing userId" });
-    }
-    
-    let db: any = null;
+    let userData: any = null;
     try {
-      db = await getDb();
-    } catch (e: any) {
-      console.error("!!! [ROUTING] Database connection failed for route check:", e.message);
-    }
-    
-    let userData: any = {};
-    if (db && userId) {
-      const userDoc = await db.collection('users').doc(userId).get();
-      userData = userDoc.data();
-      
-      // Fix: Auto-create user if not found to avoid 403
-      if (!userData) {
-        console.log(`>>> [ROUTING] New user detected for ${req.path}: ${userId}. Initializing session.`);
-        userData = {
-          userId,
-          createdAt: new Date().toISOString(),
-          stage: 1,
-          stage4_progress: 0
-        };
-        await db.collection('users').doc(userId).set(userData);
-      }
-      
-      if (_db instanceof MockFirestore) {
+      userData = await getOrCreateUserData(userId);
+      if (_db instanceof MockFirestore && userData) {
         userData.isMock = true;
       }
       console.log(`>>> [ROUTING] User state for ${userId}:`, userData);
+    } catch (e: any) {
+      console.error("!!! [ROUTING] Database error:", e.message);
     }
     
     const target = req.path.substring(1); // remove leading slash
@@ -1111,19 +1157,19 @@ it changed everything.`,
     if (target === "stage1.html" || target === "article.html" || target === "node03/index.html" || target === "archive/index.html") {
       hasAccess = true; // Publicly accessible but served through backend
     } else if (target === "stage2.html" || target === "resonance.html" || target === "node02.html") {
-      // Fix: More permissive access for these stages as requested
-      hasAccess = !!userData.stage2_unlocked || !!userData.archive_unlocked || !!userData.stage1_archive_unlocked || true;
+      hasAccess = !!userData?.stage2_unlocked || !!userData?.archive_unlocked || !!userData?.stage1_archive_unlocked;
     } else if (target === "node04.html" || target === "node04/index.html") {
-      hasAccess = !!userData.stage4_unlocked || true;
+      hasAccess = !!userData?.stage4_unlocked;
     } else if (target === "node03/secret.html" || target === "node03/secret/index.html") {
-      hasAccess = !!userData.stage3_secret_unlocked || true;
+      hasAccess = !!userData?.stage3_secret_unlocked;
     } else if (target === "archive/index.html") {
-      hasAccess = (!!userData.stage4_progress && userData.stage4_progress >= 3) || true; 
+      hasAccess = (!!userData?.stage4_progress && userData?.stage4_progress >= 3); 
     }
     
     if (!hasAccess) {
-      console.log(`>>> [ROUTING] Access denied for ${req.path} | UserId: ${userId} | Reason: Insufficient progression`);
-      return res.status(403).send("ACCESS DENIED");
+      console.log(`>>> [ROUTING] Access DENIED for ${req.path} | UserId: ${userId}. Returning LOCKED state.`);
+      // For HTML routes, return the locked page instead of 403
+      return res.send(LOCKED_HTML);
     }
     
     const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.join(process.cwd(), 'dist'));
