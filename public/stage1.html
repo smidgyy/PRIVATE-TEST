@@ -2979,15 +2979,15 @@ Something is hidden there.
             }
             
             if (targetUrl === 'archive://node/02') {
-              console.log("Loading node02 with userId:", userId);
+              console.log("Loading stage2 with userId:", userId);
               unlocked = true; // Let the backend handle access check
-              fetchPath = '/api/getNode02?userId=' + userId;
+              fetchPath = 'stage2.html?userId=' + userId;
               finishLoad();
               return;
             } else if (targetUrl === 'archive://node/02/article') {
               console.log("Loading article with userId:", userId);
               unlocked = true; // Let the backend handle access check
-              fetchPath = '/api/getArticle?userId=' + userId;
+              fetchPath = 'article.html?userId=' + userId;
               finishLoad();
               return;
             } else if (targetUrl === 'archive://node02/resonance.html' || targetUrl === 'archive://node/02/resonance.html') {

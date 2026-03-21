@@ -490,7 +490,7 @@ async function dissolveAndRespond() {
           window.parent.openBrowserUrl('archive://node/02/article');
         } else {
           // Fallback if not in iframe
-          window.location.href = '/api/getArticle?userId=' + userId;
+          window.location.href = 'article.html?userId=' + userId;
         }
       } else if (data.action === 'phase2_success') {
         if (window.soundManager) {
