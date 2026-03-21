@@ -1273,7 +1273,16 @@ Stage 4 unlocked. Messenger updated.`,
 
   // 3. THIRD: PROTECTED ROUTES LOGIC (MANDATORY)
   app.get(protectedRoutes, async (req: any, res: any, next: any) => {
-    if (req.path.startsWith("/api")) {
+    if (
+      req.path.startsWith("/api") ||
+      req.path.includes(".js") ||
+      req.path.includes(".css") ||
+      req.path.includes(".png") ||
+      req.path.includes(".jpg") ||
+      req.path.includes(".svg") ||
+      req.path.includes(".woff2") ||
+      req.path.includes(".mp3")
+    ) {
       return next();
     }
     
