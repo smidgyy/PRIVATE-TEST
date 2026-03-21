@@ -1735,7 +1735,20 @@ Something is hidden there.
   <script src="/sound-manager.js?v=2"></script>
   <script>
     let chats = {};
-    let currentStage = parseInt(localStorage.getItem("currentStage")) || 1;
+    let currentStage = 1;
+    let userId = new URLSearchParams(window.location.search).get('userId') || window.firebaseAuth?.currentUser?.uid || 'anonymous';
+
+    async function fetchUserState() {
+      try {
+        const res = await fetch('/api/userState?userId=' + userId);
+        const data = await res.json();
+        currentStage = data.currentStage || 1;
+        return data;
+      } catch (e) {
+        console.error("Failed to fetch user state:", e);
+        return {};
+      }
+    }
     function arrangeIcons() {
       const icons = Array.from(document.querySelectorAll('#desktop > .icon:not(.hidden)'));
       let startX = 10;
@@ -1808,8 +1821,9 @@ Something is hidden there.
       }
     }
 
-    document.getElementById('boot-start-btn').addEventListener('click', () => {
+    document.getElementById('boot-start-btn').addEventListener('click', async () => {
       document.getElementById('boot-start-btn').style.display = 'none';
+      await fetchUserState();
       if (window.soundManager) window.soundManager.startComputerHum();
       playBootSound();
       setTimeout(nextBootStep, 1000);

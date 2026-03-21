@@ -451,7 +451,21 @@ async function startServer() {
         currentStage: userData.stage || 1,
         node02_step: userData.node02_step || 1,
         stage1_vale_unlocked: !!userData.stage1_vale_unlocked,
-        stage4_progress: userData.stage4_progress || 0
+        stage1_complete: !!userData.stage1_complete,
+        stage2_unlocked: !!userData.stage2_unlocked,
+        stage3_greed: !!userData.stage3_greed,
+        stage3_death: !!userData.stage3_death,
+        stage3_money: !!userData.stage3_money,
+        stage3_gold: !!userData.stage3_gold,
+        stage3_ground: !!userData.stage3_ground,
+        stage3_messenger_complete: !!userData.stage3_messenger_complete,
+        stage4_unlocked: !!userData.stage4_unlocked,
+        stage4_forum_unlocked: !!userData.stage4_forum_unlocked,
+        stage4_observer_logs_opened: !!userData.stage4_observer_logs_opened,
+        stage4_network_trace_viewed: !!userData.stage4_network_trace_viewed,
+        stage4_complete: !!userData.stage4_complete,
+        stage4_progress: userData.stage4_progress || 0,
+        aurora_archive_unlocked: !!userData.aurora_archive_unlocked
       });
     } catch (error) {
       console.error("Error in /api/userState:", error);
