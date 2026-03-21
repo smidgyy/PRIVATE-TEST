@@ -377,6 +377,11 @@ async function startServer() {
   // 1. FIRST: STATIC FILES (MANDATORY - MUST BE FIRST)
   // We wrap express.static to ensure it handles assets but skips protected HTML routes
   app.use((req: any, res: any, next: any) => {
+    // 0. API BYPASS: Never serve API routes as static files
+    if (req.path.startsWith("/api")) {
+      return next();
+    }
+    
     // If it's a protected HTML route, skip static serving so it hits the protection logic later
     if (protectedRoutes.includes(req.path)) {
       return next();
@@ -1267,7 +1272,11 @@ Stage 4 unlocked. Messenger updated.`,
 
 
   // 3. THIRD: PROTECTED ROUTES LOGIC (MANDATORY)
-  app.get(protectedRoutes, async (req: any, res: any) => {
+  app.get(protectedRoutes, async (req: any, res: any, next: any) => {
+    if (req.path.startsWith("/api")) {
+      return next();
+    }
+    
     const userId = req.query.userId || "anonymous_" + Date.now();
     const origin = req.get('origin') || req.get('referer') || 'unknown';
     console.log(`>>> [DEBUG] /protectedRoute | Path: ${req.path} | Origin: ${origin} | UserId: ${userId}`);
