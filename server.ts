@@ -437,6 +437,34 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  app.get("/api/getNode02", async (req: any, res: any) => {
+    console.log("HIT: GET /api/getNode02");
+    try {
+      const userId = req.query.userId;
+      if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+      const db = await getDb();
+      const userDoc = await db.collection("users").doc(userId).get();
+      const userData = userDoc.data() || {};
+
+      const hasAccess = !!userData.stage2_unlocked || !!userData.archive_unlocked || !!userData.stage1_archive_unlocked;
+      
+      if (!hasAccess) {
+        return res.status(403).send(LOCKED_HTML);
+      }
+
+      const filePath = path.join(process.cwd(), baseDir, "node02.html");
+      if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+      } else {
+        res.status(404).send("Node 02 content not found");
+      }
+    } catch (error) {
+      console.error("Error in /api/getNode02:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+
   app.get("/api/debug-db", async (req: any, res: any) => {
     console.log("HIT: GET /api/debug-db");
     try {
