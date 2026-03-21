@@ -2934,6 +2934,26 @@ Something is hidden there.
     }
 
     function openBrowserUrl(url) {
+      if (url === "archive://node/02") {
+        openWindow('browser');
+        const page = document.getElementById("browser-page");
+        let iframe = document.getElementById("browser-frame");
+        if (!iframe) {
+          iframe = document.createElement('iframe');
+          iframe.id = "browser-frame";
+          iframe.style.width = "100%";
+          iframe.style.height = "100%";
+          iframe.style.border = "none";
+          if (page) {
+            page.innerHTML = '';
+            page.appendChild(iframe);
+          }
+        }
+        const userId = window.ensureUserId();
+        iframe.src = "/stage2.html?userId=" + userId;
+        iframe.style.display = "block";
+        return;
+      }
       openWindow('browser');
       const spinner = document.getElementById('browser-spinner');
       const page = document.getElementById('browser-page');
