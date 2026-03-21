@@ -1,18 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="/auth-init.js"></script>
 <script type="module" src="/main.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const checkAccess = async () => {
-    let retries = 0;
-    while (!window.firebaseAuth?.currentUser && retries < 20) {
-      await new Promise(r => setTimeout(r, 100));
-      retries++;
-    }
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('userId') || window.firebaseAuth?.currentUser?.uid || 'anonymous';
+    const userId = window.ensureUserId();
     try {
       const res = await fetch('/api/validateCommand?userId=' + userId, {
         method: 'POST',

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AURORA OS v1.3</title>
+  <script src="/auth-init.js"></script>
   <script type="module" src="/main.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400;1,700&family=JetBrains+Mono:wght@400;700&family=VT323&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
@@ -1750,9 +1751,6 @@ Something is hidden there.
   <script>
     let chats = {};
     let currentStage = parseInt(localStorage.getItem("currentStage")) || 1;
-    function getUserId() {
-      return window.userId || localStorage.getItem("aurora_userId");
-    }
     function arrangeIcons() {
       const icons = Array.from(document.querySelectorAll('#desktop > .icon:not(.hidden)'));
       let startX = 10;
@@ -1937,24 +1935,10 @@ Something is hidden there.
       }
     }
 
-    async function getUserId() {
-      if (window.userId) return window.userId;
-      if (window.userIdReady) return await window.userIdReady;
-      
-      let retries = 0;
-      while (!window.userIdReady && retries < 50) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        retries++;
-      }
-      
-      if (window.userIdReady) return await window.userIdReady;
-      return window.userId || localStorage.getItem("aurora_userId");
-    }
-
     async function openWindow(id) {
       console.log("Opening fragment:", id);
       
-      const userId = await getUserId();
+      const userId = window.ensureUserId();
       
       if (!userId) {
         console.error("CRITICAL: User ID initialization failed.");
@@ -2969,7 +2953,7 @@ Something is hidden there.
       if (page) page.style.opacity = '0.5';
       
       const checkAndLoad = async () => {
-        const userId = await getUserId();
+        const userId = window.ensureUserId();
         
         if (!userId && (targetUrl.includes('node/02') || targetUrl.includes('resonance') || targetUrl.includes('node/03/secret') || targetUrl.includes('node/04') || targetUrl.includes('forum') || targetUrl.includes('records'))) {
           console.error("CRITICAL: User ID missing for protected route.");
@@ -3572,7 +3556,7 @@ Something is hidden there.
       }
       
       // Server sync
-      const userId = await getUserId();
+      const userId = window.ensureUserId();
       
       if (userId) {
         fetch('/api/validateCommand?userId=' + userId, {
@@ -3642,7 +3626,7 @@ Something is hidden there.
     }
 
     async function waitForAuth() {
-      return await getUserId();
+      return window.ensureUserId();
     }
 
     function saveChats() {
@@ -3761,7 +3745,7 @@ Something is hidden there.
       historyDiv.scrollTop = historyDiv.scrollHeight;
       
       try {
-        const userId = await waitForAuth();
+        const userId = window.ensureUserId();
         const response = await fetch('/api/sendMessage?userId=' + userId, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -4079,7 +4063,7 @@ Something is hidden there.
       const token = btoa(step + '|' + SECRET_KEY);
       localStorage.setItem('aurora_stage3_token', token);
       
-      const userId = await getUserId();
+      const userId = window.ensureUserId();
       
       if (userId) {
         fetch('/api/validateCommand', {
@@ -4112,7 +4096,7 @@ Something is hidden there.
       localStorage.setItem("currentStage", currentStage);
       startStage4();
       
-      const userId = await getUserId();
+      const userId = window.ensureUserId();
       
       if (userId) {
         fetch('/api/validateCommand', {
@@ -4130,7 +4114,7 @@ Something is hidden there.
     }
 
     async function syncProgression() {
-      const userId = await getUserId();
+      const userId = window.ensureUserId();
       
       if (!userId) return;
       

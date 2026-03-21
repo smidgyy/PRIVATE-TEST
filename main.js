@@ -1,30 +1,27 @@
-// Generate or retrieve a persistent session ID
-let userId = localStorage.getItem('aurora_userId');
-if (!userId) {
-  userId = 'user_' + Math.random().toString(36).substring(2, 11);
-  localStorage.setItem('aurora_userId', userId);
-}
+// AURORA OS - MAIN MODULE
+// This module runs after auth-init.js
 
 // SINGLE SOURCE OF TRUTH
-window.userId = userId;
-window.getUserId = () => window.userId;
+const userId = window.userId || localStorage.getItem('aurora_user_id');
+if (userId) {
+  window.userId = userId;
+}
 
-console.log("USER ID INITIALIZED:", window.userId);
+window.getUserId = () => window.userId || (typeof window.ensureUserId === 'function' ? window.ensureUserId() : localStorage.getItem('aurora_user_id'));
 
-// Provide a promise for readiness
+// Expose for compatibility
 window.userIdReady = Promise.resolve(window.userId);
 
 // Expose minimal interface for compatibility with existing scripts
 window.onAuthReady = (callback) => {
-  // Simulate auth ready immediately since we're using session IDs
   setTimeout(() => {
     if (typeof callback === 'function') {
       callback({ uid: window.userId });
     }
-  }, 100);
+  }, 0);
 };
 
-// Mock firestore for any legacy scripts that might try to access it
+// Mock firestore for any legacy scripts
 window.firestore = {
   doc: () => ({}),
   getDoc: () => Promise.resolve({ exists: () => false }),
