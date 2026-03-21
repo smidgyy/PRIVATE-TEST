@@ -1273,71 +1273,76 @@ Stage 4 unlocked. Messenger updated.`,
 
   // 3. THIRD: PROTECTED ROUTES LOGIC (MANDATORY)
   app.get(protectedRoutes, async (req: any, res: any, next: any) => {
-    if (
-      req.path.startsWith("/api") ||
-      req.path.includes(".js") ||
-      req.path.includes(".css") ||
-      req.path.includes(".png") ||
-      req.path.includes(".jpg") ||
-      req.path.includes(".svg") ||
-      req.path.includes(".woff2") ||
-      req.path.includes(".mp3")
-    ) {
-      return next();
-    }
-    
-    const userId = req.query.userId || "anonymous_" + Date.now();
-    const origin = req.get('origin') || req.get('referer') || 'unknown';
-    console.log(`>>> [DEBUG] /protectedRoute | Path: ${req.path} | Origin: ${origin} | UserId: ${userId}`);
-
-    let userData: any = null;
     try {
-      userData = await getOrCreateUserData(userId);
-      if (_db instanceof MockFirestore && userData) {
-        userData.isMock = true;
+      if (
+        req.path.startsWith("/api") ||
+        req.path.includes(".js") ||
+        req.path.includes(".css") ||
+        req.path.includes(".png") ||
+        req.path.includes(".jpg") ||
+        req.path.includes(".svg") ||
+        req.path.includes(".woff2") ||
+        req.path.includes(".mp3")
+      ) {
+        return next();
       }
-      console.log(`>>> [ROUTING] User state for ${userId}:`, userData);
-    } catch (e: any) {
-      console.error("!!! [ROUTING] Database error:", e.message);
-    }
-    
-    const target = req.path.substring(1); // remove leading slash
-    let hasAccess = false;
-    
-    // Check if we are in Mock mode
-    const isMock = _db instanceof MockFirestore;
-    if (isMock) {
-      console.warn(`>>> [ROUTING] Running in Mock mode for ${req.path}. Persistence is disabled.`);
-    }
-    
-    if (target === "stage1.html" || target === "article.html") {
-      hasAccess = true; // Publicly accessible but served through backend
-    } else if (target === "stage2.html" || target === "resonance.html" || target === "node02.html") {
-      hasAccess = !!userData?.stage2_unlocked || !!userData?.archive_unlocked || !!userData?.stage1_archive_unlocked;
-    } else if (target === "node04.html" || target === "node04/index.html") {
-      hasAccess = !!userData?.stage4_unlocked;
-    } else if (target === "node03/secret.html" || target === "node03/secret/index.html") {
-      hasAccess = !!userData?.stage3_secret_unlocked;
-    } else if (target === "archive/index.html") {
-      hasAccess = (!!userData?.stage4_progress && userData?.stage4_progress >= 3); 
-    } else if (target === "node03/index.html") {
-      hasAccess = !!userData?.stage2_unlocked;
-    }
-    
-    if (!hasAccess) {
-      console.log(`>>> [ROUTING] Access DENIED for ${req.path} | UserId: ${userId}. Returning LOCKED state.`);
-      // For HTML routes, return the locked page instead of 403
-      return res.send(LOCKED_HTML);
-    }
-    
-    // If stage2.html is requested, we can serve node02.html directly if they have access
-    const actualTarget = target === "stage2.html" ? "node02.html" : target;
-    const filePath = path.join(process.cwd(), baseDir, actualTarget);
-    
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).sendFile(path.join(process.cwd(), 'index.html'));
+      
+      const userId = req.query.userId || "anonymous_" + Date.now();
+      const origin = req.get('origin') || req.get('referer') || 'unknown';
+      console.log(`>>> [DEBUG] /protectedRoute | Path: ${req.path} | Origin: ${origin} | UserId: ${userId}`);
+
+      let userData: any = null;
+      try {
+        userData = await getOrCreateUserData(userId);
+        if (_db instanceof MockFirestore && userData) {
+          userData.isMock = true;
+        }
+        console.log(`>>> [ROUTING] User state for ${userId}:`, userData);
+      } catch (e: any) {
+        console.error("!!! [ROUTING] Database error:", e.message);
+      }
+      
+      const target = req.path.substring(1); // remove leading slash
+      let hasAccess = false;
+      
+      // Check if we are in Mock mode
+      const isMock = _db instanceof MockFirestore;
+      if (isMock) {
+        console.warn(`>>> [ROUTING] Running in Mock mode for ${req.path}. Persistence is disabled.`);
+      }
+      
+      if (target === "stage1.html" || target === "article.html") {
+        hasAccess = true; // Publicly accessible but served through backend
+      } else if (target === "stage2.html" || target === "resonance.html" || target === "node02.html") {
+        hasAccess = !!userData?.stage2_unlocked || !!userData?.archive_unlocked || !!userData?.stage1_archive_unlocked;
+      } else if (target === "node04.html" || target === "node04/index.html") {
+        hasAccess = !!userData?.stage4_unlocked;
+      } else if (target === "node03/secret.html" || target === "node03/secret/index.html") {
+        hasAccess = !!userData?.stage3_secret_unlocked;
+      } else if (target === "archive/index.html") {
+        hasAccess = (!!userData?.stage4_progress && userData?.stage4_progress >= 3); 
+      } else if (target === "node03/index.html") {
+        hasAccess = !!userData?.stage2_unlocked;
+      }
+      
+      if (!hasAccess) {
+        console.log(`>>> [ROUTING] Access DENIED for ${req.path} | UserId: ${userId}. Returning LOCKED state.`);
+        // For HTML routes, return the locked page instead of 403
+        return res.send(LOCKED_HTML);
+      }
+      
+      // If stage2.html is requested, we can serve node02.html directly if they have access
+      const actualTarget = target === "stage2.html" ? "node02.html" : target;
+      const filePath = path.join(process.cwd(), baseDir, actualTarget);
+      
+      if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+      } else {
+        res.status(404).sendFile(path.join(process.cwd(), 'index.html'));
+      }
+    } catch (error) {
+      console.error("protectedRoutes error:", error);
+      return res.status(500).send("Server Error");
     }
   });
 
@@ -1360,17 +1365,26 @@ Stage 4 unlocked. Messenger updated.`,
 
   // 4. LAST: CATCH-ALL (FALLBACK HANDLER)
   app.get("*", (req: any, res: any) => {
-    // Only handle HTML navigation, not assets or API
-    if (req.path.includes('.') || req.path.startsWith('/api/')) return res.status(404).end();
-    
-    if (isProduction) {
-      res.sendFile(path.join(process.cwd(), 'dist', 'index.html'));
-    } else {
-      res.redirect("/stage1.html" + (req.query.userId ? "?userId=" + req.query.userId : ""));
+    try {
+      // Only handle HTML navigation, not assets or API
+      if (req.path.includes('.') || req.path.startsWith('/api/')) return res.status(404).end();
+      
+      if (isProduction) {
+        res.sendFile(path.join(process.cwd(), 'dist', 'index.html'));
+      } else {
+        res.redirect("/stage1.html" + (req.query.userId ? "?userId=" + req.query.userId : ""));
+      }
+    } catch (error) {
+      console.error("Catch-all error:", error);
+      res.status(500).send("Server Error");
     }
   });
 
-  // Remove the old listen call at the bottom
+  // 5. GLOBAL ERROR HANDLER (CRITICAL)
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error("SERVER ERROR:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  });
 }
 
 startServer().catch(err => {
