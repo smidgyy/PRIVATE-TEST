@@ -964,6 +964,26 @@ async function startServer() {
         const currentStep = userData.messenger_step || 0;
         const currentStage = userData.stage || 1;
 
+        // Handle the first command explicitly to allow progression from Stage 1
+        if (input === "the archive remembers") {
+          if (currentStage > 1) {
+            return res.json({ status: "success", contact, reply: "COMMAND ALREADY USED", action: null });
+          } else if (db) {
+            await db.collection('users').doc(userId).set({ 
+              stage1_archive_unlocked: true,
+              archive_unlocked: true,
+              stage2_unlocked: true,
+              stage: 2
+            }, { merge: true });
+            return res.json({ 
+              status: "success", 
+              contact, 
+              reply: "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.", 
+              action: "unlock_archive" 
+            });
+          }
+        }
+
         if (currentStage < 3) {
           return res.json({ status: "error", reply: "ACCESS DENIED: Signal alignment required." });
         }
@@ -1128,29 +1148,7 @@ Stage 4 unlocked. Messenger updated.`,
         ];
         reply = eliasReplies[Math.floor(Math.random() * eliasReplies.length)];
       } else if (contact === 'archive') {
-        let userData: any = {};
-        if (db) {
-          const userDoc = await db.collection('users').doc(userId).get();
-          userData = userDoc.data() || {};
-        }
-        const currentStage = userData.stage || 1;
-
-        if (t === 'THE ARCHIVE REMEMBERS') {
-          if (currentStage > 1) {
-            reply = "COMMAND ALREADY USED";
-          } else if (db) {
-            await db.collection('users').doc(userId).set({ 
-              stage1_archive_unlocked: true,
-              archive_unlocked: true,
-              stage2_unlocked: true,
-              stage: 2
-            }, { merge: true });
-            reply = "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.";
-            action = "unlock_archive";
-          }
-        } else {
-          reply = "INVALID INPUT. AWAITING COMMAND.";
-        }
+        reply = "INVALID INPUT. AWAITING COMMAND.";
       }
 
       return res.json({ 
