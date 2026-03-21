@@ -273,7 +273,9 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || 3000;
   
   // 1. LISTEN IMMEDIATELY to satisfy Hostinger
+  console.log("SERVER STARTING...");
   const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log("SERVER RUNNING");
     console.log(`>>> [SERVER] Running on port ${PORT}`);
     // Warm up the database in the background
     getDb().catch(e => console.error("!!! [WARMUP ERROR] Database failed to warm up:", e.message));
@@ -1180,7 +1182,9 @@ Stage 4 unlocked. Messenger updated.`,
         userData = userDoc.data() || {};
       }
 
-      const stage4_unlocked = userData.stage4_unlocked || false;
+      if (!userData) {
+        return res.status(403).json({ status: "error", message: "ACCESS DENIED" });
+      }
 
       const contentMap: { [key: string]: { content: string, title?: string, access: boolean } } = {
         'recycle_fragment': {
@@ -1200,61 +1204,61 @@ Stage 4 unlocked. Messenger updated.`,
           content: `<p>[FRAGMENT RECOVERY LOG - 04]</p><p>Source: Node 03 Archive</p><p>Status: Decrypted</p><p>The rhythm of the machine... it's not just noise. It's a transmission. The second pulse holds the key. Look closely at the second transmission in the music player. The rhythm will reveal the final frequency.</p><p>Hint: [CORRUPTED]</p>`
         },
         'observer-log-01': {
-          access: stage4_unlocked,
+          access: userData.stage4_unlocked || false,
           content: Buffer.from('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxMjozMTxicj5Ob2RlIGFjY2VzcyByZWNvcmRlZC48YnI+PGJyPlVzZXIgY2xhc3NpZmljYXRpb246IEludmVzdGlnYXRvcjxicj5QYXR0ZXJuIG1hdGNoOiBWQUxFPGJyPjxicj5Nb25pdG9yaW5nIGVzY2FsYXRpb24gZW5hYmxlZC48YnI+PGJyPkZyYWdtZW50OiBkZWNvZGVf', 'base64').toString()
         },
         'observer-log-02': {
-          access: stage4_unlocked,
+          access: userData.stage4_unlocked || false,
           content: Buffer.from('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxNTowMjxicj5TdWJqZWN0IGJlaGF2aW9yIGFub21hbG91cy48YnI+PGJyPkZyYWdtZW50OiB2YWxlXw==', 'base64').toString()
         },
         'observer-log-03': {
-          access: stage4_unlocked,
+          access: userData.stage4_unlocked || false,
           content: Buffer.from('U1lTVEVNIE9CU0VSVkVSIExPRzxicj48YnI+VGltZXN0YW1wOiAwNDoxODo0NDxicj5BcmNoaXZlIGludGVncml0eSBjb21wcm9taXNlZC48YnI+PGJyPkZyYWdtZW50OiBhcmNoaXZl', 'base64').toString()
         },
         'journal-day01': {
-          access: stage4_unlocked,
+          access: userData.stage4_unlocked || false,
           title: 'VALE INVESTIGATION LOG',
           content: '<div class="journal-date">Day 01</div><p>Started investigating the archive system today. It\'s more complex than I thought. The architecture seems to have layers of hidden nodes.</p><p>Node 03 required multiple encoding layers. Someone intentionally hid the internal structure.</p>'
         },
         'journal-day03': {
-          access: stage4_unlocked,
+          access: userData.stage4_unlocked || false,
           title: 'VALE INVESTIGATION LOG',
           content: '<div class="journal-date">Day 03</div><p>There are references to something called "Subjects". A storage system should not track subjects.</p><p>Something about this Archive feels wrong. The system is fighting back. Every time I access a node, the encryption keys rotate.</p>'
         },
         'journal-day05': {
-          access: stage4_unlocked,
+          access: userData.stage4_unlocked || false,
           title: 'VALE INVESTIGATION LOG',
           content: '<div class="journal-date">Day 05</div><p>Noticed anomalies. Someone else was here before me. There are traces of a previous investigator, but their logs were scrubbed.</p><p>Node 04 is heavily restricted. Whatever is stored there is clearly important.</p>'
         },
         'journal-day09': {
-          access: stage4_unlocked,
+          access: userData.stage4_unlocked || false,
           title: 'VALE INVESTIGATION LOG',
           content: '<div class="journal-date">Day 09</div><p>The anomalies are increasing. Fragments of deleted conversations are appearing in the terminal buffer. \'archivist404040\'... who is that?</p><p>Something inside the system noticed me. New log files appeared automatically. The Archive might be monitoring investigators.</p>'
         },
         'journal-day12': {
-          access: stage4_unlocked,
+          access: userData.stage4_unlocked || false,
           title: 'VALE INVESTIGATION LOG',
           content: '<div class="journal-date">Day 12</div><p>The logs now reference my name. I never entered it anywhere. The system shouldn\'t know who I am.</p><p>I\'m not the only one being tracked. There\'s a whole list of us. We\'re all part of the archive now. We\'re the data.</p>'
         },
         'journal-day16': {
-          access: stage4_unlocked,
+          access: userData.stage4_unlocked || false,
           title: 'VALE INVESTIGATION LOG',
           content: '<div class="journal-date">Day 16</div><p>The Archive isn\'t storage. It\'s an observer. Investigators who go too deep become entries.</p><p>If anyone finds this... look me up in the archive. The forum holds the final piece. Good luck, investigator.</p>'
         },
         'terminal-dump': {
-          access: stage4_unlocked,
+          access: userData.stage4_unlocked || false,
           content: Buffer.from('W1NZU10gQ09OTkVDVElPTiBURVJNSU5BVEVEPGJyPltTWVNdIEZPUkNFRCBESVNDT05ORUNUPGJyPltTWVNdIEFSQ0hJVkUgTE9DSyBJTklUSUFURUQ=', 'base64').toString()
         },
         'network-trace': {
-          access: stage4_unlocked,
+          access: userData.stage4_unlocked || false,
           content: Buffer.from('VFJBQ0UgUk9VVEU6PGJyPjxicj42MTcyNjM2ODY5NzY2NTNBMkYyRjY2NkY3MjE1NkQ=', 'base64').toString() + '<br><br>' + Buffer.from('TkVUV09SSyBUUkFDRSBMT0cgLSBOT0RFXzA0X09VVEJPVU5EPGJyPi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLTxicj5QQUNLRVRfSUQ6IDB4ODgyOTxicj5TT1VSQ0U6IElOVEVSTkFMX05PREVfMDQ8YnI+REVTVElOQVRJT046IEVYVEVSTkFMX0FSQ0hJVklTVF9SRUxBWTxicj5QQVlMT0FEIChIRVgpOjxicj40MyA0ZiA0ZSA1NCA0MSA0MyA1NCAyMCA0MSA1MiA0MyA0OCA0OSA1NiA0OSA1MyA1NCAyMCA0NiA0ZiA1MiAyMCA0MyA0ZiA0NCA0NSAzYSAyMCAzOCAzNCAzMCAzMiAzOSAzMTxicj4tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS08YnI+VFJBQ0UgQ09NUExFVEUu', 'base64').toString()
         },
         'memory-scan-log': {
-          access: stage4_unlocked,
+          access: userData.stage4_unlocked || false,
           content: 'Memory block recovery successful.<br><br>Recovered archive fragment:<br>' + Buffer.from('Tk9ERV8wMw==', 'base64').toString()
         },
         'resonance': {
-          access: stage4_unlocked,
+          access: userData.stage4_unlocked || false,
           title: Buffer.from('Tk9ERV8wMw==', 'base64').toString(),
           content: ''
         },
@@ -1316,6 +1320,10 @@ Stage 4 unlocked. Messenger updated.`,
         }
       } catch (e: any) {
         console.error("!!! [ROUTING] Database error:", e.message);
+      }
+
+      if (!userData) {
+        return res.status(403).send(LOCKED_HTML);
       }
       
       const target = req.path.substring(1); // remove leading slash
@@ -1402,6 +1410,14 @@ Stage 4 unlocked. Messenger updated.`,
 
 startServer().catch(err => {
   console.error("FATAL ERROR DURING STARTUP:", err);
-  process.exit(1);
+  // process.exit(1);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION:", err.stack || err);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("UNHANDLED REJECTION:", err);
 });
 
