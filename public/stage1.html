@@ -3553,7 +3553,9 @@ Something is hidden there.
       if (typeof arrangeIcons === 'function') {
         setTimeout(arrangeIcons, 50);
       }
-      localStorage.setI    async function syncProgression() {
+    }
+
+    async function syncProgression() {
       console.log('>>> [SYNC] Checking backend progression...');
       const state = await fetchUserState();
       
