@@ -1421,18 +1421,23 @@ Stage 4 unlocked. Messenger updated.`,
       const isMock = _db instanceof MockFirestore;
       
       if (target === "stage1.html") {
-        hasAccess = true; // Publicly accessible but served through backend
+        hasAccess = true; 
       } else if (target === "article.html") {
         hasAccess = !!userData?.stage2_phase1_complete;
       } else if (target === "stage2.html" || target === "resonance.html" || target === "node02.html") {
+        if ((userData.stage || 1) < 2) return res.send(LOCKED_HTML);
         hasAccess = !!userData?.stage2_unlocked || !!userData?.archive_unlocked || !!userData?.stage1_archive_unlocked;
       } else if (target === "node04.html" || target === "node04/index.html") {
+        if ((userData.stage || 1) < 4) return res.send(LOCKED_HTML);
         hasAccess = !!userData?.stage4_unlocked;
       } else if (target === "node03/secret.html" || target === "node03/secret/index.html") {
+        if ((userData.stage || 1) < 3) return res.send(LOCKED_HTML);
         hasAccess = !!userData?.stage3_secret_unlocked;
       } else if (target === "archive/index.html") {
+        if ((userData.stage || 1) < 4) return res.send(LOCKED_HTML);
         hasAccess = (!!userData?.stage4_progress && userData?.stage4_progress >= 3); 
       } else if (target === "node03/index.html") {
+        if ((userData.stage || 1) < 3) return res.send(LOCKED_HTML);
         hasAccess = !!userData?.stage2_unlocked;
       }
       
