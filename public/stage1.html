@@ -3251,6 +3251,12 @@ Something is hidden there.
                   }, 1500);
                 }, 1500);
               }, 1000);
+            } else if (data.action === 'open_vale_archive') {
+              printTerminal(data.reply || "Decoding archive...");
+              setTimeout(() => {
+                openWindow('vale-folder');
+                if (window.soundManager) window.soundManager.playSuccess();
+              }, 1000);
             } else if (data.action === 'unlock_vale') {
               printTerminal("Decoding archive...");
               setTimeout(() => {

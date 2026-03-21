@@ -536,6 +536,28 @@ async function startServer() {
     }
 
     if (type === 'terminal') {
+      if (fullCmd.toLowerCase() === 'decode_vale_archive') {
+        let userData: any = {};
+        if (db) {
+          const userDoc = await db.collection('users').doc(effectiveUserId).get();
+          userData = userDoc.data() || {};
+        }
+        
+        // The user said: "return a structured success response with an action that opens the Vale logs / Vale journal view."
+        // "reply: a short confirmation message"
+        // "action: open the existing Vale archive / logs window"
+        
+        if (db) await db.collection('users').doc(effectiveUserId).set({ 
+          stage1_vale_unlocked: true, 
+          stage4_progress: Math.max(userData.stage4_progress || 0, 2) 
+        }, { merge: true });
+        
+        return res.json({ 
+          status: 'success', 
+          reply: 'Vale archive decryption sequence initiated... Success.',
+          action: 'open_vale_archive' 
+        });
+      }
       if (baseCmd === 'decrypt' && args.length > 1 && args[1] === '840291') {
         if (db) await db.collection('users').doc(effectiveUserId).set({ 
           stage1_archive_unlocked: true,
