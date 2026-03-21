@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURORA OS - ARCHIVE ENTRY K7-4419</title>
+    <style>
+        body {
+            background-color: #050505;
+            color: #0c0;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .container {
+            border: 1px solid #0c0;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            background: #000;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+            position: relative;
+        }
+        .header {
+            border-bottom: 1px dashed #0c0;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        h1 {
+            font-size: 1.2rem;
+            margin: 0;
+            letter-spacing: 2px;
+        }
+        .status {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+        .content {
+            line-height: 1.8;
+        }
+        .row {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .label {
+            width: 150px;
+            font-weight: bold;
+        }
+        .value {
+            flex: 1;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px dashed #0c0;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .glitch-text {
+            animation: glitch 2s infinite;
+        }
+        @keyframes glitch {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; transform: translateX(1px); }
+            51% { opacity: 1; transform: translateX(0); }
+            100% { opacity: 1; }
+        }
+        .btn-return {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            border: 1px solid #0c0;
+            color: #0c0;
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .btn-return:hover {
+            background: #0c0;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ARCHIVE ENTRY: K7-4419</h1>
+            <div class="status">STATUS: PERMANENTLY RECORDED</div>
+        </div>
+        <div class="content">
+            <div class="row">
+                <div class="label">SUBJECT:</div>
+                <div class="value">INVESTIGATOR</div>
+            </div>
+            <div class="row">
+                <div class="label">ENTRY_ID:</div>
+                <div class="value">K7-4419</div>
+            </div>
+            <div class="row">
+                <div class="label">TIMESTAMP:</div>
+                <div class="value" id="timestamp"></div>
+            </div>
+            <div class="row">
+                <div class="label">LOCATION:</div>
+                <div class="value">AURORA_ROOT_ARCHIVE</div>
+            </div>
+            <br>
+            <p>The investigation is complete. The anomaly has been observed, classified, and integrated into the collective memory.</p>
+            <p class="glitch-text">You are no longer just a witness. You are part of the archive now.</p>
+        </div>
+        <div class="footer">
+            <div>SYSTEM_STABLE // CONNECTION_SECURE</div>
+            <a href="/stage1.html" class="btn-return">RETURN TO TERMINAL</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('timestamp').innerText = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    </script>
+</body>
+</html>

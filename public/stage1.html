@@ -3029,7 +3029,7 @@ Something is hidden there.
                     dynamicHtml = atob('PGRpdiBzdHlsZT0iY29sb3I6IzBjMDtmb250LWZhbWlseTptb25vc3BhY2U7cGFkZGluZzozMHB4O2JhY2tncm91bmQ6IzA1MDUwNTtoZWlnaHQ6MTAwJTtvdmVyZmxvdy15OmF1dG87Ym94LXNpemluZzpib3JkZXItYm94OyI+CiAgPGRpdiBzdHlsZT0iYm9yZGVyOiAxcHggc29saWQgIzBjMDsgcGFkZGluZzogMjBweDsgbWF4LXdpZHRoOiA4MDBweDsgbWFyZ2luOiAwIGF1dG87IGJhY2tncm91bmQ6ICMwMDA7Ij4KICAgIDxoMiBzdHlsZT0ibWFyZ2luLXRvcDogMDsgbGV0dGVyLXNwYWNpbmc6IDFweDsgY29sb3I6ICMwZjA7Ij5JTlRFUk5BTCBBUkNISVZFIEZPUlVNIFtSRUFELU9OTFldPC9oMj4KICAgIDxkaXYgc3R5bGU9ImJvcmRlci1ib3R0b206IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy1ib3R0b206IDE1cHg7IG1hcmdpbi1ib3R0b206IDIwcHg7IGxpbmUtaGVpZ2h0OiAxLjY7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPlRvcGljOjwvc3Ryb25nPiBUaGUgQW5vbWFseTwvcD4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPkF1dGhvcjo8L3N0cm9uZz4gYXJjaGl2aXN0NDA0MDQwPC9wPgogICAgICA8cCBzdHlsZT0ibWFyZ2luOiA1cHggMDsiPjxzdHJvbmc+RGF0ZTo8L3N0cm9uZz4gMTk5OC0wNC0xMiAwMzoxNCBBTTwvcD4KICAgIDwvZGl2PgogICAgPGRpdiBzdHlsZT0ibGluZS1oZWlnaHQ6IDEuODsgZm9udC1zaXplOiAxNXB4OyI+CiAgICAgIDxwPkkndmUgZm91bmQgc29tZXRoaW5nIGluIHRoZSBsb2dzLiBJdCdzIG5vdCBqdXN0IGRhdGEgY29ycnVwdGlvbi4gSXQncyBsb29raW5nIGJhY2sgYXQgdXMuPC9wPgogICAgICA8cD5JJ3ZlIGhpZGRlbiB0aGUgZmluYWwga2V5IGluIHRoZSBzeXN0ZW0gbmV0d29yayB0cmFjZS4gSWYgYW55b25lIGZpbmRzIHRoaXMsIHlvdSBrbm93IHdoZXJlIHRvIHJlYWNoIG1lLiBMb29rIGF0IG5ldHdvcmtfdHJhY2Uuc3lzLjwvcD4KICAgICAgPHAgPkV4dGVybmFsIGNvbnRhY3QgcHJvdG9jb2wgaW5pdGlhdGVkLiBUaGV5IGFyZSB3YXRjaGluZyB0aGUgbmV0d29yay48L3A+CiAgICA8L2Rpdj4KICAgIDxkaXYgc3R5bGU9Im1hcmdpbi10b3A6IDMwcHg7IGJvcmRlci10b3A6IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy10b3A6IDE1cHg7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogMDsiPltFbmQgb2YgdGhyZWFkXTwvcD4KICAgIDwvZGl2PgogIDwvZGl2Pgo8L2Rpdj4=');
                     if (getStage4Progress() < 5) {
                       setStage4Progress(5);
-                      triggerEndingSequence();
+                      // triggerEndingSequence(); // Disabled old ending branch
                     }
                   } else {
                     accessDeniedMsg = 'Archive forum locked.';
@@ -3257,6 +3257,11 @@ Something is hidden there.
                 openWindow('vale-folder');
                 if (window.soundManager) window.soundManager.playSuccess();
               }, 1000);
+            } else if (data.action === 'open_final_archive_page') {
+              printTerminal(data.reply || "Archive entry accepted.");
+              setTimeout(() => {
+                window.location.href = window.location.origin + '/archive_entry.html';
+              }, 2000);
             } else if (data.action === 'unlock_vale') {
               printTerminal("Decoding archive...");
               setTimeout(() => {

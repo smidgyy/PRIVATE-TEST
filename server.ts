@@ -559,12 +559,21 @@ async function startServer() {
         });
       }
       if (baseCmd === 'decrypt' && args.length > 1 && args[1] === '840291') {
+        return res.json({ 
+          status: 'success', 
+          reply: 'Network trace 840291 verified. External relay active.' 
+        });
+      }
+      if (baseCmd === 'archive_entry' && args.length > 1 && args[1].toUpperCase() === 'K7-4419') {
         if (db) await db.collection('users').doc(effectiveUserId).set({ 
-          stage1_archive_unlocked: true,
-          archive_unlocked: true,
-          stage2_unlocked: true
+          stage4_complete: true,
+          stage4_progress: 7
         }, { merge: true });
-        return res.json({ status: 'success', action: 'redirect_archive' });
+        return res.json({ 
+          status: 'success', 
+          reply: 'Archive entry K7-4419 accepted. Finalizing subject record...',
+          action: 'open_final_archive_page' 
+        });
       }
       if (baseCmd === 'decode' && args.length > 1 && args[1].toLowerCase() === 'vale_archive.enc') {
         let userData: any = {};
