@@ -172,15 +172,10 @@ svg { max-width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(139, 115,
   async function resetProgress() {
     if (confirm("Are you sure you want to reset all progress?")) {
       try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('userId') || (window.parent && window.parent.userId);
-        if (userId) {
-          await fetch('/api/resetProgress', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId })
-          });
-        }
+        await fetch('/api/resetProgress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
         localStorage.clear();
         sessionStorage.clear();
         if(window.parent && window.parent.location) window.parent.location.reload(); else window.location.reload();
@@ -191,13 +186,9 @@ svg { max-width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(139, 115,
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('userId');
-    if (userId) {
-      const returnLink = document.getElementById('return-link');
-      if (returnLink) {
-        returnLink.href = 'stage2.html?userId=' + userId;
-      }
+    const returnLink = document.getElementById('return-link');
+    if (returnLink) {
+      returnLink.href = 'stage2.html';
     }
 
     const voidText = document.querySelector('.void-text');

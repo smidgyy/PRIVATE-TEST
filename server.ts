@@ -4,6 +4,9 @@ import cors from "cors";
 import fs from "fs";
 import crypto from "crypto";
 import dotenv from "dotenv";
+import session from "express-session";
+import { rateLimit } from "express-rate-limit";
+import hpp from "hpp";
 
 // Load environment variables safely
 try {
@@ -232,6 +235,42 @@ async function startServer() {
     credentials: true
   }));
   app.use(express.json());
+  app.use(hpp()); // Step 2: Reject duplicate or polluted parameters
+
+  // Step 6: Add basic rate limiting
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many requests, please try again later." }
+  });
+
+  // Apply rate limiting to sensitive API routes
+  app.use("/api/validateCommand", limiter);
+  app.use("/api/getContent", limiter);
+  app.use("/api/sendMessage", limiter);
+
+  // Step 1: Implement server-managed session
+  app.use(session({
+    secret: process.env.SESSION_SECRET || "aurora-os-secret-key-2026",
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+      httpOnly: true,
+      secure: true, // Required for SameSite=None
+      sameSite: 'none', // Required for iframe context
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  }));
+
+  // Middleware to ensure userId is in session
+  app.use(async (req: any, res: any, next: any) => {
+    if (!req.session.userId) {
+      req.session.userId = "user_" + crypto.randomBytes(8).toString("hex");
+    }
+    next();
+  });
   
   // JSON Parsing Error Handler
   app.use((err: any, req: any, res: any, next: any) => {
@@ -364,18 +403,30 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
-  app.post("/api/resetProgress", async (req: any, res: any) => {
-    console.log("HIT: POST /api/resetProgress");
+  app.post("/api/init", async (req: any, res: any) => {
     try {
-      const userId = req.body.userId;
-      if (!userId) return res.status(400).json({ error: "Missing userId" });
+      const userId = req.session.userId;
+      const userData = await getOrCreateUserData(userId);
+      res.json({ status: "success", state: userData });
+    } catch (error) {
+      console.error("Error in /api/init:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  });
+
+  app.post("/api/resetProgress", async (req: any, res: any) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
       const db = await getDb();
       await db.collection("users").doc(userId).set({
+        userId,
         stage: 1,
         node02_step: 1,
         messenger_step: 0,
-        stage4_progress: 0
+        stage4_progress: 0,
+        createdAt: new Date().toISOString()
       });
 
       res.json({ success: true });
@@ -386,10 +437,9 @@ async function startServer() {
   });
 
   app.get("/api/userState", async (req: any, res: any) => {
-    console.log("HIT: GET /api/userState");
     try {
-      const userId = req.query.userId;
-      if (!userId) return res.status(400).json({ error: "Missing userId" });
+      const userId = req.session.userId;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
       const db = await getDb();
       const userDoc = await db.collection("users").doc(userId).get();
@@ -423,10 +473,9 @@ async function startServer() {
   });
 
   app.get("/api/getNode02", async (req: any, res: any) => {
-    console.log("HIT: GET /api/getNode02");
     try {
-      const userId = req.query.userId;
-      if (!userId) return res.status(400).json({ error: "Missing userId" });
+      const userId = req.session.userId;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
       const db = await getDb();
       const userDoc = await db.collection("users").doc(userId).get();
@@ -451,10 +500,9 @@ async function startServer() {
   });
 
   app.get("/api/getArticle", async (req: any, res: any) => {
-    console.log("HIT: GET /api/getArticle");
     try {
-      const userId = req.query.userId;
-      if (!userId) return res.status(400).json({ error: "Missing userId" });
+      const userId = req.session.userId;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
       const db = await getDb();
       const userDoc = await db.collection("users").doc(userId).get();
@@ -478,470 +526,231 @@ async function startServer() {
     }
   });
 
-  app.get("/api/debug-db", async (req: any, res: any) => {
-    console.log("HIT: GET /api/debug-db");
-    try {
-      const filesInDir = fs.readdirSync(process.cwd());
-      const db = await getDb();
-      
-      // Get service account info for diagnostics (safely)
-      let clientEmail = "unknown";
-      let hasEnvVar = !!process.env.FIREBASE_SERVICE_ACCOUNT || !!process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-      let keyHash = "none";
-      let keyStart = "none";
-      let rawFirstChars = "none";
-      
-      const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
-      if (fs.existsSync(serviceAccountPath)) {
-        const raw = fs.readFileSync(serviceAccountPath, 'utf8');
-        rawFirstChars = JSON.stringify(raw.substring(0, 10));
-        
-        const sa = JSON.parse(raw);
-        clientEmail = sa.client_email;
-        if (sa.private_key) {
-          keyHash = crypto.createHash('sha256').update(sa.private_key).digest('hex');
-          keyStart = sa.private_key.substring(0, 25);
-        }
-      }
+  // Removed /api/debug-db for security hardening
 
-      const collections = await db.listCollections();
-      
-      // Test if the key can actually sign data (verifies format)
-      let keySignTest = "untested";
-      try {
-        let sa: any = null;
-        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-          sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-        } else if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-          sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-        } else if (fs.existsSync(serviceAccountPath)) {
-          sa = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-        }
-        
-        if (sa && sa.private_key) {
-          const sign = crypto.createSign('SHA256');
-          sign.update('test');
-          sign.sign(sa.private_key.replace(/\\n/g, '\n'));
-          keySignTest = "success";
-        } else {
-          keySignTest = "no private key found to test";
-        }
-      } catch (e: any) {
-        keySignTest = "failed: " + e.message;
-      }
+const ALLOWED_COMMAND_TYPES = [
+  'terminal',
+  'archive_password',
+  'node02_answer',
+  'unlock_node03_secret',
+  'get_progression',
+  'check_access'
+];
 
-      res.json({ 
-        status: "connected", 
-        buildId: "v1.1.2-clean-diagnostics",
-        serverTime: new Date().toISOString(),
-        processTime: new Date().getTime(),
-        clientEmail: clientEmail,
-        keySignTest: keySignTest,
-        hasEnvVar: hasEnvVar,
-        keyHash: keyHash,
-        keyStart: keyStart,
-        rawFirstChars: rawFirstChars,
-        cwd: process.cwd(),
-        files: filesInDir,
-        collections: collections.map((c: any) => c.id),
-        projectId: db.projectId,
-        databaseId: db.databaseId,
-        settings: db._settings,
-        env: {
-          NODE_ENV: process.env.NODE_ENV,
-          PORT: process.env.PORT,
-          availableKeys: Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('KEY') && !k.includes('PASSWORD')),
-          hasEnvFile: fs.existsSync(path.join(process.cwd(), '.env'))
-        }
-      });
-    } catch (err: any) {
-      let clientEmail = "unknown";
-      let keyHash = "none";
-      let keyStart = "none";
-      let rawFirstChars = "none";
-      let keySignTest = "untested";
-      let saType = "unknown";
-      let source = "none";
-      
-      try {
-        let sa: any = null;
-        
-        // Check ENV first
-        if (process.env.FIREBASE_SERVICE_ACCOUNT || fs.existsSync(path.join(process.cwd(), '.env'))) {
-          source = "env-or-file-fallback";
-          let rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT?.trim();
-          
-          if (!rawEnv && fs.existsSync(path.join(process.cwd(), '.env'))) {
-             const content = fs.readFileSync(path.join(process.cwd(), '.env'), 'utf8');
-             const lines = content.split('\n');
-             for (const line of lines) {
-               if (line.trim().startsWith('FIREBASE_SERVICE_ACCOUNT=')) {
-                 rawEnv = line.trim().substring('FIREBASE_SERVICE_ACCOUNT='.length).trim();
-                 if ((rawEnv.startsWith("'") && rawEnv.endsWith("'")) || (rawEnv.startsWith('"') && rawEnv.endsWith('"'))) {
-                   rawEnv = rawEnv.substring(1, rawEnv.length - 1);
-                 }
-                 break;
-               }
-             }
-          }
-
-          if (rawEnv) {
-            rawFirstChars = JSON.stringify(rawEnv.substring(0, 20));
-            
-            try {
-              // Try robust parsing
-              if (rawEnv.startsWith('\\"') && rawEnv.endsWith('\\"')) {
-                rawEnv = rawEnv.substring(2, rawEnv.length - 2).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-              }
-              
-              sa = JSON.parse(rawEnv);
-              if (typeof sa === 'string') {
-                sa = JSON.parse(sa);
-                saType = "string-wrapped-object";
-              } else {
-                saType = "object";
-              }
-            } catch(e: any) {
-              keySignTest = "JSON Parse Error in ENV: " + e.message;
-              // Try aggressive unescape
-              try {
-                 const unescaped = rawEnv.replace(/\\"/g, '"').replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
-                 sa = JSON.parse(unescaped);
-                 saType = "aggressive-unescaped-object";
-                 keySignTest = "Aggressive unescape worked";
-              } catch (e2) {}
-            }
-          }
-        } else {
-          const serviceAccountPath = path.join(process.cwd(), 'service-account.json');
-          if (fs.existsSync(serviceAccountPath)) {
-            source = "file";
-            const raw = fs.readFileSync(serviceAccountPath, 'utf8');
-            rawFirstChars = JSON.stringify(raw.substring(0, 10));
-            sa = JSON.parse(raw);
-            if (typeof sa === 'string') {
-              sa = JSON.parse(sa);
-              saType = "string-wrapped-object";
-            }
-          } else {
-            keySignTest = "No credentials found (ENV or FILE)";
-          }
-        }
-
-        if (sa) {
-          saType = saType === "unknown" ? typeof sa : saType;
-          clientEmail = sa.client_email;
-          if (sa.private_key) {
-            keyHash = crypto.createHash('sha256').update(sa.private_key).digest('hex');
-            keyStart = sa.private_key.substring(0, 25);
-            
-            try {
-              const sign = crypto.createSign('SHA256');
-              sign.update('test');
-              sign.sign(sa.private_key.replace(/\\n/g, '\n'));
-              keySignTest = "success";
-            } catch (e: any) {
-              keySignTest = "failed: " + e.message;
-            }
-          }
-        }
-      } catch(e) {}
-
-      res.status(500).json({ 
-        status: "error", 
-        buildId: "v1.1.2-clean-diagnostics",
-        serverTime: new Date().toISOString(),
-        clientEmail: clientEmail,
-        keySignTest: keySignTest,
-        keyHash: keyHash,
-        keyStart: keyStart,
-        rawFirstChars: rawFirstChars,
-        saType: saType,
-        source: source,
-        hasEnvVar: !!process.env.FIREBASE_SERVICE_ACCOUNT || !!process.env.FIREBASE_SERVICE_ACCOUNT_JSON,
-        env: {
-          NODE_ENV: process.env.NODE_ENV,
-          PORT: process.env.PORT,
-          availableKeys: Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('KEY') && !k.includes('PASSWORD')),
-          hasEnvFile: fs.existsSync(path.join(process.cwd(), '.env'))
-        },
-        message: err.message,
-        details: err.stack,
-        cwd: process.cwd(),
-        files: fs.readdirSync(process.cwd())
-      });
-    }
-  });
+function validateUserId(userId: any): string | null {
+  if (!userId || typeof userId !== 'string' || userId.length < 5 || userId.length > 128) {
+    return null;
+  }
+  // Basic alphanumeric check for userId to prevent injection or malformed IDs
+  if (!/^[a-zA-Z0-9_\-]+$/.test(userId)) {
+    return null;
+  }
+  return userId;
+}
 
   app.post("/api/validateCommand", async (req: any, res: any) => {
     try {
-      const { input, type, step, SECRET_KEY } = req.body;
-    const userId = req.body.userId || req.query.userId;
-    const origin = req.get('origin') || req.get('referer') || 'unknown';
-    
-    console.log(`>>> [DEBUG] /api/validateCommand | Origin: ${origin} | UserId: ${userId} | Type: ${type}`);
-    
-    if (!userId && SECRET_KEY !== 'RESILIENT_BOOT') {
-      console.log(`>>> [API] validateCommand: Access denied for missing userId. Origin: ${origin}`);
-      return res.status(403).json({ error: "ACCESS DENIED: Missing userId" });
-    }
-    
-    console.log(`>>> [API] Request: ${type} from user ${userId}. Input: "${input}"`);
-    
-    // Allow bypass if SECRET_KEY is provided, or if userId is present
-    // Note: input is optional for some types like 'check_access' and 'get_progression'
-    const isInputRequired = ['terminal', 'archive_password', 'node02_answer'].includes(type);
-    
-    if ((isInputRequired && !input) || (!userId && SECRET_KEY !== 'RESILIENT_BOOT') || !type) {
-      console.error(`!!! [API] Missing required fields: input=${!!input}, userId=${!!userId}, type=${!!type}`);
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    const fullCmd = (input || "").trim();
-    const t = fullCmd.toUpperCase();
-    const args = fullCmd.split(/\s+/);
-    const baseCmd = args[0].toLowerCase();
-    console.log(`>>> [API] Normalized input: "${t}"`);
-    
-    // Get database instance
-    let db: any = null;
-    try {
-      db = await getDb();
-    } catch (e: any) {
-      console.error("!!! [API] Database connection failed, proceeding with logic-only mode:", e.message);
-    }
-
-    // We can use Firebase Admin here, but for simplicity and to avoid credential issues,
-    // we'll just handle the validation logic and let the frontend update Firestore,
-    // OR we can update Firestore here if we initialize Admin SDK.
-    // Since we are just validating, returning the action is enough.
-    // The instructions say: "Backend must track: current stage, unlocked nodes, completed puzzles"
-    // "Frontend must NOT control progression logic."
-    // To do this properly without Admin SDK credentials in this environment,
-    // we can use the REST API or just trust the frontend to pass the user ID and we return the action.
-    // Wait, the prompt says "Backend must track...".
-    // Let's initialize Firebase Admin.
-    
-    // Use a dummy userId if missing but SECRET_KEY is valid
-    const effectiveUserId = userId || (SECRET_KEY === 'RESILIENT_BOOT' ? 'anonymous_session' : null);
-    
-    if (!effectiveUserId) {
-      console.error(`!!! [API] Missing effective userId`);
-      return res.status(400).json({ error: "Missing userId" });
-    }
-
-    if (type === 'terminal') {
-      let userData: any = {};
-      if (db) {
-        const userDoc = await db.collection('users').doc(effectiveUserId).get();
-        userData = userDoc.data() || {};
-      }
-
-      // Stage-based Command Locking
-      const currentStage = userData.stage || 1;
-
-      if (fullCmd.toLowerCase() === 'decode_vale_archive') {
-        if (currentStage < 4 || !userData.stage3_ground) {
-          return res.json({ status: 'error', message: 'ACCESS DENIED: Required progression not detected.' });
-        }
-        
-        if (userData.stage1_vale_unlocked) {
-          return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
-        }
-        
-        if (db) await db.collection('users').doc(effectiveUserId).set({ 
-          stage1_vale_unlocked: true, 
-          stage4_progress: Math.max(userData.stage4_progress || 0, 2) 
-        }, { merge: true });
-        
-        return res.json({ 
-          status: 'success', 
-          reply: 'Vale archive decryption sequence initiated... Success. /vale/ directory unlocked.',
-          action: 'unlock_vale'
-        });
-      }
-      if (baseCmd === 'decrypt' && args.length > 1 && args[1] === '840291') {
-        if (currentStage < 4) return res.json({ status: 'error', message: 'ACCESS DENIED' });
-        return res.json({ 
-          status: 'success', 
-          reply: 'Network trace 840291 verified. External relay active.' 
-        });
-      }
-      if (baseCmd === 'archive_entry' && args.length > 1 && args[1].toUpperCase() === 'K7-4419') {
-        if (!userData.stage4_forum_unlocked) {
-          return res.json({ status: 'error', message: 'ACCESS DENIED: Forum authentication required.' });
-        }
-        if (userData.stage4_complete) {
-          return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
-        }
-        if (db) await db.collection('users').doc(effectiveUserId).set({ 
-          stage4_complete: true,
-          stage4_progress: 7
-        }, { merge: true });
-        return res.json({ 
-          status: 'success', 
-          reply: 'Archive entry K7-4419 accepted. Finalizing subject record... Access granted to /archive_entry.html',
-          action: 'open_final_archive_page'
-        });
-      }
-      if (baseCmd === 'archive' && args.length > 1 && args[1].toLowerCase() === 'vale') {
-        if (!userData.stage1_vale_unlocked) {
-          return res.json({ status: 'error', message: 'ACCESS DENIED: Vale archive decryption required.' });
-        }
-        if (userData.stage4_forum_unlocked) {
-          return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
-        }
-        if (db) await db.collection('users').doc(effectiveUserId).set({ stage4_forum_unlocked: true }, { merge: true });
-        return res.json({ status: 'success', action: 'unlock_forum' });
-      }
-      if (baseCmd === 'archive' && args.length === 1) {
-        if (currentStage > 1) return res.json({ status: 'error', message: 'COMMAND INVALID' });
-        return res.json({ status: 'success', action: 'require_password' });
-      }
-      if (baseCmd === 'decrypt' && args.length > 1 && args[1].toLowerCase() === 'depth') {
-        if (currentStage !== 3) return res.json({ status: 'error', message: 'ACCESS DENIED' });
-        const currentStep = userData.messenger_step || 0;
-        if (currentStep < 2) {
-          return res.json({ status: 'error', message: 'COMMAND INVALID: Sequence incomplete.' });
-        }
-        if (userData.stage3_secret_unlocked) {
-          return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
-        }
-        if (db) await db.collection('users').doc(effectiveUserId).set({ stage3_secret_unlocked: true }, { merge: true });
-        return res.json({ 
-          status: 'success', 
-          reply: 'Fragment decrypted. Algorithm: Caesar. Key: THE ARCHIVE REMEMBERS',
-          action: 'show_caesar_clue' 
-        });
-      }
-      return res.json({ status: 'error', message: 'Bad command or file name.' });
-    }
-
-    if (type === 'archive_password') {
-      let userData: any = {};
-      if (db) {
-        const userDoc = await db.collection('users').doc(effectiveUserId).get();
-        userData = userDoc.data() || {};
+      const { input, type } = req.body; // Ignore extra fields like 'step'
+      const userId = req.session.userId;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
       
-      const currentStage = userData.stage || 1;
-      if (currentStage > 1 && fullCmd.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
-        return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+      if (!type || !ALLOWED_COMMAND_TYPES.includes(type)) {
+        console.log(`>>> [API] validateCommand: Rejected unknown command type: ${type}`);
+        return res.status(400).json({ error: "Invalid command type" });
       }
 
-      if (fullCmd.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
-        if (db) {
-          await db.collection('users').doc(effectiveUserId).set({ 
+      console.log(`>>> [API] Request: ${type} from user ${userId}. Input: "${input}"`);
+      
+      const isInputRequired = ['terminal', 'archive_password', 'node02_answer'].includes(type);
+      if (isInputRequired && !input) {
+        return res.status(400).json({ error: "Missing required field: input" });
+      }
+
+      const fullCmd = (input || "").trim();
+      const t = fullCmd.toUpperCase();
+      const args = fullCmd.split(/\s+/);
+      const baseCmd = args[0].toLowerCase();
+      
+      const db = await getDb();
+      const userDoc = await db.collection('users').doc(userId).get();
+      const userData = userDoc.data() || {};
+      const currentStage = userData.stage || 1;
+
+      if (type === 'terminal') {
+        if (fullCmd.toLowerCase() === 'decode_vale_archive') {
+          if (currentStage < 4 || !userData.stage3_ground) {
+            return res.json({ status: 'error', message: 'ACCESS DENIED: Required progression not detected.' });
+          }
+          
+          if (userData.stage1_vale_unlocked) {
+            return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+          }
+          
+          await db.collection('users').doc(userId).update({ 
+            stage1_vale_unlocked: true, 
+            stage4_progress: Math.max(userData.stage4_progress || 0, 2) 
+          });
+          
+          return res.json({ 
+            status: 'success', 
+            reply: 'Vale archive decryption sequence initiated... Success. /vale/ directory unlocked.',
+            action: 'unlock_vale'
+          });
+        }
+        if (baseCmd === 'decrypt' && args.length > 1 && args[1] === '840291') {
+          if (currentStage < 4) return res.json({ status: 'error', message: 'ACCESS DENIED' });
+          return res.json({ 
+            status: 'success', 
+            reply: 'Network trace 840291 verified. External relay active.' 
+          });
+        }
+        if (baseCmd === 'archive_entry' && args.length > 1 && args[1].toUpperCase() === 'K7-4419') {
+          if (!userData.stage4_forum_unlocked) {
+            return res.json({ status: 'error', message: 'ACCESS DENIED: Forum authentication required.' });
+          }
+          if (userData.stage4_complete) {
+            return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+          }
+          if (db) await db.collection('users').doc(userId).update({ 
+            stage4_complete: true,
+            stage4_progress: 7
+          });
+          return res.json({ 
+            status: 'success', 
+            reply: 'Archive entry K7-4419 accepted. Finalizing subject record... Access granted to /archive_entry.html',
+            action: 'open_final_archive_page'
+          });
+        }
+        if (baseCmd === 'archive' && args.length > 1 && args[1].toLowerCase() === 'vale') {
+          if (!userData.stage1_vale_unlocked) {
+            return res.json({ status: 'error', message: 'ACCESS DENIED: Vale archive decryption required.' });
+          }
+          if (userData.stage4_forum_unlocked) {
+            return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+          }
+          if (db) await db.collection('users').doc(userId).update({ stage4_forum_unlocked: true });
+          return res.json({ status: 'success', action: 'unlock_forum' });
+        }
+        if (baseCmd === 'archive' && args.length === 1) {
+          if (currentStage > 1) return res.json({ status: 'error', message: 'COMMAND INVALID' });
+          return res.json({ status: 'success', action: 'require_password' });
+        }
+        if (baseCmd === 'decrypt' && args.length > 1 && args[1].toLowerCase() === 'depth') {
+          if (currentStage !== 3) return res.json({ status: 'error', message: 'ACCESS DENIED' });
+          const currentStep = userData.messenger_step || 0;
+          if (currentStep < 2) {
+            return res.json({ status: 'error', message: 'COMMAND INVALID: Sequence incomplete.' });
+          }
+          if (userData.stage3_secret_unlocked) {
+            return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+          }
+          if (db) await db.collection('users').doc(userId).update({ stage3_secret_unlocked: true });
+          return res.json({ 
+            status: 'success', 
+            reply: 'Fragment decrypted. Algorithm: Caesar. Key: THE ARCHIVE REMEMBERS',
+            action: 'show_caesar_clue' 
+          });
+        }
+        return res.json({ status: 'error', message: 'Bad command or file name.' });
+      }
+
+      if (type === 'archive_password') {
+        if (currentStage > 1 && fullCmd.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
+          return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+        }
+
+        if (fullCmd.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
+          await db.collection('users').doc(userId).update({ 
             stage1_archive_unlocked: true,
             archive_unlocked: true,
             stage2_unlocked: true,
             stage: 2
-          }, { merge: true });
+          });
+          return res.json({ status: 'success', action: 'unlock_archive' });
         }
-        return res.json({ status: 'success', action: 'unlock_archive' });
+        if (fullCmd.toUpperCase() === 'VALE') {
+          if (userData.stage1_vale_unlocked) {
+            if (userData.stage4_forum_unlocked) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+            await db.collection('users').doc(userId).update({ stage4_forum_unlocked: true });
+            return res.json({ status: 'success', action: 'unlock_forum' });
+          } else {
+            return res.json({ status: 'error', message: 'Access denied.' });
+          }
+        }
+        return res.json({ status: 'error', message: 'Access denied.' });
       }
-      if (fullCmd.toUpperCase() === 'VALE') {
-        if (userData.stage1_vale_unlocked || SECRET_KEY === 'RESILIENT_BOOT') {
-          if (userData.stage4_forum_unlocked) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
-          if (db) await db.collection('users').doc(effectiveUserId).set({ stage4_forum_unlocked: true }, { merge: true });
-          return res.json({ status: 'success', action: 'unlock_forum' });
+
+      if (type === 'node02_answer') {
+        if (currentStage !== 2) return res.json({ status: 'error', message: 'ACCESS DENIED' });
+
+        const hash = crypto.createHash('sha256').update(t.toLowerCase()).digest('hex');
+        
+        // Use server-side progression state instead of client-sent 'step'
+        if (!userData.stage2_phase1_complete) {
+          if (hash === '76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22') {
+            await db.collection('users').doc(userId).update({ stage2_phase1_complete: true });
+            return res.json({ status: 'success', success: true, action: 'open_article', msg: "The earth opens. Seek the marginalia." });
+          }
+        } else if (!userData.stage2_phase2_complete) {
+          if (hash === 'ba6f8ed6d0d150b2a2ab2bebe99540f8c00cafb0ebdbf71a6f0b768c45425ca7') {
+            await db.collection('users').doc(userId).update({ stage2_phase2_complete: true });
+            return res.json({ status: 'success', success: true, action: 'phase2_success', msg: "The flame is extinguished." });
+          }
+        } else if (!userData.stage2_phase3_complete) {
+          if (hash === '90b7b8654171c04a5e5de1eae884cfd86952739d50d09d9bb7680763e31faee8') {
+            await db.collection('users').doc(userId).update({ 
+              stage2_phase3_complete: true,
+              stage: 3 
+            });
+            return res.json({ status: 'success', success: true, action: 'phase3_success', msg: String.fromCharCode(71, 82, 69, 69, 68) });
+          }
         } else {
-          return res.json({ status: 'error', message: 'Access denied.' });
+          return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
         }
+        
+        return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
       }
-      return res.json({ status: 'error', message: 'Access denied.' });
-    }
 
-    if (type === 'node02_answer') {
-      let userData: any = {};
-      if (db) {
-        const userDoc = await db.collection('users').doc(effectiveUserId).get();
-        userData = userDoc.data() || {};
+      if (type === 'unlock_node03_secret') {
+        if (!userData.stage2_phase3_complete) {
+          return res.status(403).json({ error: "ACCESS DENIED: Phase 3 not complete." });
+        }
+        await db.collection('users').doc(userId).update({ 
+          stage3_secret_unlocked: true,
+          stage: Math.max(userData.stage || 1, 3)
+        });
+        return res.json({ status: 'success', message: 'The spark has ignited. Node 03 access granted.' });
       }
-      
-      const currentStage = userData.stage || 1;
-      if (currentStage !== 2) return res.json({ status: 'error', message: 'ACCESS DENIED' });
 
-      const hash = crypto.createHash('sha256').update(t.toLowerCase()).digest('hex');
-      
-      if (step === '1' && hash === '76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22') {
-        if (db) await db.collection('users').doc(effectiveUserId).set({ stage2_phase1_complete: true }, { merge: true });
-        return res.json({ status: 'success', success: true, action: 'open_article', msg: "The earth opens. Seek the marginalia." });
+      if (type === 'get_progression') {
+        return res.json({ 
+          status: 'success', 
+          messenger_step: userData?.messenger_step || 0,
+          stage4_progress: userData?.stage4_progress || 0,
+          stage1_archive_unlocked: userData?.stage1_archive_unlocked || false,
+          stage2_unlocked: userData?.stage2_unlocked || false,
+          stage1_vale_unlocked: userData?.stage1_vale_unlocked || false,
+          stage4_forum_unlocked: userData?.stage4_forum_unlocked || false,
+          stage3_messenger_complete: userData?.stage3_messenger_complete || false,
+          stage3_secret_unlocked: userData?.stage3_secret_unlocked || false,
+          stage2_phase1_complete: userData?.stage2_phase1_complete || false,
+          stage2_phase2_complete: userData?.stage2_phase2_complete || false,
+          stage4_observer_logs_opened: userData?.stage4_observer_logs_opened || false,
+          stage4_network_trace_viewed: userData?.stage4_network_trace_viewed || false
+        });
       }
-      if (step === '2' && hash === 'ba6f8ed6d0d150b2a2ab2bebe99540f8c00cafb0ebdbf71a6f0b768c45425ca7') {
-        if (!userData.stage2_phase1_complete) return res.json({ status: 'error', message: 'COMMAND INVALID' });
-        if (db) await db.collection('users').doc(effectiveUserId).set({ stage2_phase2_complete: true }, { merge: true });
-        return res.json({ status: 'success', success: true, action: 'phase2_success', msg: "The flame is extinguished." });
-      }
-      if (step === '3' && hash === '90b7b8654171c04a5e5de1eae884cfd86952739d50d09d9bb7680763e31faee8') {
-        if (!userData.stage2_phase2_complete) return res.json({ status: 'error', message: 'COMMAND INVALID' });
-        if (db) await db.collection('users').doc(effectiveUserId).set({ 
-          stage2_phase3_complete: true,
-          stage: 3 
-        }, { merge: true });
-        return res.json({ status: 'success', success: true, action: 'phase3_success', msg: String.fromCharCode(71, 82, 69, 69, 68) });
-      }
-      
-      return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
-    }
-
-    if (type === 'unlock_node03_secret') {
-      if (db) await db.collection('users').doc(effectiveUserId).set({ stage3_secret_unlocked: true }, { merge: true });
-      return res.json({ status: 'success', message: 'Node 03 secret relay active at /node03/secret.html' });
-    }
-
-    if (type === 'update_messenger_step') {
-      const { step } = req.body;
-      if (db) await db.collection('users').doc(effectiveUserId).set({ messenger_step: step }, { merge: true });
-      return res.json({ status: 'success' });
-    }
-
-    if (type === 'update_stage4_progress') {
-      const { step, flag } = req.body;
-      const updateData: any = { stage4_progress: step };
-      if (flag) updateData[flag] = true;
-      if (db) await db.collection('users').doc(effectiveUserId).set(updateData, { merge: true });
-      return res.json({ status: 'success' });
-    }
-
-    if (type === 'get_progression') {
-      let data: any = {};
-      if (db) {
-        const userDoc = await db.collection('users').doc(effectiveUserId).get();
-        data = userDoc.data() || {};
-      }
-      
-      return res.json({ 
-        status: 'success', 
-        messenger_step: data?.messenger_step || 0,
-        stage4_progress: data?.stage4_progress || 0,
-        stage1_archive_unlocked: data?.stage1_archive_unlocked || false,
-        stage2_unlocked: data?.stage2_unlocked || false,
-        stage1_vale_unlocked: data?.stage1_vale_unlocked || false,
-        stage4_forum_unlocked: data?.stage4_forum_unlocked || false,
-        stage3_messenger_complete: data?.stage3_messenger_complete || false,
-        stage3_secret_unlocked: data?.stage3_secret_unlocked || false,
-        stage2_phase1_complete: data?.stage2_phase1_complete || false,
-        stage2_phase2_complete: data?.stage2_phase2_complete || false,
-        stage4_observer_logs_opened: data?.stage4_observer_logs_opened || false,
-        stage4_network_trace_viewed: data?.stage4_network_trace_viewed || false
-      });
-    }
 
     if (type === 'check_access') {
       const { target } = req.body;
-      let userData: any = {};
-      if (db) {
-        const doc = await db.collection('users').doc(effectiveUserId).get();
-        userData = doc.data() || {};
-        console.log(">>> [API] validateCommand check_access: userId:", effectiveUserId);
-        console.log(">>> [API] validateCommand check_access: User state:", userData);
+      if (!target || typeof target !== 'string') {
+        return res.status(400).json({ error: "Invalid target" });
       }
       
       let hasAccess = false;
-      if (SECRET_KEY === 'RESILIENT_BOOT') {
-        hasAccess = true;
-      } else if (target === 'node02' || target === 'resonance') {
+      if (target === 'node02' || target === 'resonance') {
         hasAccess = !!userData.stage2_unlocked || !!userData.archive_unlocked || !!userData.stage1_archive_unlocked;
       } else if (target === 'node03_secret') {
         hasAccess = !!userData.stage3_secret_unlocked;
@@ -971,55 +780,45 @@ async function startServer() {
   });
 
   app.post("/api/sendMessage", async (req: any, res: any) => {
-    console.log("HIT: POST /api/sendMessage");
     try {
       const { message, contact } = req.body;
-      const userId = req.body.userId || req.query.userId;
+      const userId = req.session.userId;
       
       if (!message || !contact || !userId) {
-        return res.status(400).json({ error: "Missing required fields" });
+        return res.status(400).json({ error: "Missing or invalid required fields" });
       }
 
       let normalized = message.trim().toLowerCase();
       if (normalized === "depth") normalized = "death";
 
-      // Get database instance
-      let db: any = null;
-      try {
-        db = await getDb();
-      } catch (e: any) {}
+      const db = await getDb();
+      const userDoc = await db.collection('users').doc(userId).get();
+      const userData = userDoc.data() || {};
+      
+      const currentStep = userData.messenger_step || 0;
+      const currentStage = userData.stage || 1;
 
       // FIX: Stage 3 specific overrides with immediate return
       if (contact === 'archive') {
-        const input = message.toLowerCase().trim();
-
-        let userData: any = {};
-        if (db) {
-          const userDoc = await db.collection('users').doc(userId).get();
-          userData = userDoc.data() || {};
-        }
-        
-        const currentStep = userData.messenger_step || 0;
-        const currentStage = userData.stage || 1;
+        const input = normalized;
 
         // Handle the first command explicitly to allow progression from Stage 1
         if (input === "the archive remembers") {
           if (currentStage > 1) {
             return res.json({ status: "success", contact, reply: "COMMAND ALREADY USED", action: null });
-          } else if (db) {
-            await db.collection('users').doc(userId).set({ 
-              stage1_archive_unlocked: true,
-              archive_unlocked: true,
-              stage2_unlocked: true,
-              stage: 2
-            }, { merge: true });
-            return res.json({ 
-              status: "success", 
-              contact, 
-              reply: "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.", 
-              action: "unlock_archive" 
-            });
           }
+          await db.collection('users').doc(userId).set({ 
+            stage1_archive_unlocked: true,
+            archive_unlocked: true,
+            stage2_unlocked: true,
+            stage: 2
+          }, { merge: true });
+          return res.json({ 
+            status: "success", 
+            contact, 
+            reply: "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.", 
+            action: "unlock_archive" 
+          });
         }
 
         if (currentStage < 3) {
@@ -1030,12 +829,11 @@ async function startServer() {
           if (userData.stage3_greed) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 0) return res.json({ status: "error", reply: "COMMAND INVALID" });
           
-          if (db) {
-            await db.collection("users").doc(userId).set({
-              stage3_greed: true,
-              messenger_step: 1
-            }, { merge: true });
-          }
+          await db.collection("users").doc(userId).set({
+            stage3_greed: true,
+            messenger_step: 1
+          }, { merge: true });
+          
           return res.json({
             status: "success",
             reply: `So you solved Vale’s second lock.
@@ -1051,16 +849,15 @@ Check the trash.`,
           });
         }
 
-        if (input === "depth") {
+        if (input === "death") {
           if (userData.stage3_death) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 1) return res.json({ status: "error", reply: "COMMAND INVALID" });
 
-          if (db) {
-            await db.collection("users").doc(userId).set({
-              stage3_death: true,
-              messenger_step: 2
-            }, { merge: true });
-          }
+          await db.collection("users").doc(userId).set({
+            stage3_death: true,
+            messenger_step: 2
+          }, { merge: true });
+          
           return res.json({
             status: "success",
             reply: `Correct.
@@ -1080,12 +877,11 @@ Use the terminal.`,
           if (userData.stage3_money) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 2) return res.json({ status: "error", reply: "COMMAND INVALID" });
 
-          if (db) {
-            await db.collection("users").doc(userId).set({
-              stage3_money: true,
-              messenger_step: 3
-            }, { merge: true });
-          }
+          await db.collection("users").doc(userId).set({
+            stage3_money: true,
+            messenger_step: 3
+          }, { merge: true });
+          
           return res.json({
             status: "success",
             reply: `The mask of exchange.
@@ -1103,12 +899,11 @@ Check fragment_3.log.`,
           if (userData.stage3_gold) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 3) return res.json({ status: "error", reply: "COMMAND INVALID" });
 
-          if (db) {
-            await db.collection("users").doc(userId).set({
-              stage3_gold: true,
-              messenger_step: 4
-            }, { merge: true });
-          }
+          await db.collection("users").doc(userId).set({
+            stage3_gold: true,
+            messenger_step: 4
+          }, { merge: true });
+          
           return res.json({
             status: "success",
             reply: `The final ambition.
@@ -1126,13 +921,12 @@ Listen to the system's pulse.`,
           if (userData.stage3_ground) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 4) return res.json({ status: "error", reply: "COMMAND INVALID" });
 
-          if (db) {
-            await db.collection("users").doc(userId).set({
-              stage3_ground: true,
-              stage: 4,
-              stage4_unlocked: true
-            }, { merge: true });
-          }
+          await db.collection("users").doc(userId).set({
+            stage3_ground: true,
+            stage: 4,
+            stage4_unlocked: true
+          }, { merge: true });
+          
           return res.json({
             status: "success",
             reply: `The pattern is complete.
@@ -1203,24 +997,42 @@ Stage 4 unlocked. Messenger updated.`,
 
   // Content Security: Secure content retrieval endpoint
   app.post('/api/getContent', async (req: any, res: any) => {
-    console.log("HIT: POST /api/getContent");
     try {
-      const { target, userId } = req.body;
-      if (!userId) return res.status(400).json({ status: "error", message: "User ID required" });
+      const { target } = req.body;
+      const userId = req.session.userId;
 
-      let db: any = null;
-      try {
-        db = await getDb();
-      } catch (e: any) {}
+      if (!userId) return res.status(401).json({ status: "error", message: "Unauthorized" });
+      if (!target || typeof target !== 'string') return res.status(400).json({ status: "error", message: "Invalid or missing target" });
 
-      let userData: any = {};
-      if (db) {
-        const userDoc = await db.collection('users').doc(userId).get();
-        userData = userDoc.data() || {};
-      }
+      const db = await getDb();
+      const userDoc = await db.collection('users').doc(userId).get();
+      const userData = userDoc.data();
 
       if (!userData) {
-        return res.status(403).json({ status: "error", message: "ACCESS DENIED" });
+        return res.status(403).json({ status: "error", message: "ACCESS DENIED: No progression found" });
+      }
+
+      // Progression update logic based on content access - STRICT ORDER
+      if (target === 'network-trace' && userData.stage4_unlocked) {
+        // Must have unlocked Vale archive (progress 2) before seeing network trace (progress 3)
+        if ((userData.stage4_progress || 0) === 2) {
+          await db.collection('users').doc(userId).update({
+            stage4_progress: 3,
+            stage4_network_trace_viewed: true
+          });
+          userData.stage4_progress = 3;
+          userData.stage4_network_trace_viewed = true;
+        }
+      }
+
+      if (['observer-log-01', 'observer-log-02', 'observer-log-03'].includes(target) && userData.stage4_unlocked) {
+        // Observer logs are available once stage 4 is unlocked
+        if (!userData.stage4_observer_logs_opened) {
+          await db.collection('users').doc(userId).update({
+            stage4_observer_logs_opened: true
+          });
+          userData.stage4_observer_logs_opened = true;
+        }
       }
 
       const contentMap: { [key: string]: { content: string, title?: string, access: boolean } } = {
@@ -1346,19 +1158,14 @@ Stage 4 unlocked. Messenger updated.`,
       // ONLY handle HTML
       if (!req.path.endsWith(".html")) return next();
 
-      const userId = req.query.userId || "anonymous_" + Date.now();
-      const origin = req.get('origin') || req.get('referer') || 'unknown';
+      const userId = req.session.userId;
       
-      let userData: any = null;
-      try {
-        userData = await getOrCreateUserData(userId);
-        if (_db instanceof MockFirestore && userData) {
-          userData.isMock = true;
-        }
-      } catch (e: any) {
-        console.error("!!! [ROUTING] Database error:", e.message);
+      if (!userId) {
+        console.log(`>>> [AUTH] Protected route access denied: Missing userId in session for ${req.path}`);
+        return res.status(403).send(LOCKED_HTML);
       }
 
+      const userData = await getOrCreateUserData(userId);
       if (!userData) {
         return res.status(403).send(LOCKED_HTML);
       }
@@ -1373,12 +1180,14 @@ Stage 4 unlocked. Messenger updated.`,
         hasAccess = true; 
       } else if (target === "article.html") {
         hasAccess = !!userData?.stage2_phase1_complete;
-      } else if (target === "stage2.html" || target === "resonance.html" || target === "node02.html") {
+      } else if (target === "resonance.html") {
+        hasAccess = !!userData?.stage2_phase2_complete;
+      } else if (target === "stage2.html" || target === "node02.html") {
         if ((userData.stage || 1) < 2) return res.send(LOCKED_HTML);
-        hasAccess = !!userData?.stage2_unlocked || !!userData?.archive_unlocked || !!userData?.stage1_archive_unlocked;
+        hasAccess = !!userData?.stage1_archive_unlocked;
       } else if (target === "node04.html" || target === "node04/index.html") {
         if ((userData.stage || 1) < 4) return res.send(LOCKED_HTML);
-        hasAccess = !!userData?.stage4_unlocked;
+        hasAccess = !!userData?.stage4_complete;
       } else if (target === "node03/secret.html" || target === "node03/secret/index.html") {
         if ((userData.stage || 1) < 3) return res.send(LOCKED_HTML);
         hasAccess = !!userData?.stage3_secret_unlocked;
@@ -1387,7 +1196,7 @@ Stage 4 unlocked. Messenger updated.`,
         hasAccess = (!!userData?.stage4_progress && userData?.stage4_progress >= 3); 
       } else if (target === "node03/index.html") {
         if ((userData.stage || 1) < 3) return res.send(LOCKED_HTML);
-        hasAccess = !!userData?.stage2_unlocked;
+        hasAccess = !!userData?.stage2_phase3_complete;
       }
       
       if (!hasAccess) {
@@ -1437,7 +1246,7 @@ Stage 4 unlocked. Messenger updated.`,
       if (isProduction) {
         res.sendFile(path.join(process.cwd(), 'dist', 'index.html'));
       } else {
-        res.redirect("/stage1.html" + (req.query.userId ? "?userId=" + req.query.userId : ""));
+        res.redirect("/stage1.html");
       }
     } catch (error: any) {
       console.error("Catch-all error:", error.stack || error);

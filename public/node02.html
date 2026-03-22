@@ -221,11 +221,11 @@ const subtitle = document.getElementById('subtitle');
 let busy = false;
 
 let currentStep = 1;
-let userId = new URLSearchParams(window.location.search).get('userId') || window.firebaseAuth?.currentUser?.uid || 'anonymous';
+let userId = 'session_managed';
 
 async function fetchUserState() {
   try {
-    const res = await fetch('/api/userState?userId=' + userId);
+    const res = await fetch('/api/userState');
     const data = await res.json();
     return data.node02_step || 1;
   } catch (e) {
@@ -442,11 +442,10 @@ function startBlackFire() {
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, fireWidth, fireHeight);
       
-      const userId = new URLSearchParams(window.location.search).get('userId') || window.firebaseAuth?.currentUser?.uid || 'anonymous';
-      fetch('/api/validateCommand?userId=' + userId, {
+      fetch('/api/validateCommand', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'unlock_node03_secret', userId })
+        body: JSON.stringify({ type: 'unlock_node03_secret' })
       }).then(res => res.json()).then(data => {
         if (data.message) {
           response.textContent = data.message;
@@ -490,13 +489,10 @@ async function dissolveAndRespond() {
   await new Promise(r => setTimeout(r, totalDissolveTime));
   charLayer.style.opacity = '0';
 
-  const userId = new URLSearchParams(window.location.search).get('userId') || window.firebaseAuth?.currentUser?.uid || 'anonymous';
-  
-  try {
-    const res = await fetch('/api/validateCommand?userId=' + userId, {
+    const res = await fetch('/api/validateCommand', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ input: text, userId, type: 'node02_answer', step: currentStep.toString() })
+      body: JSON.stringify({ input: text, type: 'node02_answer', step: currentStep.toString() })
     });
     const data = await res.json();
     
@@ -513,7 +509,7 @@ async function dissolveAndRespond() {
           window.parent.openBrowserUrl('archive://node/02/article');
         } else {
           // Fallback if not in iframe
-          window.location.href = 'article.html?userId=' + userId;
+          window.location.href = 'article.html';
         }
       } else if (data.action === 'phase2_success') {
         if (window.soundManager) {

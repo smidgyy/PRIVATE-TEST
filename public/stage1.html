@@ -1736,12 +1736,12 @@ Something is hidden there.
   <script>
     let chats = {};
     let currentStage = 1;
-    let userId = new URLSearchParams(window.location.search).get('userId') || window.firebaseAuth?.currentUser?.uid || 'anonymous';
+    let userId = 'session_managed';
     window.userState = {};
 
     async function fetchUserState() {
       try {
-        const res = await fetch('/api/userState?userId=' + userId);
+        const res = await fetch('/api/userState');
         const data = await res.json();
         window.userState = data;
         currentStage = data.currentStage || 1;
@@ -1903,7 +1903,6 @@ Something is hidden there.
     }
 
     async function populateStage4Content(id) {
-      const userId = window.ensureUserId();
       const contentTargets = [
         'observer-log-01', 'observer-log-02', 'observer-log-03',
         'journal-day01', 'journal-day03', 'journal-day05', 'journal-day09', 'journal-day12', 'journal-day16',
@@ -1916,7 +1915,7 @@ Something is hidden there.
           const res = await fetch('/api/getContent', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ target: id, userId })
+            body: JSON.stringify({ target: id })
           });
           const data = await res.json();
           if (data.status === 'success') {
@@ -1950,22 +1949,14 @@ Something is hidden there.
     async function openWindow(id) {
       console.log("Opening fragment:", id);
       
-      const userId = window.ensureUserId();
-      
-      if (!userId) {
-        console.error("CRITICAL: User ID initialization failed.");
-        printTerminal("System Error: Session initialization failed.");
-        return;
-      }
-      
       const restrictedTargets = ['observer-folder', 'vale-folder', 'resonance', 'node02', 'node04', 'forum'];
       
       if (restrictedTargets.includes(id)) {
         try {
-          const res = await fetch('/api/validateCommand?userId=' + userId, {
+          const res = await fetch('/api/validateCommand', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'check_access', target: id, userId, SECRET_KEY: 'RESILIENT_BOOT' })
+            body: JSON.stringify({ type: 'check_access', target: id })
           });
           const data = await res.json();
           if (data.status !== 'success') {
@@ -1990,22 +1981,18 @@ Something is hidden there.
       
       // Stage 4 tracking
       if (id.startsWith('observer-log-')) {
-        if (userId) {
-          fetch('/api/validateCommand?userId=' + userId, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'update_stage4_progress', step: getStage4Progress(), flag: 'stage4_observer_logs_opened', userId, SECRET_KEY: 'RESILIENT_BOOT' })
-          });
-        }
+        fetch('/api/validateCommand', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'update_stage4_progress', step: getStage4Progress(), flag: 'stage4_observer_logs_opened' })
+        });
       }
       if (id === 'network-trace') {
-        if (userId) {
-          fetch('/api/validateCommand?userId=' + userId, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'update_stage4_progress', step: Math.max(getStage4Progress(), 3), flag: 'stage4_network_trace_viewed', userId, SECRET_KEY: 'RESILIENT_BOOT' })
-          });
-        }
+        fetch('/api/validateCommand', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'update_stage4_progress', step: Math.max(getStage4Progress(), 3), flag: 'stage4_network_trace_viewed' })
+        });
       }
       
       if (id === 'photo-fragment') {
@@ -2990,8 +2977,7 @@ Something is hidden there.
             page.appendChild(iframe);
           }
         }
-        const userId = window.ensureUserId();
-        iframe.src = "/node02.html?userId=" + userId;
+        iframe.src = "/node02.html";
         iframe.style.display = "block";
         return;
       }
@@ -3012,15 +2998,6 @@ Something is hidden there.
       if (page) page.style.opacity = '0.5';
       
       const checkAndLoad = async () => {
-        const userId = window.ensureUserId();
-        
-        if (!userId && (targetUrl.includes('node/02') || targetUrl.includes('resonance') || targetUrl.includes('node/03/secret') || targetUrl.includes('node/04') || targetUrl.includes('forum') || targetUrl.includes('records'))) {
-          console.error("CRITICAL: User ID missing for protected route.");
-          page.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f00;font-family:monospace;text-align:center;"><div><h1>SYSTEM ERROR</h1><p>Session initialization failed.</p></div></div>';
-          if (spinner) spinner.style.display = 'none';
-          return;
-        }
-        
         if (spinner) spinner.style.display = 'none';
         if (page) {
           page.style.opacity = '1';
@@ -3046,52 +3023,50 @@ Something is hidden there.
             }
             
             if (targetUrl === 'archive://node/02') {
-              console.log("Loading stage2 with userId:", userId);
               unlocked = true; // Let the backend handle access check
-              fetchPath = 'stage2.html?userId=' + userId;
+              fetchPath = 'stage2.html';
               finishLoad();
               return;
             } else if (targetUrl === 'archive://node/02/article') {
-              console.log("Loading article with userId:", userId);
               unlocked = true; // Let the backend handle access check
-              fetchPath = 'article.html?userId=' + userId;
+              fetchPath = 'article.html';
               finishLoad();
               return;
             } else if (targetUrl === 'archive://node02/resonance.html' || targetUrl === 'archive://node/02/resonance.html') {
-              fetch('/api/getUserState?userId=' + userId)
+              fetch('/api/getUserState')
                 .then(res => res.json())
                 .then(data => {
                   if (data.stage2_unlocked) {
                     unlocked = true;
                   }
-                  fetchPath = 'resonance.html?userId=' + userId;
+                  fetchPath = 'resonance.html';
                   finishLoad();
                 });
               return;
             } else if (targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://' + atob('bm9kZTAzL3NlY3JldA==')) {
-              fetch('/api/validateCommand?userId=' + userId, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node03_secret', userId: userId, SECRET_KEY: 'RESILIENT_BOOT' }) })
+              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node03_secret' }) })
                 .then(res => res.json())
                 .then(data => {
                   if (data.status === 'success') {
                     unlocked = true;
                   }
-                  fetchPath = 'node03/secret.html?userId=' + userId;
+                  fetchPath = 'node03/secret.html';
                   finishLoad();
                 });
               return;
             } else if (targetUrl === 'archive://node/04') {
-              fetch('/api/validateCommand?userId=' + userId, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node04', userId: userId, SECRET_KEY: 'RESILIENT_BOOT' }) })
+              fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node04' }) })
                 .then(res => res.json())
                 .then(data => {
                   if (data.status === 'success') {
                     unlocked = true;
                   }
-                  fetchPath = 'node04.html?userId=' + userId;
+                  fetchPath = 'node04.html';
                   finishLoad();
                 });
               return;
             } else if (targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt')) {
-              fetch('/api/getContent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target: 'forum', userId: userId }) })
+              fetch('/api/getContent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target: 'forum' }) })
                 .then(res => res.json())
                 .then(data => {
                   if (data.status === 'success') {
@@ -3108,7 +3083,7 @@ Something is hidden there.
                 });
               return;
             } else if (targetUrl === atob('YXJjaGl2ZTovL3JlY29yZHM=')) {
-              fetch('/api/getContent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target: 'records', userId: userId }) })
+              fetch('/api/getContent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target: 'records' }) })
                 .then(res => res.json())
                 .then(data => {
                   if (data.status === 'success') {
@@ -3303,11 +3278,11 @@ Something is hidden there.
         default:
           // Send to backend for validation
       printTerminal("Connecting to archive server...");
-      waitForAuth().then(userId => {
-        fetch('/api/validateCommand?userId=' + userId, {
+      waitForAuth().then(() => {
+        fetch('/api/validateCommand', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input: cmd, userId, type: 'terminal', SECRET_KEY: 'RESILIENT_BOOT' })
+          body: JSON.stringify({ input: cmd, type: 'terminal' })
         })
         .then(res => res.json())
         .then(data => {
@@ -3422,11 +3397,11 @@ Something is hidden there.
 
     function handleArchivePassword(pwd) {
       printTerminal("Verifying decryption key...");
-      waitForAuth().then(userId => {
-        fetch('/api/validateCommand?userId=' + userId, {
+      waitForAuth().then(() => {
+        fetch('/api/validateCommand', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input: pwd, userId, type: 'archive_password', SECRET_KEY: 'RESILIENT_BOOT' })
+          body: JSON.stringify({ input: pwd, type: 'archive_password' })
         })
         .then(res => res.json())
         .then(data => {
@@ -3694,14 +3669,12 @@ Something is hidden there.
       historyDiv.scrollTop = historyDiv.scrollHeight;
       
       try {
-        const userId = window.ensureUserId();
-        const response = await fetch('/api/sendMessage?userId=' + userId, {
+        const response = await fetch('/api/sendMessage', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             message: text, 
-            contact: currentChatContact, 
-            userId: userId
+            contact: currentChatContact
           })
         });
         
@@ -3995,22 +3968,17 @@ Something is hidden there.
     }
   </style>
   <script>
-    const SECRET_KEY = "AURORA_OS_SECRET";
     function getProgressStep() {
       return window.userState ? (window.userState.messenger_step || 0) : 0;
     }
     async function setProgressStep(step) {
       if (window.userState) window.userState.messenger_step = step;
       
-      const userId = window.ensureUserId();
-      
-      if (userId) {
-        fetch('/api/validateCommand', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'update_messenger_step', step: step, userId, SECRET_KEY: 'RESILIENT_BOOT' })
-        });
-      }
+      fetch('/api/validateCommand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'update_messenger_step', step: step })
+      });
     }
     
     function getStage4Progress() {
@@ -4023,15 +3991,11 @@ Something is hidden there.
       currentStage = 4;
       startStage4();
       
-      const userId = window.ensureUserId();
-      
-      if (userId) {
-        fetch('/api/validateCommand', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'update_stage4_progress', step: step, userId, SECRET_KEY: 'RESILIENT_BOOT' })
-        });
-      }
+      fetch('/api/validateCommand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'update_stage4_progress', step: step })
+      });
     }
 
     // Migration removed
@@ -4039,12 +4003,9 @@ Something is hidden there.
     async function syncProgression() {
       if (typeof chats === 'undefined') window.chats = {};
       if (typeof currentStage === 'undefined') window.currentStage = 1;
-      const userId = window.ensureUserId();
-      
-      if (!userId) return;
       
       try {
-        const response = await fetch('/api/userState?userId=' + userId);
+        const response = await fetch('/api/userState');
         const data = await response.json();
         
         window.userState = data;
@@ -4135,7 +4096,7 @@ Something is hidden there.
     if (window.userIdReady) {
       window.userIdReady.then((id) => {
         if (id) {
-          console.log('Syncing progression with ID:', id);
+          console.log('Syncing progression...');
           syncProgression();
         }
       });
@@ -4339,11 +4300,9 @@ Something is hidden there.
     async function resetProgress() {
       if (confirm("Are you sure you want to reset all progress?")) {
         try {
-          const userId = await waitForAuth();
           await fetch('/api/resetProgress', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId })
+            headers: { 'Content-Type': 'application/json' }
           });
           localStorage.clear();
           sessionStorage.clear();

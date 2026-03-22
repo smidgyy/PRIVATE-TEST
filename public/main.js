@@ -1,32 +1,16 @@
-// AURORA OS - MAIN MODULE
-// This module runs after auth-init.js
-
-// SINGLE SOURCE OF TRUTH
-const userId = window.userId;
-if (userId) {
-  window.userId = userId;
-}
-
-window.getUserId = () => window.userId;
-
-// Expose for compatibility
-window.userIdReady = Promise.resolve(window.userId);
-
-// Expose minimal interface for compatibility with existing scripts
-window.onAuthReady = (callback) => {
-  setTimeout(() => {
-    if (typeof callback === 'function') {
-      callback({ uid: window.userId });
+// AURORA OS - MAIN INITIALIZATION
+(function() {
+  // The backend is the sole source of truth.
+  // We wait for authReady event from auth-init.js
+  window.addEventListener('authReady', (event) => {
+    const userState = event.detail;
+    console.log("AURORA OS: Main initialized with state:", userState);
+    
+    // Initialize UI based on userState if needed
+    if (typeof window.syncProgression === 'function') {
+      window.syncProgression();
     }
-  }, 0);
-};
-
-// Mock firestore for any legacy scripts
-window.firestore = {
-  doc: () => ({}),
-  getDoc: () => Promise.resolve({ exists: () => false }),
-  setDoc: () => Promise.resolve(),
-  updateDoc: () => Promise.resolve()
-};
+  });
+})();
 
 
