@@ -172,7 +172,7 @@ async function getDb() {
         _db = getFirestore(app);
       }
 
-      _db.settings({ preferRest: true });
+      // _db.settings({ preferRest: true }); // Removed invalid setting for firebase-admin
       console.log(">>> [DB] Firestore instance ready.");
       return _db;
     } catch (e: any) {
@@ -237,6 +237,8 @@ async function startServer() {
   app.use(express.json());
   app.use(hpp()); // Step 2: Reject duplicate or polluted parameters
 
+  app.set('trust proxy', 1); // Trust first proxy (Hostinger/Cloud Run)
+
   // Step 6: Add basic rate limiting
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -273,6 +275,7 @@ async function startServer() {
       }
       if (!req.session.userId) {
         req.session.userId = "user_" + crypto.randomBytes(8).toString("hex");
+        console.log(`>>> [SESSION] Initialized new userId: ${req.session.userId} for session: ${req.sessionID}`);
       }
       next();
     } catch (err) {
@@ -389,21 +392,36 @@ async function startServer() {
   // (API routes are defined below and will be reached if static serving falls through)
 
   async function getOrCreateUserData(userId: string) {
-    if (!userId) return null;
-    const db = await getDb();
-    const userDoc = await db.collection("users").doc(userId).get();
-    let userData = userDoc.data();
-    if (!userData) {
-      console.log(`>>> [DB] Initializing new user session: ${userId}`);
-      userData = {
-        userId,
-        createdAt: new Date().toISOString(),
-        stage: 1,
-        stage4_progress: 0
-      };
-      await db.collection("users").doc(userId).set(userData);
+    try {
+      if (!userId) {
+        console.error(">>> [DB] getOrCreateUserData: No userId provided");
+        return null;
+      }
+      const db = await getDb();
+      if (!db) {
+        console.error(">>> [DB] getOrCreateUserData: Database unavailable");
+        throw new Error("Database unavailable");
+      }
+      
+      console.log(`>>> [DB] Fetching userData for: ${userId}`);
+      const userDoc = await db.collection("users").doc(userId).get();
+      let userData = userDoc.data();
+      
+      if (!userData) {
+        console.log(`>>> [DB] Initializing new user session: ${userId}`);
+        userData = {
+          userId,
+          createdAt: new Date().toISOString(),
+          stage: 1,
+          stage4_progress: 0
+        };
+        await db.collection("users").doc(userId).set(userData);
+      }
+      return userData;
+    } catch (error) {
+      console.error(`>>> [DB] Error in getOrCreateUserData for ${userId}:`, error);
+      throw error;
     }
-    return userData;
   }
 
   // API Routes
@@ -419,16 +437,27 @@ async function startServer() {
 
   app.post("/api/init", async (req: any, res: any) => {
     try {
+      console.log(">>> [API] HIT: POST /api/init");
       const userId = req.session?.userId;
+      console.log(">>> [API] /api/init: userId from session:", userId);
       if (!userId) {
-        console.error(">>> [API] /api/init: Missing userId in session");
+        console.error(">>> [API] /api/init: Missing userId in session. Session ID:", req.sessionID);
         return res.status(401).json({ status: "error", message: "Unauthorized: Session missing" });
       }
+      
+      console.log(">>> [API] /api/init: Calling getOrCreateUserData");
       const userData = await getOrCreateUserData(userId);
+      console.log(">>> [API] /api/init: userData received:", !!userData);
+      if (!userData) {
+        console.error(">>> [API] /api/init: Failed to get or create userData for:", userId);
+        return res.status(500).json({ status: "error", message: "Failed to initialize user data" });
+      }
+      
+      console.log(">>> [API] /api/init: SUCCESS");
       res.json({ status: "success", state: userData });
-    } catch (error) {
-      console.error("Error in /api/init:", error);
-      res.status(500).json({ status: "error", message: "Internal Server Error" });
+    } catch (error: any) {
+      console.error("!!! [API] Error in /api/init:", error.message, error.stack);
+      res.status(500).json({ status: "error", message: "Internal Server Error: " + error.message });
     }
   });
 
@@ -456,17 +485,25 @@ async function startServer() {
 
   app.get("/api/userState", async (req: any, res: any) => {
     try {
+      console.log(">>> [API] HIT: GET /api/userState");
       const userId = req.session?.userId;
-      if (!userId) return res.status(401).json({ status: "error", message: "Unauthorized" });
+      console.log(">>> [API] /api/userState: userId from session:", userId);
+      if (!userId) {
+        console.error(">>> [API] /api/userState: Missing userId in session. Session ID:", req.sessionID);
+        return res.status(401).json({ status: "error", message: "Unauthorized" });
+      }
 
       const db = await getDb();
       if (!db) {
         console.error(">>> [API] /api/userState: Database unavailable");
         return res.status(500).json({ status: "error", message: "Database unavailable" });
       }
+      
+      console.log(`>>> [API] /api/userState: Fetching data for ${userId}`);
       const userDoc = await db.collection("users").doc(userId).get();
       const userData = userDoc.data() || { stage: 1, node02_step: 1 };
 
+      console.log(">>> [API] /api/userState: SUCCESS");
       res.json({
         currentStage: userData.stage || 1,
         node02_step: userData.node02_step || 1,
@@ -488,9 +525,9 @@ async function startServer() {
         stage4_progress: userData.stage4_progress || 0,
         aurora_archive_unlocked: !!userData.aurora_archive_unlocked
       });
-    } catch (error) {
-      console.error("Error in /api/userState:", error);
-      res.status(500).json({ status: "error", message: "Internal Server Error" });
+    } catch (error: any) {
+      console.error("!!! [API] Error in /api/userState:", error.message, error.stack);
+      res.status(500).json({ status: "error", message: "Internal Server Error: " + error.message });
     }
   });
 
@@ -1264,6 +1301,12 @@ Stage 4 unlocked. Messenger updated.`,
     console.log("Starting in production mode...");
   }
 
+  // 404 Handler for API routes (MANDATORY)
+  app.use("/api", (req: any, res: any) => {
+    console.warn(`>>> [API] 404: ${req.method} ${req.path}`);
+    res.status(404).json({ status: "error", message: "API endpoint not found" });
+  });
+
   // 4. LAST: CATCH-ALL (FALLBACK HANDLER)
   app.get(/.*/, (req: any, res: any) => {
     try {
@@ -1283,8 +1326,16 @@ Stage 4 unlocked. Messenger updated.`,
 
   // 5. GLOBAL ERROR HANDLER (CRITICAL)
   app.use((err: any, req: any, res: any, next: any) => {
-    console.error("SERVER ERROR (Global Handler):", err.stack || err);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("!!! [SERVER FATAL ERROR]", err.stack || err);
+    if (res.headersSent) {
+      return next(err);
+    }
+    // Always return JSON for API errors
+    if (req.path.startsWith("/api")) {
+      return res.status(500).json({ status: "error", message: "Internal Server Error: " + (err.message || "Unknown error") });
+    }
+    // For HTML routes, return a simple error page
+    res.status(500).send("Internal Server Error");
   });
 }
 
