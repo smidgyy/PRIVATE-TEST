@@ -214,9 +214,9 @@ class SoundManager {
       let stage = 1;
       if (typeof getStage4Progress === 'function' && getStage4Progress() >= 1) {
         stage = 4;
-      } else if (localStorage.getItem('aurora_stage3_token1') || localStorage.getItem('aurora_stage3_token_complete')) {
+      } else if (window.userState && (window.userState.stage3_secret_unlocked || window.userState.stage3_ground)) {
         stage = 3;
-      } else if (localStorage.getItem('aurora_stage1_complete')) {
+      } else if (window.userState && window.userState.stage1_complete) {
         stage = 2;
       }
       

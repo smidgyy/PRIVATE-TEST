@@ -7,8 +7,9 @@ if (window === window.top) {
 } else {
   let unlocked = false;
   try {
-    const t = localStorage.getItem('aurora_stage3_token_complete');
-    if (t && atob(t) === 'true|AURORA_OS_SECRET') unlocked = true;
+    if (window.parent && window.parent.userState && window.parent.userState.stage3_ground) {
+      unlocked = true;
+    }
   } catch(e) {}
   if (!unlocked) {
     document.documentElement.innerHTML = '<body style="background:#000;color:#f00;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;margin:0;"><div><h1>ACCESS DENIED</h1><p>Node authentication required.</p></div></body>';
