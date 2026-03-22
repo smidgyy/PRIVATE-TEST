@@ -266,10 +266,19 @@ async function startServer() {
 
   // Middleware to ensure userId is in session
   app.use(async (req: any, res: any, next: any) => {
-    if (!req.session.userId) {
-      req.session.userId = "user_" + crypto.randomBytes(8).toString("hex");
+    try {
+      if (!req.session) {
+        console.error(">>> [SERVER] req.session is undefined. Check session middleware configuration.");
+        return next();
+      }
+      if (!req.session.userId) {
+        req.session.userId = "user_" + crypto.randomBytes(8).toString("hex");
+      }
+      next();
+    } catch (err) {
+      console.error(">>> [SERVER] Session middleware error:", err);
+      next();
     }
-    next();
   });
   
   // JSON Parsing Error Handler
@@ -399,25 +408,34 @@ async function startServer() {
 
   // API Routes
   app.get("/api/health", (req: any, res: any) => {
-    console.log("HIT: GET /api/health");
-    res.json({ status: "ok" });
+    try {
+      console.log("HIT: GET /api/health");
+      res.json({ status: "ok" });
+    } catch (error) {
+      console.error("Error in /api/health:", error);
+      res.status(500).json({ status: "error", message: "Internal Server Error" });
+    }
   });
 
   app.post("/api/init", async (req: any, res: any) => {
     try {
-      const userId = req.session.userId;
+      const userId = req.session?.userId;
+      if (!userId) {
+        console.error(">>> [API] /api/init: Missing userId in session");
+        return res.status(401).json({ status: "error", message: "Unauthorized: Session missing" });
+      }
       const userData = await getOrCreateUserData(userId);
       res.json({ status: "success", state: userData });
     } catch (error) {
       console.error("Error in /api/init:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+      res.status(500).json({ status: "error", message: "Internal Server Error" });
     }
   });
 
   app.post("/api/resetProgress", async (req: any, res: any) => {
     try {
-      const userId = req.session.userId;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const userId = req.session?.userId;
+      if (!userId) return res.status(401).json({ status: "error", message: "Unauthorized" });
 
       const db = await getDb();
       await db.collection("users").doc(userId).set({
@@ -432,16 +450,20 @@ async function startServer() {
       res.json({ success: true });
     } catch (error) {
       console.error("Error in /api/resetProgress:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+      res.status(500).json({ status: "error", message: "Internal Server Error" });
     }
   });
 
   app.get("/api/userState", async (req: any, res: any) => {
     try {
-      const userId = req.session.userId;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const userId = req.session?.userId;
+      if (!userId) return res.status(401).json({ status: "error", message: "Unauthorized" });
 
       const db = await getDb();
+      if (!db) {
+        console.error(">>> [API] /api/userState: Database unavailable");
+        return res.status(500).json({ status: "error", message: "Database unavailable" });
+      }
       const userDoc = await db.collection("users").doc(userId).get();
       const userData = userDoc.data() || { stage: 1, node02_step: 1 };
 
@@ -468,16 +490,17 @@ async function startServer() {
       });
     } catch (error) {
       console.error("Error in /api/userState:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+      res.status(500).json({ status: "error", message: "Internal Server Error" });
     }
   });
 
   app.get("/api/getNode02", async (req: any, res: any) => {
     try {
-      const userId = req.session.userId;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const userId = req.session?.userId;
+      if (!userId) return res.status(401).json({ status: "error", message: "Unauthorized" });
 
       const db = await getDb();
+      if (!db) return res.status(500).json({ status: "error", message: "Database unavailable" });
       const userDoc = await db.collection("users").doc(userId).get();
       const userData = userDoc.data() || {};
 
@@ -501,10 +524,11 @@ async function startServer() {
 
   app.get("/api/getArticle", async (req: any, res: any) => {
     try {
-      const userId = req.session.userId;
-      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const userId = req.session?.userId;
+      if (!userId) return res.status(401).json({ status: "error", message: "Unauthorized" });
 
       const db = await getDb();
+      if (!db) return res.status(500).json({ status: "error", message: "Database unavailable" });
       const userDoc = await db.collection("users").doc(userId).get();
       const userData = userDoc.data() || {};
 
@@ -551,22 +575,22 @@ function validateUserId(userId: any): string | null {
   app.post("/api/validateCommand", async (req: any, res: any) => {
     try {
       const { input, type } = req.body; // Ignore extra fields like 'step'
-      const userId = req.session.userId;
+      const userId = req.session?.userId;
       
       if (!userId) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ status: "error", message: "Unauthorized" });
       }
       
       if (!type || !ALLOWED_COMMAND_TYPES.includes(type)) {
         console.log(`>>> [API] validateCommand: Rejected unknown command type: ${type}`);
-        return res.status(400).json({ error: "Invalid command type" });
+        return res.status(400).json({ status: "error", message: "Invalid command type" });
       }
 
       console.log(`>>> [API] Request: ${type} from user ${userId}. Input: "${input}"`);
       
       const isInputRequired = ['terminal', 'archive_password', 'node02_answer'].includes(type);
       if (isInputRequired && !input) {
-        return res.status(400).json({ error: "Missing required field: input" });
+        return res.status(400).json({ status: "error", message: "Missing required field: input" });
       }
 
       const fullCmd = (input || "").trim();
@@ -575,6 +599,7 @@ function validateUserId(userId: any): string | null {
       const baseCmd = args[0].toLowerCase();
       
       const db = await getDb();
+      if (!db) return res.status(500).json({ status: "error", message: "Database unavailable" });
       const userDoc = await db.collection('users').doc(userId).get();
       const userData = userDoc.data() || {};
       const currentStage = userData.stage || 1;
@@ -782,16 +807,17 @@ function validateUserId(userId: any): string | null {
   app.post("/api/sendMessage", async (req: any, res: any) => {
     try {
       const { message, contact } = req.body;
-      const userId = req.session.userId;
+      const userId = req.session?.userId;
       
       if (!message || !contact || !userId) {
-        return res.status(400).json({ error: "Missing or invalid required fields" });
+        return res.status(400).json({ status: "error", message: "Missing or invalid required fields" });
       }
 
       let normalized = message.trim().toLowerCase();
       if (normalized === "depth") normalized = "death";
 
       const db = await getDb();
+      if (!db) return res.status(500).json({ status: "error", message: "Database unavailable" });
       const userDoc = await db.collection('users').doc(userId).get();
       const userData = userDoc.data() || {};
       
@@ -991,7 +1017,7 @@ Stage 4 unlocked. Messenger updated.`,
       });
     } catch (err: any) {
       console.error(">>> [API] sendMessage error:", err.message);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ status: "error", message: "Internal Server Error" });
     }
   });
 
@@ -999,12 +1025,13 @@ Stage 4 unlocked. Messenger updated.`,
   app.post('/api/getContent', async (req: any, res: any) => {
     try {
       const { target } = req.body;
-      const userId = req.session.userId;
+      const userId = req.session?.userId;
 
       if (!userId) return res.status(401).json({ status: "error", message: "Unauthorized" });
       if (!target || typeof target !== 'string') return res.status(400).json({ status: "error", message: "Invalid or missing target" });
 
       const db = await getDb();
+      if (!db) return res.status(500).json({ status: "error", message: "Database unavailable" });
       const userDoc = await db.collection('users').doc(userId).get();
       const userData = userDoc.data();
 
@@ -1133,7 +1160,7 @@ Stage 4 unlocked. Messenger updated.`,
       }
     } catch (err: any) {
       console.error(">>> [API] getContent error:", err.message);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ status: "error", message: "Internal Server Error" });
     }
   });
 
