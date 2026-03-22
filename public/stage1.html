@@ -1801,7 +1801,9 @@ Something is hidden there.
       { text: "", delay: 500, action: () => {
         bootScreen.style.display = 'none';
         desktop.style.display = 'block';
-        arrangeIcons();
+        if (typeof arrangeIcons === "function") {
+          arrangeIcons();
+        }
       }}
     ];
 
@@ -2259,7 +2261,9 @@ Something is hidden there.
 
     function sortIcons() {
       closeContextMenu();
-      arrangeIcons();
+      if (typeof arrangeIcons === "function") {
+        arrangeIcons();
+      }
       refreshDesktop();
     }
 
@@ -2937,15 +2941,19 @@ Something is hidden there.
         
         // Unlock observer folder
         document.getElementById('icon-observer').classList.remove('hidden');
-        arrangeIcons();
+        if (typeof arrangeIcons === "function") {
+          arrangeIcons();
+        }
         
         // Start ambient audio
         const stage4Audio = document.getElementById('stage4-ambient');
         if (stage4Audio) {
           stage4Audio.play().catch(e => console.error("Audio play failed:", e));
         }
-        
-            async function openBrowserUrl(url) {
+      }
+    }
+
+    async function openBrowserUrl(url) {
       if (!window.userState) {
         console.error("User state not loaded");
         return;
@@ -3336,7 +3344,9 @@ Something is hidden there.
                 printTerminal("Archive decoded successfully.");
                 printTerminal("Unlocking /vale/ directory...");
                 document.getElementById('icon-vale').classList.remove('hidden');
-                arrangeIcons();
+                if (typeof arrangeIcons === "function") {
+                  arrangeIcons();
+                }
                 if (window.soundManager) window.soundManager.playSuccess();
               }, 1000);
             } else if (data.action === 'unlock_forum') {
@@ -3942,7 +3952,9 @@ Something is hidden there.
             });
             icon.innerHTML = `<svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#ffcc00" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#ffcc00"/></svg><span>System Logs</span>`;
             desk.appendChild(icon);
-            arrangeIcons();
+            if (typeof arrangeIcons === "function") {
+              arrangeIcons();
+            }
           }
         }
       } else {
@@ -4006,6 +4018,7 @@ Something is hidden there.
     }
 
     async function setStage4Progress(step) {
+      if (typeof currentStage === 'undefined') window.currentStage = 1;
       if (window.userState) window.userState.stage4_progress = step;
       currentStage = 4;
       startStage4();
@@ -4024,6 +4037,8 @@ Something is hidden there.
     // Migration removed
 
     async function syncProgression() {
+      if (typeof chats === 'undefined') window.chats = {};
+      if (typeof currentStage === 'undefined') window.currentStage = 1;
       const userId = window.ensureUserId();
       
       if (!userId) return;
@@ -4099,7 +4114,9 @@ Something is hidden there.
           startStage4();
         }
         
-        arrangeIcons();
+        if (typeof arrangeIcons === "function") {
+          arrangeIcons();
+        }
       } catch (e) {
         console.error("Progression sync failed", e);
       }
@@ -4140,13 +4157,16 @@ Something is hidden there.
         if (archiveIcon) archiveIcon.classList.remove('hidden');
       }
       if (s4p >= 1 || (window.userState && window.userState.stage1_complete)) {
-        arrangeIcons();
+        if (typeof arrangeIcons === "function") {
+          arrangeIcons();
+        }
         startSystemAliveEffects();
       }
     })();
 
     // Helper to update clues dynamically based on stage3_step
     function updateStage3Clues() {
+      if (typeof chats === 'undefined') window.chats = {};
       let step = getProgressStep();
       
       if (step >= 1) {
@@ -4213,6 +4233,9 @@ Something is hidden there.
 
     // Reconstruct chat history
     function reconstructChatHistory() {
+      if (typeof chats === 'undefined') {
+        window.chats = {};
+      }
       const step = getProgressStep();
       
       // Reset to initial state to avoid duplicates
