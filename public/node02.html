@@ -226,6 +226,9 @@ let userId = 'session_managed';
 async function fetchUserState() {
   try {
     const res = await fetch('/api/userState');
+    if (!res.ok) return 1;
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) return 1;
     const data = await res.json();
     return data.node02_step || 1;
   } catch (e) {
@@ -446,7 +449,12 @@ function startBlackFire() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'unlock_node03_secret' })
-      }).then(res => res.json()).then(data => {
+      }).then(res => {
+        if (!res.ok) throw new Error("Server error");
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
+        return res.json();
+      }).then(data => {
         if (data.message) {
           response.textContent = data.message;
         }
@@ -494,6 +502,19 @@ async function dissolveAndRespond() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ input: text, type: 'node02_answer', step: currentStep.toString() })
     });
+    if (!res.ok) {
+      console.error("Server error:", res.status);
+      busy = false;
+      input.classList.remove('hidden');
+      return;
+    }
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      console.error("Unexpected response format:", contentType);
+      busy = false;
+      input.classList.remove('hidden');
+      return;
+    }
     const data = await res.json();
     
     let msg = data.message || "Incorrect. The truth eludes you.";

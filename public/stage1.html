@@ -1742,6 +1742,9 @@ Something is hidden there.
     async function fetchUserState() {
       try {
         const res = await fetch('/api/userState');
+        if (!res.ok) return {};
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) return {};
         const data = await res.json();
         window.userState = data;
         currentStage = data.currentStage || 1;
@@ -1917,6 +1920,9 @@ Something is hidden there.
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ target: id })
           });
+          if (!res.ok) throw new Error("Server error");
+          const contentType = res.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
           const data = await res.json();
           if (data.status === 'success') {
             const contentEl = document.getElementById('content-' + id);
@@ -1958,6 +1964,9 @@ Something is hidden there.
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ type: 'check_access', target: id })
           });
+          if (!res.ok) throw new Error("Server error");
+          const contentType = res.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
           const data = await res.json();
           if (data.status !== 'success') {
             printTerminal("Access denied: Insufficient permissions.");
@@ -1985,14 +1994,18 @@ Something is hidden there.
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'update_stage4_progress', step: getStage4Progress(), flag: 'stage4_observer_logs_opened' })
-        });
+        }).then(res => {
+          if (!res.ok) console.error("Server error updating stage 4 progress:", res.status);
+        }).catch(e => console.error("Failed to update stage 4 progress:", e));
       }
       if (id === 'network-trace') {
         fetch('/api/validateCommand', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'update_stage4_progress', step: Math.max(getStage4Progress(), 3), flag: 'stage4_network_trace_viewed' })
-        });
+        }).then(res => {
+          if (!res.ok) console.error("Server error updating stage 4 progress:", res.status);
+        }).catch(e => console.error("Failed to update stage 4 progress:", e));
       }
       
       if (id === 'photo-fragment') {
@@ -3033,19 +3046,32 @@ Something is hidden there.
               finishLoad();
               return;
             } else if (targetUrl === 'archive://node02/resonance.html' || targetUrl === 'archive://node/02/resonance.html') {
-              fetch('/api/getUserState')
-                .then(res => res.json())
+              fetch('/api/userState')
+                .then(res => {
+                  if (!res.ok) throw new Error("Server error");
+                  const contentType = res.headers.get("content-type");
+                  if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
+                  return res.json();
+                })
                 .then(data => {
                   if (data.stage2_unlocked) {
                     unlocked = true;
                   }
                   fetchPath = 'resonance.html';
                   finishLoad();
+                }).catch(e => {
+                  console.error("Failed to check access:", e);
+                  finishLoad();
                 });
               return;
             } else if (targetUrl === 'archive://node/03/secret' || targetUrl === 'archive://' + atob('bm9kZTAzL3NlY3JldA==')) {
               fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node03_secret' }) })
-                .then(res => res.json())
+                .then(res => {
+                  if (!res.ok) throw new Error("Server error");
+                  const contentType = res.headers.get("content-type");
+                  if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
+                  return res.json();
+                })
                 .then(data => {
                   if (data.status === 'success') {
                     unlocked = true;
@@ -3056,7 +3082,12 @@ Something is hidden there.
               return;
             } else if (targetUrl === 'archive://node/04') {
               fetch('/api/validateCommand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'check_access', target: 'node04' }) })
-                .then(res => res.json())
+                .then(res => {
+                  if (!res.ok) throw new Error("Server error");
+                  const contentType = res.headers.get("content-type");
+                  if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
+                  return res.json();
+                })
                 .then(data => {
                   if (data.status === 'success') {
                     unlocked = true;
@@ -3067,7 +3098,12 @@ Something is hidden there.
               return;
             } else if (targetUrl === atob('YXJjaGl2ZTovL2ZvcnVt')) {
               fetch('/api/getContent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target: 'forum' }) })
-                .then(res => res.json())
+                .then(res => {
+                  if (!res.ok) throw new Error("Server error");
+                  const contentType = res.headers.get("content-type");
+                  if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
+                  return res.json();
+                })
                 .then(data => {
                   if (data.status === 'success') {
                     unlocked = true;
@@ -3084,7 +3120,12 @@ Something is hidden there.
               return;
             } else if (targetUrl === atob('YXJjaGl2ZTovL3JlY29yZHM=')) {
               fetch('/api/getContent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target: 'records' }) })
-                .then(res => res.json())
+                .then(res => {
+                  if (!res.ok) throw new Error("Server error");
+                  const contentType = res.headers.get("content-type");
+                  if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
+                  return res.json();
+                })
                 .then(data => {
                   if (data.status === 'success') {
                     unlocked = true;
@@ -3284,7 +3325,12 @@ Something is hidden there.
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ input: cmd, type: 'terminal' })
         })
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) throw new Error("Server error");
+          const contentType = res.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
+          return res.json();
+        })
         .then(data => {
           applyGameState(data);
           if (data.status === 'success') {
@@ -3678,6 +3724,10 @@ Something is hidden there.
           })
         });
         
+        if (!response.ok) throw new Error("Server error");
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
+        
         const data = await response.json();
         
         // Remove indicator
@@ -3978,7 +4028,9 @@ Something is hidden there.
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'update_messenger_step', step: step })
-      });
+      }).then(res => {
+        if (!res.ok) console.error("Server error updating progress:", res.status);
+      }).catch(e => console.error("Failed to update progress:", e));
     }
     
     function getStage4Progress() {
@@ -3995,7 +4047,9 @@ Something is hidden there.
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'update_stage4_progress', step: step })
-      });
+      }).then(res => {
+        if (!res.ok) console.error("Server error updating stage 4 progress:", res.status);
+      }).catch(e => console.error("Failed to update stage 4 progress:", e));
     }
 
     // Migration removed
@@ -4006,6 +4060,9 @@ Something is hidden there.
       
       try {
         const response = await fetch('/api/userState');
+        if (!response.ok) throw new Error("Server error");
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
         const data = await response.json();
         
         window.userState = data;
@@ -4300,10 +4357,11 @@ Something is hidden there.
     async function resetProgress() {
       if (confirm("Are you sure you want to reset all progress?")) {
         try {
-          await fetch('/api/resetProgress', {
+          const res = await fetch('/api/resetProgress', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
           });
+          if (!res.ok) throw new Error("Server error");
           localStorage.clear();
           sessionStorage.clear();
           window.location.reload();

@@ -37,7 +37,7 @@ class MockFirestore {
       doc: (id: string) => ({
         get: async () => ({
           exists: col.has(id),
-          data: () => col.get(id) || {}
+          data: () => col.get(id)
         }),
         set: async (data: any, options?: { merge?: boolean }) => {
           const existing = col.get(id) || {};
@@ -432,7 +432,7 @@ async function startServer() {
       res.json({ success: true });
     } catch (error) {
       console.error("Error in /api/resetProgress:", error);
-      res.status(500).send("Internal Server Error");
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
@@ -468,7 +468,7 @@ async function startServer() {
       });
     } catch (error) {
       console.error("Error in /api/userState:", error);
-      res.status(500).send("Internal Server Error");
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
@@ -495,7 +495,7 @@ async function startServer() {
       }
     } catch (error) {
       console.error("Error in /api/getNode02:", error);
-      res.status(500).send("Internal Server Error");
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
@@ -522,7 +522,7 @@ async function startServer() {
       }
     } catch (error) {
       console.error("Error in /api/getArticle:", error);
-      res.status(500).send("Internal Server Error");
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 

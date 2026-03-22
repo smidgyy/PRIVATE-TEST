@@ -9,6 +9,15 @@
   async function initializeSession() {
     try {
       const response = await fetch('/api/init', { method: 'POST' });
+      if (!response.ok) {
+        console.error("AURORA OS: Server error during session initialization:", response.status);
+        return;
+      }
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        console.error("AURORA OS: Unexpected response format (expected JSON):", contentType);
+        return;
+      }
       const data = await response.json();
       if (data.status === 'success') {
         window.userState = data.state;
