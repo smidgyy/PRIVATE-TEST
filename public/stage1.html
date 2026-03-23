@@ -2571,7 +2571,8 @@ Something is hidden there.
       const container = document.getElementById('notifications');
       const notif = document.createElement('div');
       notif.className = 'notification';
-      notif.innerHTML = `<svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2"><path d="M16 4l12 24H4L16 4z"/><path d="M16 12v8M16 24v2"/></svg> <span>${msg}</span>`;
+      notif.innerHTML = `<svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2"><path d="M16 4l12 24H4L16 4z"/><path d="M16 12v8M16 24v2"/></svg> <span></span>`;
+      notif.querySelector('span').textContent = msg;
       container.appendChild(notif);
       
       if (window.soundManager) {
@@ -3655,7 +3656,7 @@ Something is hidden there.
       const historyDiv = document.getElementById('chat-history');
       const chat = chats[currentChatContact];
       
-      let html = '';
+      historyDiv.innerHTML = '';
       chat.forEach(msg => {
         const isYou = msg.sender === 'You';
         let senderColor = '#800000'; // Default red for incoming
@@ -3663,14 +3664,38 @@ Something is hidden there.
         else if (currentChatContact === 'archive') senderColor = '#800080'; // Purple for archive
         else if (currentChatContact === 'elias') senderColor = '#000080'; // Dark blue for Elias
         
-        html += `
-          <div style="margin-bottom: 12px; text-align: ${isYou ? 'right' : 'left'};">
-            <div style="font-weight: bold; color: ${senderColor}; margin-bottom: 2px;">${msg.sender} <span style="font-size: 10px; color: #666; font-weight: normal;">${msg.time}</span></div>
-            <div style="background: ${isYou ? '#e6e6ff' : '#ffe6e6'}; padding: 6px 8px; border-radius: 2px; display: inline-block; max-width: 80%; border: 1px solid ${isYou ? '#b3b3ff' : '#ffb3b3'}; text-align: left; box-shadow: 1px 1px 0 rgba(0,0,0,0.1);">${msg.text}</div>
-          </div>
-        `;
+        const wrapper = document.createElement('div');
+        wrapper.style.marginBottom = '12px';
+        wrapper.style.textAlign = isYou ? 'right' : 'left';
+
+        const senderDiv = document.createElement('div');
+        senderDiv.style.fontWeight = 'bold';
+        senderDiv.style.color = senderColor;
+        senderDiv.style.marginBottom = '2px';
+        senderDiv.textContent = msg.sender + ' ';
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.style.fontSize = '10px';
+        timeSpan.style.color = '#666';
+        timeSpan.style.fontWeight = 'normal';
+        timeSpan.textContent = msg.time;
+        senderDiv.appendChild(timeSpan);
+
+        const textDiv = document.createElement('div');
+        textDiv.style.background = isYou ? '#e6e6ff' : '#ffe6e6';
+        textDiv.style.padding = '6px 8px';
+        textDiv.style.borderRadius = '2px';
+        textDiv.style.display = 'inline-block';
+        textDiv.style.maxWidth = '80%';
+        textDiv.style.border = '1px solid ' + (isYou ? '#b3b3ff' : '#ffb3b3');
+        textDiv.style.textAlign = 'left';
+        textDiv.style.boxShadow = '1px 1px 0 rgba(0,0,0,0.1)';
+        textDiv.textContent = msg.text;
+
+        wrapper.appendChild(senderDiv);
+        wrapper.appendChild(textDiv);
+        historyDiv.appendChild(wrapper);
       });
-      historyDiv.innerHTML = html;
       historyDiv.scrollTop = historyDiv.scrollHeight;
     }
 
@@ -3835,7 +3860,13 @@ Something is hidden there.
         trackName.title = "SYSTEM_PULSE_02";
         
         if (window.userState && window.userState.stage3_gold) {
-          trackName.innerHTML = `${title} <span style="font-size: 0.7rem; opacity: 0.7; margin-left: 5px;">[0x47 0x52 0x4f 0x55 0x4e 0x44]</span>`;
+          trackName.textContent = title;
+          const span = document.createElement('span');
+          span.style.fontSize = '0.7rem';
+          span.style.opacity = '0.7';
+          span.style.marginLeft = '5px';
+          span.textContent = '[0x47 0x52 0x4f 0x55 0x4e 0x44]';
+          trackName.appendChild(span);
         } else {
           trackName.innerText = title;
         }

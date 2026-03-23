@@ -227,8 +227,7 @@ async function startServer() {
       
       if (!isAllowed) {
         console.warn(`>>> [CORS] Origin check: ${origin} | isAllowed: ${isAllowed}`);
-        // Allow for now but log it to avoid breaking things during transition
-        return callback(null, true);
+        return callback(new Error("Not allowed by CORS"));
       }
       return callback(null, true);
     },
@@ -248,14 +247,27 @@ async function startServer() {
     message: { error: "Too many requests, please try again later." }
   });
 
+  const strictLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 10, // Limit each IP to 10 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many requests, please try again later." }
+  });
+
   // Apply rate limiting to sensitive API routes
-  app.use("/api/validateCommand", limiter);
+  app.use("/api/validateCommand", strictLimiter);
   app.use("/api/getContent", limiter);
-  app.use("/api/sendMessage", limiter);
+  app.use("/api/sendMessage", strictLimiter);
+
+  if (!process.env.SESSION_SECRET) {
+    console.error("FATAL ERROR: SESSION_SECRET is missing.");
+    process.exit(1);
+  }
 
   // Step 1: Implement server-managed session
   app.use(session({
-    secret: process.env.SESSION_SECRET || "aurora-os-secret-key-2026",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: {
@@ -371,8 +383,17 @@ async function startServer() {
         return next();
       }
       
+      let normalizedPath = path.posix.normalize(req.path);
+      if (normalizedPath.endsWith('/')) {
+        normalizedPath += 'index.html';
+      } else if (!normalizedPath.includes('.')) {
+        if (protectedRoutes.includes(normalizedPath + '/index.html')) {
+          normalizedPath += '/index.html';
+        }
+      }
+      
       // If it's a protected HTML route, skip static serving so it hits the protection logic later
-      if (protectedRoutes.includes(req.path)) {
+      if (protectedRoutes.includes(normalizedPath)) {
         return next();
       }
       
@@ -560,14 +581,14 @@ async function startServer() {
       const hasAccess = !!userData.stage2_unlocked;
       
       if (!hasAccess) {
-        return res.status(403).send(LOCKED_HTML);
+        return res.status(403).json({ status: "error", message: "ACCESS DENIED: Signal alignment required." });
       }
 
       const filePath = path.join(process.cwd(), baseDir, "node02.html");
       if (fs.existsSync(filePath)) {
         res.sendFile(filePath);
       } else {
-        res.status(404).send("Node 02 content not found");
+        res.status(404).json({ status: "error", message: "Node 02 content not found" });
       }
     } catch (error) {
       console.error("Error in /api/getNode02:", error);
@@ -588,14 +609,14 @@ async function startServer() {
       const hasAccess = !!userData.stage2_phase1_complete;
       
       if (!hasAccess) {
-        return res.status(403).send(LOCKED_HTML);
+        return res.status(403).json({ status: "error", message: "ACCESS DENIED: Archive records locked." });
       }
 
       const filePath = path.join(process.cwd(), baseDir, "article.html");
       if (fs.existsSync(filePath)) {
         res.sendFile(filePath);
       } else {
-        res.status(404).send("Article content not found");
+        res.status(404).json({ status: "error", message: "Article content not found" });
       }
     } catch (error) {
       console.error("Error in /api/getArticle:", error);
@@ -645,6 +666,10 @@ function validateUserId(userId: any): string | null {
       const isInputRequired = ['terminal', 'archive_password', 'node02_answer'].includes(type);
       if (isInputRequired && !input) {
         return res.status(400).json({ status: "error", message: "Missing required field: input" });
+      }
+
+      if (input !== undefined && typeof input !== 'string') {
+        return res.status(400).json({ status: "error", message: "Invalid input type" });
       }
 
       const fullCmd = (input || "").trim();
@@ -898,6 +923,10 @@ function validateUserId(userId: any): string | null {
       
       if (!message || !contact || !userId) {
         return res.status(400).json({ status: "error", message: "Missing or invalid required fields" });
+      }
+
+      if (typeof message !== 'string' || typeof contact !== 'string') {
+        return res.status(400).json({ status: "error", message: "Invalid input type" });
       }
 
       let normalized = message.trim().toLowerCase();
@@ -1252,29 +1281,42 @@ Stage 4 unlocked. Messenger updated.`,
 
 
   // 3. THIRD: PROTECTED ROUTES LOGIC (MANDATORY)
-  app.get(protectedRoutes, async (req: any, res: any, next: any) => {
+  app.use(async (req: any, res: any, next: any) => {
     try {
+      let normalizedPath = path.posix.normalize(req.path);
+      if (normalizedPath.endsWith('/')) {
+        normalizedPath += 'index.html';
+      } else if (!normalizedPath.includes('.')) {
+        if (protectedRoutes.includes(normalizedPath + '/index.html')) {
+          normalizedPath += '/index.html';
+        }
+      }
+
+      if (!protectedRoutes.includes(normalizedPath)) {
+        return next();
+      }
+
       // BYPASS API + ASSETS (MANDATORY)
       if (
-        req.path.startsWith("/api") ||
-        req.path.includes(".js") ||
-        req.path.includes(".css") ||
-        req.path.includes(".png") ||
-        req.path.includes(".jpg") ||
-        req.path.includes(".svg") ||
-        req.path.includes(".woff2") ||
-        req.path.includes(".mp3")
+        normalizedPath.startsWith("/api") ||
+        normalizedPath.includes(".js") ||
+        normalizedPath.includes(".css") ||
+        normalizedPath.includes(".png") ||
+        normalizedPath.includes(".jpg") ||
+        normalizedPath.includes(".svg") ||
+        normalizedPath.includes(".woff2") ||
+        normalizedPath.includes(".mp3")
       ) {
         return next();
       }
 
       // ONLY handle HTML
-      if (!req.path.endsWith(".html")) return next();
+      if (!normalizedPath.endsWith(".html")) return next();
 
-      const userId = req.session.userId;
+      const userId = req.session?.userId;
       
       if (!userId) {
-        console.log(`>>> [AUTH] Protected route access denied: Missing userId in session for ${req.path}`);
+        console.log(`>>> [AUTH] Protected route access denied: Missing userId in session for ${normalizedPath}`);
         return res.status(403).send(LOCKED_HTML);
       }
 
@@ -1283,7 +1325,7 @@ Stage 4 unlocked. Messenger updated.`,
         return res.status(403).send(LOCKED_HTML);
       }
       
-      const target = req.path.substring(1); // remove leading slash
+      const target = normalizedPath.substring(1); // remove leading slash
       let hasAccess = false;
       
       // Check if we are in Mock mode
@@ -1328,7 +1370,7 @@ Stage 4 unlocked. Messenger updated.`,
     } catch (err) {
       console.error("PROTECTED ROUTE ERROR:", err);
       // ALWAYS send response to prevent 503
-      return res.status(500).send("Server Error");
+      return res.status(500).json({ status: "error", message: "Server Error" });
     }
   });
 
@@ -1368,7 +1410,7 @@ Stage 4 unlocked. Messenger updated.`,
       }
     } catch (error: any) {
       console.error("Catch-all error:", error.stack || error);
-      res.status(500).send("Server Error");
+      res.status(500).json({ status: "error", message: "Server Error" });
     }
   });
 
@@ -1383,7 +1425,7 @@ Stage 4 unlocked. Messenger updated.`,
       return res.status(500).json({ status: "error", message: "Internal Server Error: " + (err.message || "Unknown error") });
     }
     // For HTML routes, return a simple error page
-    res.status(500).send("Internal Server Error");
+    res.status(500).json({ status: "error", message: "Internal Server Error" });
   });
 }
 
