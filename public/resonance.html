@@ -146,7 +146,10 @@
 <div id="content">
   <header>
     <div style="font-weight: bold; letter-spacing: 2px;">AURORA // NODE_02</div>
-    <div class="status-tag">Signal Aligned</div>
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <button onclick="resetProgress()" style="background: #ff4444; color: white; border: 1px solid #000; padding: 2px 5px; cursor: pointer; font-size: 10px; font-weight: bold; box-shadow: 1px 1px 0 #fff inset, -1px -1px 0 #888 inset;" title="Reset all progress">DEV RESET</button>
+      <div class="status-tag">Signal Aligned</div>
+    </div>
   </header>
 
   <div id="visualizer"></div>
@@ -170,6 +173,7 @@
 
   <div class="hint-text">Frequency: 432Hz // Resonance: Active</div>
 
+  <script src="/sound-manager.js?v=2"></script>
   <script>
     // Visualizer Logic
     const NUM_BARS = 128;
