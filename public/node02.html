@@ -230,7 +230,10 @@ async function fetchUserState() {
     const contentType = res.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) return 1;
     const data = await res.json();
-    return data.node02_step || 1;
+    let step = 1;
+    if (data.stage2_phase2_complete) step = 3;
+    else if (data.stage2_phase1_complete) step = 2;
+    return step;
   } catch (e) {
     console.error("Failed to fetch user state:", e);
     return 1;

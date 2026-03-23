@@ -536,7 +536,10 @@ async function startServer() {
         stage4_network_trace_viewed: !!userData.stage4_network_trace_viewed,
         stage4_complete: !!userData.stage4_complete,
         stage4_progress: userData.stage4_progress || 0,
-        aurora_archive_unlocked: !!userData.aurora_archive_unlocked
+        aurora_archive_unlocked: !!userData.aurora_archive_unlocked,
+        stage2_phase1_complete: !!userData.stage2_phase1_complete,
+        stage2_phase2_complete: !!userData.stage2_phase2_complete,
+        stage2_phase3_complete: !!userData.stage2_phase3_complete
       });
     } catch (error: any) {
       console.error("!!! [API] Error in /api/userState:", error.message, error.stack);
@@ -761,27 +764,31 @@ function validateUserId(userId: any): string | null {
 
         const hash = crypto.createHash('sha256').update(t.toLowerCase()).digest('hex');
         
-        // Use server-side progression state instead of client-sent 'step'
-        if (!userData.stage2_phase1_complete) {
-          if (hash === '76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22') {
+        // Allow answers to be retried even if already complete
+        if (hash === '76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22') {
+          if (!userData.stage2_phase1_complete) {
             await db.collection('users').doc(userId).update({ stage2_phase1_complete: true });
-            return res.json({ status: 'success', success: true, action: 'open_article', msg: "The earth opens. Seek the marginalia." });
           }
-        } else if (!userData.stage2_phase2_complete) {
-          if (hash === 'ba6f8ed6d0d150b2a2ab2bebe99540f8c00cafb0ebdbf71a6f0b768c45425ca7') {
+          return res.json({ status: 'success', success: true, action: 'open_article', msg: "The earth opens. Seek the marginalia." });
+        }
+        
+        if (hash === 'ba6f8ed6d0d150b2a2ab2bebe99540f8c00cafb0ebdbf71a6f0b768c45425ca7') {
+          if (!userData.stage2_phase1_complete) return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
+          if (!userData.stage2_phase2_complete) {
             await db.collection('users').doc(userId).update({ stage2_phase2_complete: true });
-            return res.json({ status: 'success', success: true, action: 'phase2_success', msg: "The flame is extinguished." });
           }
-        } else if (!userData.stage2_phase3_complete) {
-          if (hash === '90b7b8654171c04a5e5de1eae884cfd86952739d50d09d9bb7680763e31faee8') {
+          return res.json({ status: 'success', success: true, action: 'phase2_success', msg: "The flame is extinguished." });
+        }
+        
+        if (hash === '90b7b8654171c04a5e5de1eae884cfd86952739d50d09d9bb7680763e31faee8') {
+          if (!userData.stage2_phase2_complete) return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
+          if (!userData.stage2_phase3_complete) {
             await db.collection('users').doc(userId).update({ 
               stage2_phase3_complete: true,
               stage: 3 
             });
-            return res.json({ status: 'success', success: true, action: 'phase3_success', msg: String.fromCharCode(71, 82, 69, 69, 68) });
           }
-        } else {
-          return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+          return res.json({ status: 'success', success: true, action: 'phase3_success', msg: String.fromCharCode(71, 82, 69, 69, 68) });
         }
         
         return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
