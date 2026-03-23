@@ -497,6 +497,7 @@ async function dissolveAndRespond() {
   await new Promise(r => setTimeout(r, totalDissolveTime));
   charLayer.style.opacity = '0';
 
+  try {
     const res = await fetch('/api/validateCommand', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
