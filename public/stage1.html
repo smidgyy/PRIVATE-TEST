@@ -1988,24 +1988,12 @@ Something is hidden there.
       const win = document.getElementById('win-' + id);
       if (!win) return;
       
-      // Stage 4 tracking
+      // Stage 4 tracking removed from frontend to keep whitelist strict
       if (id.startsWith('observer-log-')) {
-        fetch('/api/validateCommand', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'update_stage4_progress', step: getStage4Progress(), flag: 'stage4_observer_logs_opened' })
-        }).then(res => {
-          if (!res.ok) console.error("Server error updating stage 4 progress:", res.status);
-        }).catch(e => console.error("Failed to update stage 4 progress:", e));
+        // No longer sending update_stage4_progress from client
       }
       if (id === 'network-trace') {
-        fetch('/api/validateCommand', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'update_stage4_progress', step: Math.max(getStage4Progress(), 3), flag: 'stage4_network_trace_viewed' })
-        }).then(res => {
-          if (!res.ok) console.error("Server error updating stage 4 progress:", res.status);
-        }).catch(e => console.error("Failed to update stage 4 progress:", e));
+        // No longer sending update_stage4_progress from client
       }
       
       if (id === 'photo-fragment') {
@@ -2922,34 +2910,38 @@ Something is hidden there.
     }
 
     function startStage4() {
+      // System awareness effects
+      if (currentStage >= 4) {
+        document.body.style.animation = 'glitch 0.2s 3';
+        setTimeout(() => { document.body.style.animation = ''; }, 600);
+        
+        const termInput = document.getElementById('term-input');
+        if (termInput) {
+          termInput.classList.add('glitching');
+          setTimeout(() => { termInput.classList.remove('glitching'); }, 1000);
+        }
+      }
+      
+      showNotification("<b>SYSTEM LOGGING ENABLED</b><br>Investigator activity detected.");
+      
+      // Unlock observer folder
+      const observerIcon = document.getElementById('icon-observer');
+      if (observerIcon) {
+        observerIcon.classList.remove('hidden');
+        observerIcon.style.display = 'flex';
+      }
+      if (typeof arrangeIcons === "function") {
+        arrangeIcons();
+      }
+      
+      // Start ambient audio
+      const stage4Audio = document.getElementById('stage4-ambient');
+      if (stage4Audio) {
+        stage4Audio.play().catch(e => console.error("Audio play failed:", e));
+      }
+
       if (getStage4Progress() === 0) {
         setStage4Progress(1);
-        
-        // System awareness effects
-        if (currentStage >= 4) {
-          document.body.style.animation = 'glitch 0.2s 3';
-          setTimeout(() => { document.body.style.animation = ''; }, 600);
-          
-          const termInput = document.getElementById('term-input');
-          if (termInput) {
-            termInput.classList.add('glitching');
-            setTimeout(() => { termInput.classList.remove('glitching'); }, 1000);
-          }
-        }
-        
-        showNotification("<b>SYSTEM LOGGING ENABLED</b><br>Investigator activity detected.");
-        
-        // Unlock observer folder
-        document.getElementById('icon-observer').classList.remove('hidden');
-        if (typeof arrangeIcons === "function") {
-          arrangeIcons();
-        }
-        
-        // Start ambient audio
-        const stage4Audio = document.getElementById('stage4-ambient');
-        if (stage4Audio) {
-          stage4Audio.play().catch(e => console.error("Audio play failed:", e));
-        }
       }
     }
 
@@ -3530,7 +3522,10 @@ Something is hidden there.
         if (window.userState) window.userState.stage3_gold = true;
       } else if (response.action === "unlock_stage4") {
         currentStage = 4;
-        if (window.userState) window.userState.stage3_ground = true;
+        if (window.userState) {
+          window.userState.stage3_ground = true;
+          window.userState.stage4_progress = 1;
+        }
         
         // Trigger Unknown User message immediately
         if (typeof updateStage3Clues === 'function') {
@@ -4042,14 +4037,6 @@ Something is hidden there.
       if (window.userState) window.userState.stage4_progress = step;
       currentStage = 4;
       startStage4();
-      
-      fetch('/api/validateCommand', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'update_stage4_progress', step: step })
-      }).then(res => {
-        if (!res.ok) console.error("Server error updating stage 4 progress:", res.status);
-      }).catch(e => console.error("Failed to update stage 4 progress:", e));
     }
 
     // Migration removed

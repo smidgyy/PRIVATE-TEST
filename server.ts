@@ -667,7 +667,8 @@ function validateUserId(userId: any): string | null {
         await db.collection('users').doc(userId).update({ 
           stage3_ground: true,
           stage: 4,
-          stage4_unlocked: true
+          stage4_unlocked: true,
+          stage4_progress: 1
         });
         return res.json({ status: 'success', action: 'unlock_stage4' });
       }
@@ -755,7 +756,8 @@ function validateUserId(userId: any): string | null {
           await db.collection('users').doc(userId).update({ 
             stage3_ground: true,
             stage: 4,
-            stage4_unlocked: true
+            stage4_unlocked: true,
+            stage4_progress: 1
           });
           return res.json({ 
             status: 'success', 
@@ -1033,7 +1035,8 @@ Listen to the system's pulse.`,
           await db.collection("users").doc(userId).set({
             stage3_ground: true,
             stage: 4,
-            stage4_unlocked: true
+            stage4_unlocked: true,
+            stage4_progress: 1
           }, { merge: true });
           
           return res.json({
