@@ -490,6 +490,28 @@ async function startServer() {
     }
   });
 
+  app.post("/api/resetProgress", async (req: any, res: any) => {
+    try {
+      const userId = req.session?.userId;
+      if (!userId) return res.status(401).json({ status: "error", message: "Unauthorized" });
+
+      const db = await getDb();
+      await db.collection("users").doc(userId).set({
+        userId,
+        stage: 1,
+        node02_step: 1,
+        messenger_step: 0,
+        stage4_progress: 0,
+        createdAt: new Date().toISOString()
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error in /api/resetProgress:", error);
+      res.status(500).json({ status: "error", message: "Internal Server Error" });
+    }
+  });
+
   app.get("/api/userState", async (req: any, res: any) => {
     try {
       console.log(">>> [API] HIT: GET /api/userState");
