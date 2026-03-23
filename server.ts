@@ -611,7 +611,8 @@ const ALLOWED_COMMAND_TYPES = [
   'node02_answer',
   'unlock_node03_secret',
   'get_progression',
-  'check_access'
+  'check_access',
+  'ground'
 ];
 
 function validateUserId(userId: any): string | null {
@@ -656,6 +657,20 @@ function validateUserId(userId: any): string | null {
       const userDoc = await db.collection('users').doc(userId).get();
       const userData = userDoc.data() || {};
       const currentStage = userData.stage || 1;
+
+      if (type === 'ground') {
+        const userData = await db.collection('users').doc(userId).get().then((doc: any) => doc.data() || {});
+        if (userData.stage3_ground) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+        const currentStep = userData.messenger_step || 0;
+        if (currentStep < 4) return res.json({ status: 'error', message: 'COMMAND INVALID' });
+        
+        await db.collection('users').doc(userId).update({ 
+          stage3_ground: true,
+          stage: 4,
+          stage4_unlocked: true
+        });
+        return res.json({ status: 'success', action: 'unlock_stage4' });
+      }
 
       if (type === 'terminal') {
         if (fullCmd.toLowerCase() === 'decode_vale_archive') {
@@ -730,6 +745,22 @@ function validateUserId(userId: any): string | null {
             status: 'success', 
             reply: 'Fragment decrypted. Algorithm: Caesar. Key: THE ARCHIVE REMEMBERS',
             action: 'show_caesar_clue' 
+          });
+        }
+        if (baseCmd === 'ground') {
+          if (userData.stage3_ground) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+          const currentStep = userData.messenger_step || 0;
+          if (currentStep < 4) return res.json({ status: 'error', message: 'COMMAND INVALID' });
+          
+          await db.collection('users').doc(userId).update({ 
+            stage3_ground: true,
+            stage: 4,
+            stage4_unlocked: true
+          });
+          return res.json({ 
+            status: 'success', 
+            reply: 'The pattern is complete. Power returns to the ground. Stage 4 Unlocked.',
+            action: 'unlock_stage4' 
           });
         }
         return res.json({ status: 'error', message: 'Bad command or file name.' });
@@ -1116,19 +1147,19 @@ Stage 4 unlocked. Messenger updated.`,
 
       const contentMap: { [key: string]: { content: string, title?: string, access: boolean } } = {
         'recycle_fragment': {
-          access: userData.stage1_recycle_unlocked || false,
+          access: userData.stage3_greed || false,
           content: `<p>[FRAGMENT RECOVERY LOG]</p><p>Source: Recycle Bin</p><p>Status: Fragment moved to deleted_user.log</p><p>Trace: 0x8829 -> 0x445A</p>`
         },
         'terminal_fragment': {
-          access: userData.stage1_terminal_unlocked || false,
+          access: userData.stage3_death || false,
           content: `<p>[FRAGMENT RECOVERED]</p><p>Subject: DEATH</p><p>The final state. Not an end, but a transition. The data doesn't disappear; it just changes form. We are all just sequences waiting to be overwritten.</p><p>Aurora isn't a savior. It's a reaper.</p><p>-- END OF LOG --</p>`
         },
         'fragment3': {
-          access: userData.stage1_fragment3_unlocked || false,
+          access: userData.stage3_money || false,
           content: `<p>[FRAGMENT RECOVERY LOG - 03]</p><p>Source: Node 03 Archive</p><p>Status: Partially Decrypted</p><p>The Sun's Tears... they aren't just a metaphor. It's a frequency. A relay. The ledger entry #13151405 was just the beginning. The real value is hidden in the casefiles. The subject's obsession holds the key.</p><p>Relay Frequency: [CORRUPTED]</p>`
         },
         'fragment4': {
-          access: userData.stage1_fragment4_unlocked || false,
+          access: userData.stage3_gold || false,
           content: `<p>[FRAGMENT RECOVERY LOG - 04]</p><p>Source: Node 03 Archive</p><p>Status: Decrypted</p><p>The rhythm of the machine... it's not just noise. It's a transmission. The second pulse holds the key. Look closely at the second transmission in the music player. The rhythm will reveal the final frequency.</p><p>Hint: [CORRUPTED]</p>`
         },
         'observer-log-01': {
@@ -1265,7 +1296,7 @@ Stage 4 unlocked. Messenger updated.`,
         hasAccess = !!userData?.stage2_unlocked;
       } else if (target === "node04.html" || target === "node04/index.html") {
         if ((userData.stage || 1) < 4) return res.send(LOCKED_HTML);
-        hasAccess = !!userData?.stage4_complete;
+        hasAccess = !!userData?.stage4_unlocked;
       } else if (target === "node03/secret.html" || target === "node03/secret/index.html") {
         if ((userData.stage || 1) < 3) return res.send(LOCKED_HTML);
         hasAccess = !!userData?.stage3_secret_unlocked;
