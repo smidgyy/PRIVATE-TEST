@@ -523,7 +523,6 @@ async function startServer() {
         node02_step: userData.node02_step || 1,
         messenger_step: userData.messenger_step || 0,
         stage1_vale_unlocked: !!userData.stage1_vale_unlocked,
-        stage1_complete: !!userData.stage1_complete,
         stage2_unlocked: !!userData.stage2_unlocked,
         stage3_greed: !!userData.stage3_greed,
         stage3_death: !!userData.stage3_death,
@@ -537,9 +536,7 @@ async function startServer() {
         stage4_network_trace_viewed: !!userData.stage4_network_trace_viewed,
         stage4_complete: !!userData.stage4_complete,
         stage4_progress: userData.stage4_progress || 0,
-        aurora_archive_unlocked: !!userData.aurora_archive_unlocked,
-        archive_unlocked: !!userData.archive_unlocked,
-        stage1_archive_unlocked: !!userData.stage1_archive_unlocked
+        aurora_archive_unlocked: !!userData.aurora_archive_unlocked
       });
     } catch (error: any) {
       console.error("!!! [API] Error in /api/userState:", error.message, error.stack);
@@ -557,7 +554,7 @@ async function startServer() {
       const userDoc = await db.collection("users").doc(userId).get();
       const userData = userDoc.data() || {};
 
-      const hasAccess = !!userData.stage2_unlocked || !!userData.archive_unlocked || !!userData.stage1_archive_unlocked;
+      const hasAccess = !!userData.stage2_unlocked;
       
       if (!hasAccess) {
         return res.status(403).send(LOCKED_HTML);
@@ -742,8 +739,6 @@ function validateUserId(userId: any): string | null {
 
         if (fullCmd.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
           await db.collection('users').doc(userId).update({ 
-            stage1_archive_unlocked: true,
-            archive_unlocked: true,
             stage2_unlocked: true,
             stage: 2
           });
@@ -808,7 +803,6 @@ function validateUserId(userId: any): string | null {
           status: 'success', 
           messenger_step: userData?.messenger_step || 0,
           stage4_progress: userData?.stage4_progress || 0,
-          stage1_archive_unlocked: userData?.stage1_archive_unlocked || false,
           stage2_unlocked: userData?.stage2_unlocked || false,
           stage1_vale_unlocked: userData?.stage1_vale_unlocked || false,
           stage4_forum_unlocked: userData?.stage4_forum_unlocked || false,
@@ -829,7 +823,7 @@ function validateUserId(userId: any): string | null {
       
       let hasAccess = false;
       if (target === 'node02' || target === 'resonance') {
-        hasAccess = !!userData.stage2_unlocked || !!userData.archive_unlocked || !!userData.stage1_archive_unlocked;
+        hasAccess = !!userData.stage2_unlocked;
       } else if (target === 'node03_secret') {
         hasAccess = !!userData.stage3_secret_unlocked;
       } else if (target === 'node04') {
@@ -887,8 +881,6 @@ function validateUserId(userId: any): string | null {
             return res.json({ status: "success", contact, reply: "COMMAND ALREADY USED", action: null });
           }
           await db.collection('users').doc(userId).set({ 
-            stage1_archive_unlocked: true,
-            archive_unlocked: true,
             stage2_unlocked: true,
             stage: 2
           }, { merge: true });
@@ -1263,7 +1255,7 @@ Stage 4 unlocked. Messenger updated.`,
       } else if (target === "resonance.html") {
         hasAccess = !!userData?.stage2_phase2_complete;
       } else if (target === "stage2.html" || target === "node02.html") {
-        hasAccess = !!userData?.stage2_unlocked || !!userData?.archive_unlocked || !!userData?.stage1_archive_unlocked;
+        hasAccess = !!userData?.stage2_unlocked;
       } else if (target === "node04.html" || target === "node04/index.html") {
         if ((userData.stage || 1) < 4) return res.send(LOCKED_HTML);
         hasAccess = !!userData?.stage4_complete;

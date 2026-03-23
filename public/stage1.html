@@ -4070,7 +4070,7 @@ Something is hidden there.
         updateStage3Clues();
         
         // Refresh UI
-        if (data.stage1_archive_unlocked || data.archive_unlocked) document.getElementById('icon-archive').classList.remove('hidden');
+        if (data.stage2_unlocked) document.getElementById('icon-archive').classList.remove('hidden');
         if (data.stage1_vale_unlocked || data.stage4_progress >= 2) document.getElementById('icon-vale').classList.remove('hidden');
         if (data.stage4_progress >= 1) {
            document.getElementById('icon-observer').classList.remove('hidden');
@@ -4107,11 +4107,6 @@ Something is hidden there.
           }
         }
 
-        if (data.aurora_archive_unlocked === true) {
-          const icon = document.getElementById("icon-archive");
-          if (icon) icon.classList.remove("hidden");
-          currentStage = Math.max(currentStage, 2);
-        }
         if (data.stage2_unlocked === true) {
           unlockStage2UI();
           currentStage = Math.max(currentStage, 2);
@@ -4120,11 +4115,6 @@ Something is hidden there.
           const icon = document.getElementById("icon-vale");
           if (icon) icon.classList.remove("hidden");
           currentStage = Math.max(currentStage, 4);
-        }
-        if (data.stage1_archive_unlocked === true || data.archive_unlocked === true) {
-          const icon = document.getElementById("icon-archive");
-          if (icon) icon.classList.remove("hidden");
-          currentStage = Math.max(currentStage, 2);
         }
         
         if (data.stage4_progress > 0) {
@@ -4170,11 +4160,11 @@ Something is hidden there.
         const valeIcon = document.getElementById('icon-vale');
         if (valeIcon) valeIcon.classList.remove('hidden');
       }
-      if (window.userState && (window.userState.stage1_archive_unlocked || window.userState.archive_unlocked)) {
+      if (window.userState && window.userState.stage2_unlocked) {
         const archiveIcon = document.getElementById('icon-archive');
         if (archiveIcon) archiveIcon.classList.remove('hidden');
       }
-      if (s4p >= 1 || (window.userState && (window.userState.stage1_archive_unlocked || window.userState.archive_unlocked))) {
+      if (s4p >= 1 || (window.userState && window.userState.stage2_unlocked)) {
         if (typeof arrangeIcons === "function") {
           arrangeIcons();
         }
