@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="/auth-init.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Voynich Marginalia</title>
@@ -166,6 +167,7 @@ svg { max-width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(139, 115,
   <a id="return-link" onclick="if (window.parent && window.parent.openBrowserUrl) { window.parent.openBrowserUrl('archive://node/02'); }" class="return-link">[ Return to the threshold ]</a>
 </div>
 
+<button onclick="resetProgress()" style="position: fixed; bottom: 10px; right: 10px; font-size: 10px; color: #666; background: transparent; border: 1px solid #666; padding: 4px; cursor: pointer; z-index: 9999;">[DEV] Reset Progress</button>
 <script src="/sound-manager.js?v=2"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
