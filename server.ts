@@ -291,12 +291,86 @@ async function startServer() {
         req.session.userId = "user_" + crypto.randomBytes(8).toString("hex");
         console.log(`>>> [SESSION] Initialized new userId: ${req.session.userId} for session: ${req.sessionID}`);
       }
+      // Initialize attempts tracker if missing
+      if (!req.session.attempts) {
+        req.session.attempts = {};
+      }
       next();
     } catch (err) {
       console.error(">>> [SERVER] Session middleware error:", err);
       next();
     }
   });
+
+  // Helper for brute force protection
+  const ipAttempts: Record<string, any> = {};
+
+  const processAttempt = (session: any, stage: string, input: string, isCorrect: boolean, ip?: string) => {
+    if (!session.attempts) session.attempts = {};
+    if (!session.attempts[stage]) {
+      session.attempts[stage] = { count: 0, lastTime: 0, cooldownUntil: 0, lastInput: "" };
+    }
+
+    const tracker = session.attempts[stage];
+    const now = Date.now();
+
+    // IP Tracking (Task 2)
+    if (ip) {
+      if (!ipAttempts[ip]) ipAttempts[ip] = {};
+      if (!ipAttempts[ip][stage]) {
+        ipAttempts[ip][stage] = { count: 0, cooldownUntil: 0 };
+      }
+      const ipTracker = ipAttempts[ip][stage];
+      if (now < ipTracker.cooldownUntil) {
+        const remaining = Math.ceil((ipTracker.cooldownUntil - now) / 1000);
+        return { allowed: false, reason: `IP Security lockout active. Retry in ${remaining}s.` };
+      }
+    }
+
+    const trackerToUse = tracker; // Primary is session, but we'll sync with IP
+
+    // 1. Prevent rapid replay of the same wrong input (Task 3 in previous turn, but still relevant)
+    if (!isCorrect && input && input === trackerToUse.lastInput && now - trackerToUse.lastTime < 2000) {
+      trackerToUse.lastTime = now;
+      return { allowed: false, reason: "Redundant input detected. System stabilizing..." };
+    }
+
+    // 2. Check cooldown (Task 1 & 2)
+    if (now < trackerToUse.cooldownUntil) {
+      const remaining = Math.ceil((trackerToUse.cooldownUntil - now) / 1000);
+      return { allowed: false, reason: `Security lockout active. Retry in ${remaining}s.` };
+    }
+
+    trackerToUse.lastTime = now;
+    trackerToUse.lastInput = input;
+
+    if (isCorrect) {
+      // Reset or reduce penalty after a successful progression step (Task 1)
+      trackerToUse.count = 0;
+      trackerToUse.cooldownUntil = 0;
+      if (ip && ipAttempts[ip][stage]) {
+        ipAttempts[ip][stage].count = 0;
+        ipAttempts[ip][stage].cooldownUntil = 0;
+      }
+      return { allowed: true };
+    } else {
+      trackerToUse.count++;
+      if (ip) ipAttempts[ip][stage].count++;
+
+      // Apply stricter handling for repeated failures (Task 2)
+      // Stricter limits for specific stages/types
+      const isStrict = stage.includes('node02') || stage.includes('archive_password') || stage.includes('stage3');
+      const threshold = isStrict ? 2 : 3;
+      const multiplier = isStrict ? 5 : 3;
+
+      if (trackerToUse.count >= threshold) {
+        const backoff = Math.min(5 * Math.pow(multiplier, trackerToUse.count - threshold), 600) * 1000;
+        trackerToUse.cooldownUntil = now + backoff;
+        if (ip) ipAttempts[ip][stage].cooldownUntil = now + backoff;
+      }
+      return { allowed: true };
+    }
+  };
   
   // JSON Parsing Error Handler
   app.use((err: any, req: any, res: any, next: any) => {
@@ -539,30 +613,46 @@ async function startServer() {
       const userDoc: any = await Promise.race([userDocPromise, timeoutPromise]);
       const userData = userDoc.data() || { stage: 1, node02_step: 1 };
 
-      console.log(">>> [API] /api/userState: SUCCESS");
-      res.json({
+      console.log(`>>> [API] /api/userState: SUCCESS`);
+      
+      // Task 5: Filter state to prevent leaking future progression flags
+      const filteredState: any = {
         currentStage: userData.stage || 1,
         node02_step: userData.node02_step || 1,
         messenger_step: userData.messenger_step || 0,
-        stage1_vale_unlocked: !!userData.stage1_vale_unlocked,
-        stage2_unlocked: !!userData.stage2_unlocked,
-        stage3_greed: !!userData.stage3_greed,
-        stage3_death: !!userData.stage3_death,
-        stage3_money: !!userData.stage3_money,
-        stage3_gold: !!userData.stage3_gold,
-        stage3_ground: !!userData.stage3_ground,
-        stage3_messenger_complete: !!userData.stage3_messenger_complete,
-        stage4_unlocked: !!userData.stage4_unlocked,
-        stage4_forum_unlocked: !!userData.stage4_forum_unlocked,
-        stage4_observer_logs_opened: !!userData.stage4_observer_logs_opened,
-        stage4_network_trace_viewed: !!userData.stage4_network_trace_viewed,
-        stage4_complete: !!userData.stage4_complete,
-        stage4_progress: userData.stage4_progress || 0,
-        aurora_archive_unlocked: !!userData.aurora_archive_unlocked,
-        stage2_phase1_complete: !!userData.stage2_phase1_complete,
-        stage2_phase2_complete: !!userData.stage2_phase2_complete,
-        stage2_phase3_complete: !!userData.stage2_phase3_complete
-      });
+      };
+
+      const stage = userData.stage || 1;
+
+      // Only reveal flags relevant to current or past stages
+      if (stage >= 1) {
+        filteredState.stage1_vale_unlocked = !!userData.stage1_vale_unlocked;
+        filteredState.stage2_unlocked = !!userData.stage2_unlocked;
+      }
+      if (stage >= 2) {
+        filteredState.stage2_phase1_complete = !!userData.stage2_phase1_complete;
+        filteredState.stage2_phase2_complete = !!userData.stage2_phase2_complete;
+        filteredState.stage2_phase3_complete = !!userData.stage2_phase3_complete;
+      }
+      if (stage >= 3) {
+        filteredState.stage3_greed = !!userData.stage3_greed;
+        filteredState.stage3_death = !!userData.stage3_death;
+        filteredState.stage3_money = !!userData.stage3_money;
+        filteredState.stage3_gold = !!userData.stage3_gold;
+        filteredState.stage3_ground = !!userData.stage3_ground;
+        filteredState.stage3_messenger_complete = !!userData.stage3_messenger_complete;
+      }
+      if (stage >= 4) {
+        filteredState.stage4_unlocked = !!userData.stage4_unlocked;
+        filteredState.stage4_forum_unlocked = !!userData.stage4_forum_unlocked;
+        filteredState.stage4_observer_logs_opened = !!userData.stage4_observer_logs_opened;
+        filteredState.stage4_network_trace_viewed = !!userData.stage4_network_trace_viewed;
+        filteredState.stage4_complete = !!userData.stage4_complete;
+        filteredState.stage4_progress = userData.stage4_progress || 0;
+        filteredState.aurora_archive_unlocked = !!userData.aurora_archive_unlocked;
+      }
+
+      res.json(filteredState);
     } catch (error: any) {
       console.error("!!! [API] Error in /api/userState:", error.message, error.stack);
       res.status(500).json({ status: "error", message: "Internal Server Error: " + error.message });
@@ -649,9 +739,14 @@ function validateUserId(userId: any): string | null {
 }
 
   app.post("/api/validateCommand", async (req: any, res: any) => {
+    // Task 1 & 4: Global randomized response delay
+    const delay = Math.floor(Math.random() * 500) + 300;
+    await new Promise(resolve => setTimeout(resolve, delay));
+
     try {
       const { input, type } = req.body; // Ignore extra fields like 'step'
       const userId = req.session?.userId;
+      const clientIp = req.ip || req.headers['x-forwarded-for'] || 'unknown';
       
       if (!userId) {
         return res.status(401).json({ status: "error", message: "Unauthorized" });
@@ -662,7 +757,7 @@ function validateUserId(userId: any): string | null {
         return res.status(400).json({ status: "error", message: "Invalid command type" });
       }
 
-      console.log(`>>> [API] Request: ${type} from user ${userId}. Input: "${input}"`);
+      console.log(`>>> [API] Request: ${type} from user ${userId} [${clientIp}]. Input: "${input}"`);
       
       const isInputRequired = ['terminal', 'archive_password', 'node02_answer'].includes(type);
       if (isInputRequired && !input) {
@@ -683,13 +778,43 @@ function validateUserId(userId: any): string | null {
       const userDoc = await db.collection('users').doc(userId).get();
       const userData = userDoc.data() || {};
       const currentStage = userData.stage || 1;
+      const currentStep = userData.messenger_step || 0;
+
+      // Task 3: Strict Step Validation
+      const stepValidation: Record<string, { stage?: number, step?: number }> = {
+        'node02_answer': { stage: 2 },
+        'archive_password': { stage: 1 },
+        'ground': { stage: 3, step: 4 },
+        'unlock_node03_secret': { stage: 3, step: 2 }
+      };
+
+      if (stepValidation[type]) {
+        const required = stepValidation[type];
+        if (required.stage !== undefined && currentStage !== required.stage) {
+          return res.status(403).json({ status: 'error', message: `ACCESS DENIED: Stage mismatch (Current: ${currentStage}, Required: ${required.stage})` });
+        }
+        if (required.step !== undefined && currentStep < required.step) {
+          return res.status(403).json({ status: 'error', message: `ACCESS DENIED: Progression incomplete (Current Step: ${currentStep}, Required: ${required.step})` });
+        }
+      }
+
+      // Brute force protection check (Task 1 & 2)
+      const stageKey = `stage${currentStage}_${type}`; // Use type for more granular IP limiting
+      const cooldownCheck = processAttempt(req.session, stageKey, input, false, clientIp as string); 
+      if (!cooldownCheck.allowed) {
+        return res.status(429).json({ status: 'error', message: cooldownCheck.reason });
+      }
 
       if (type === 'ground') {
         const userData = await db.collection('users').doc(userId).get().then((doc: any) => doc.data() || {});
         if (userData.stage3_ground) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
         const currentStep = userData.messenger_step || 0;
-        if (currentStep < 4) return res.json({ status: 'error', message: 'COMMAND INVALID' });
+        if (currentStep < 4) {
+          processAttempt(req.session, stageKey, input, false, clientIp as string);
+          return res.json({ status: 'error', message: 'COMMAND INVALID' });
+        }
         
+        processAttempt(req.session, stageKey, input, true, clientIp as string);
         await db.collection('users').doc(userId).update({ 
           stage3_ground: true,
           stage: 4,
@@ -702,6 +827,7 @@ function validateUserId(userId: any): string | null {
       if (type === 'terminal') {
         if (fullCmd.toLowerCase() === 'decode_vale_archive') {
           if (currentStage < 4 || !userData.stage3_ground) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: 'error', message: 'ACCESS DENIED: Required progression not detected.' });
           }
           
@@ -709,6 +835,7 @@ function validateUserId(userId: any): string | null {
             return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
           }
           
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           await db.collection('users').doc(userId).update({ 
             stage1_vale_unlocked: true, 
             stage4_progress: Math.max(userData.stage4_progress || 0, 2) 
@@ -721,7 +848,11 @@ function validateUserId(userId: any): string | null {
           });
         }
         if (baseCmd === 'decrypt' && args.length > 1 && args[1] === '840291') {
-          if (currentStage < 4) return res.json({ status: 'error', message: 'ACCESS DENIED' });
+          if (currentStage < 4) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
+            return res.json({ status: 'error', message: 'ACCESS DENIED' });
+          }
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           return res.json({ 
             status: 'success', 
             reply: 'Network trace 840291 verified. External relay active.' 
@@ -729,11 +860,13 @@ function validateUserId(userId: any): string | null {
         }
         if (baseCmd === 'archive_entry' && args.length > 1 && args[1].toUpperCase() === 'K7-4419') {
           if (!userData.stage4_forum_unlocked) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: 'error', message: 'ACCESS DENIED: Forum authentication required.' });
           }
           if (userData.stage4_complete) {
             return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
           }
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           if (db) await db.collection('users').doc(userId).update({ 
             stage4_complete: true,
             stage4_progress: 7
@@ -746,27 +879,40 @@ function validateUserId(userId: any): string | null {
         }
         if (baseCmd === 'archive' && args.length > 1 && args[1].toLowerCase() === 'vale') {
           if (!userData.stage1_vale_unlocked) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: 'error', message: 'ACCESS DENIED: Vale archive decryption required.' });
           }
           if (userData.stage4_forum_unlocked) {
             return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
           }
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           if (db) await db.collection('users').doc(userId).update({ stage4_forum_unlocked: true });
           return res.json({ status: 'success', action: 'unlock_forum' });
         }
         if (baseCmd === 'archive' && args.length === 1) {
-          if (currentStage > 1) return res.json({ status: 'error', message: 'COMMAND INVALID' });
+          if (currentStage > 1) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
+            return res.json({ status: 'error', message: 'COMMAND INVALID' });
+          }
+          // This is a partial command, don't count as failure yet? 
+          // Actually, let's count it as success if it leads to the next step
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           return res.json({ status: 'success', action: 'require_password' });
         }
         if (baseCmd === 'decrypt' && args.length > 1 && args[1].toLowerCase() === 'depth') {
-          if (currentStage !== 3) return res.json({ status: 'error', message: 'ACCESS DENIED' });
+          if (currentStage !== 3) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
+            return res.json({ status: 'error', message: 'ACCESS DENIED' });
+          }
           const currentStep = userData.messenger_step || 0;
           if (currentStep < 2) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: 'error', message: 'COMMAND INVALID: Sequence incomplete.' });
           }
           if (userData.stage3_secret_unlocked) {
             return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
           }
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           if (db) await db.collection('users').doc(userId).update({ stage3_secret_unlocked: true });
           return res.json({ 
             status: 'success', 
@@ -777,8 +923,12 @@ function validateUserId(userId: any): string | null {
         if (baseCmd === 'ground') {
           if (userData.stage3_ground) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
           const currentStep = userData.messenger_step || 0;
-          if (currentStep < 4) return res.json({ status: 'error', message: 'COMMAND INVALID' });
+          if (currentStep < 4) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
+            return res.json({ status: 'error', message: 'COMMAND INVALID' });
+          }
           
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           await db.collection('users').doc(userId).update({ 
             stage3_ground: true,
             stage: 4,
@@ -791,6 +941,7 @@ function validateUserId(userId: any): string | null {
             action: 'unlock_stage4' 
           });
         }
+        processAttempt(req.session, stageKey, input, false, clientIp as string);
         return res.json({ status: 'error', message: 'Bad command or file name.' });
       }
 
@@ -800,6 +951,7 @@ function validateUserId(userId: any): string | null {
         }
 
         if (fullCmd.toUpperCase() === 'THE ARCHIVE REMEMBERS') {
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           await db.collection('users').doc(userId).update({ 
             stage2_unlocked: true,
             stage: 2
@@ -809,22 +961,29 @@ function validateUserId(userId: any): string | null {
         if (fullCmd.toUpperCase() === 'VALE') {
           if (userData.stage1_vale_unlocked) {
             if (userData.stage4_forum_unlocked) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+            processAttempt(req.session, stageKey, input, true, clientIp as string);
             await db.collection('users').doc(userId).update({ stage4_forum_unlocked: true });
             return res.json({ status: 'success', action: 'unlock_forum' });
           } else {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: 'error', message: 'Access denied.' });
           }
         }
+        processAttempt(req.session, stageKey, input, false, clientIp as string);
         return res.json({ status: 'error', message: 'Access denied.' });
       }
 
       if (type === 'node02_answer') {
-        if (currentStage !== 2) return res.json({ status: 'error', message: 'ACCESS DENIED' });
+        if (currentStage !== 2) {
+          processAttempt(req.session, stageKey, input, false, clientIp as string);
+          return res.json({ status: 'error', message: 'ACCESS DENIED' });
+        }
 
         const hash = crypto.createHash('sha256').update(t.toLowerCase()).digest('hex');
         
         // Allow answers to be retried even if already complete
         if (hash === '76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22') {
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           if (!userData.stage2_phase1_complete) {
             await db.collection('users').doc(userId).update({ stage2_phase1_complete: true });
           }
@@ -832,7 +991,11 @@ function validateUserId(userId: any): string | null {
         }
         
         if (hash === 'ba6f8ed6d0d150b2a2ab2bebe99540f8c00cafb0ebdbf71a6f0b768c45425ca7') {
-          if (!userData.stage2_phase1_complete) return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
+          if (!userData.stage2_phase1_complete) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
+            return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
+          }
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           if (!userData.stage2_phase2_complete) {
             await db.collection('users').doc(userId).update({ stage2_phase2_complete: true });
           }
@@ -840,7 +1003,11 @@ function validateUserId(userId: any): string | null {
         }
         
         if (hash === '90b7b8654171c04a5e5de1eae884cfd86952739d50d09d9bb7680763e31faee8') {
-          if (!userData.stage2_phase2_complete) return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
+          if (!userData.stage2_phase2_complete) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
+            return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
+          }
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           if (!userData.stage2_phase3_complete) {
             await db.collection('users').doc(userId).update({ 
               stage2_phase3_complete: true,
@@ -850,13 +1017,16 @@ function validateUserId(userId: any): string | null {
           return res.json({ status: 'success', success: true, action: 'phase3_success', msg: String.fromCharCode(71, 82, 69, 69, 68) });
         }
         
+        processAttempt(req.session, stageKey, input, false, clientIp as string);
         return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
       }
 
       if (type === 'unlock_node03_secret') {
         if (!userData.stage2_phase3_complete) {
+          processAttempt(req.session, stageKey, input, false, clientIp as string);
           return res.status(403).json({ error: "ACCESS DENIED: Phase 3 not complete." });
         }
+        processAttempt(req.session, stageKey, input, true, clientIp as string);
         await db.collection('users').doc(userId).update({ 
           stage3_secret_unlocked: true,
           stage: Math.max(userData.stage || 1, 3)
@@ -918,9 +1088,14 @@ function validateUserId(userId: any): string | null {
   });
 
   app.post("/api/sendMessage", async (req: any, res: any) => {
+    // Task 1 & 4: Global randomized response delay
+    const delay = Math.floor(Math.random() * 500) + 300;
+    await new Promise(resolve => setTimeout(resolve, delay));
+
     try {
       const { message, contact } = req.body;
       const userId = req.session?.userId;
+      const clientIp = req.ip || req.headers['x-forwarded-for'] || 'unknown';
       
       if (!message || !contact || !userId) {
         return res.status(400).json({ status: "error", message: "Missing or invalid required fields" });
@@ -941,6 +1116,13 @@ function validateUserId(userId: any): string | null {
       const currentStep = userData.messenger_step || 0;
       const currentStage = userData.stage || 1;
 
+      // Brute force protection check (Task 1 & 2)
+      const stageKey = `stage${currentStage}_msg_${contact}`;
+      const cooldownCheck = processAttempt(req.session, stageKey, normalized, false, clientIp as string);
+      if (!cooldownCheck.allowed) {
+        return res.status(429).json({ status: 'error', reply: cooldownCheck.reason });
+      }
+
       // FIX: Stage 3 specific overrides with immediate return
       if (contact === 'archive') {
         const input = normalized;
@@ -950,6 +1132,7 @@ function validateUserId(userId: any): string | null {
           if (currentStage > 1) {
             return res.json({ status: "success", contact, reply: "COMMAND ALREADY USED", action: null });
           }
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           await db.collection('users').doc(userId).set({ 
             stage2_unlocked: true,
             stage: 2
@@ -963,13 +1146,18 @@ function validateUserId(userId: any): string | null {
         }
 
         if (currentStage < 3) {
+          processAttempt(req.session, stageKey, input, false, clientIp as string);
           return res.json({ status: "error", reply: "ACCESS DENIED: Signal alignment required." });
         }
 
         if (input === "greed") {
           if (userData.stage3_greed) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
-          if (currentStep !== 0) return res.json({ status: "error", reply: "COMMAND INVALID" });
+          if (currentStep !== 0) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
+            return res.json({ status: "error", reply: "COMMAND INVALID" });
+          }
           
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           await db.collection("users").doc(userId).set({
             stage3_greed: true,
             messenger_step: 1
@@ -992,8 +1180,12 @@ Check the trash.`,
 
         if (input === "death") {
           if (userData.stage3_death) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
-          if (currentStep !== 1) return res.json({ status: "error", reply: "COMMAND INVALID" });
+          if (currentStep !== 1) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
+            return res.json({ status: "error", reply: "COMMAND INVALID" });
+          }
 
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           await db.collection("users").doc(userId).set({
             stage3_death: true,
             messenger_step: 2
@@ -1016,8 +1208,12 @@ Use the terminal.`,
 
         if (input === "money") {
           if (userData.stage3_money) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
-          if (currentStep !== 2) return res.json({ status: "error", reply: "COMMAND INVALID" });
+          if (currentStep !== 2) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
+            return res.json({ status: "error", reply: "COMMAND INVALID" });
+          }
 
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           await db.collection("users").doc(userId).set({
             stage3_money: true,
             messenger_step: 3
@@ -1038,8 +1234,12 @@ Check fragment_3.log.`,
 
         if (input === "gold") {
           if (userData.stage3_gold) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
-          if (currentStep !== 3) return res.json({ status: "error", reply: "COMMAND INVALID" });
+          if (currentStep !== 3) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
+            return res.json({ status: "error", reply: "COMMAND INVALID" });
+          }
 
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           await db.collection("users").doc(userId).set({
             stage3_gold: true,
             messenger_step: 4
@@ -1060,8 +1260,12 @@ Listen to the system's pulse.`,
 
         if (input === "ground") {
           if (userData.stage3_ground) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
-          if (currentStep !== 4) return res.json({ status: "error", reply: "COMMAND INVALID" });
+          if (currentStep !== 4) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
+            return res.json({ status: "error", reply: "COMMAND INVALID" });
+          }
 
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
           await db.collection("users").doc(userId).set({
             stage3_ground: true,
             stage: 4,
@@ -1122,6 +1326,7 @@ Stage 4 unlocked. Messenger updated.`,
         ];
         reply = eliasReplies[Math.floor(Math.random() * eliasReplies.length)];
       } else if (contact === 'archive') {
+        processAttempt(req.session, stageKey, normalized, false, clientIp as string);
         reply = "INVALID INPUT. AWAITING COMMAND.";
       }
 
@@ -1139,10 +1344,15 @@ Stage 4 unlocked. Messenger updated.`,
 
   // Content Security: Secure content retrieval endpoint
   app.post('/api/getContent', async (req: any, res: any) => {
+    // Task 1 & 4: Global randomized response delay
+    const delay = Math.floor(Math.random() * 500) + 300;
+    await new Promise(resolve => setTimeout(resolve, delay));
+
     try {
       const { target } = req.body;
       const userId = req.session?.userId;
-
+      const clientIp = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+      
       if (!userId) return res.status(401).json({ status: "error", message: "Unauthorized" });
       if (!target || typeof target !== 'string') return res.status(400).json({ status: "error", message: "Invalid or missing target" });
 
@@ -1155,10 +1365,18 @@ Stage 4 unlocked. Messenger updated.`,
         return res.status(403).json({ status: "error", message: "ACCESS DENIED: No progression found" });
       }
 
+      // Brute force protection for content probing (Task 1 & 2)
+      const stageKey = `stage${userData.stage || 1}_content`;
+      const cooldownCheck = processAttempt(req.session, stageKey, target, false, clientIp as string);
+      if (!cooldownCheck.allowed) {
+        return res.status(429).json({ status: 'error', message: cooldownCheck.reason });
+      }
+
       // Progression update logic based on content access - STRICT ORDER
       if (target === 'network-trace' && userData.stage4_unlocked) {
         // Must have unlocked Vale archive (progress 2) before seeing network trace (progress 3)
         if ((userData.stage4_progress || 0) === 2) {
+          processAttempt(req.session, stageKey, target, true, clientIp as string); // Mark as success
           await db.collection('users').doc(userId).update({
             stage4_progress: 3,
             stage4_network_trace_viewed: true
@@ -1171,6 +1389,7 @@ Stage 4 unlocked. Messenger updated.`,
       if (['observer-log-01', 'observer-log-02', 'observer-log-03'].includes(target) && userData.stage4_unlocked) {
         // Observer logs are available once stage 4 is unlocked
         if (!userData.stage4_observer_logs_opened) {
+          processAttempt(req.session, stageKey, target, true, clientIp as string); // Mark as success
           await db.collection('users').doc(userId).update({
             stage4_observer_logs_opened: true
           });
