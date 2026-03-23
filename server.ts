@@ -537,7 +537,9 @@ async function startServer() {
         stage4_network_trace_viewed: !!userData.stage4_network_trace_viewed,
         stage4_complete: !!userData.stage4_complete,
         stage4_progress: userData.stage4_progress || 0,
-        aurora_archive_unlocked: !!userData.aurora_archive_unlocked
+        aurora_archive_unlocked: !!userData.aurora_archive_unlocked,
+        archive_unlocked: !!userData.archive_unlocked,
+        stage1_archive_unlocked: !!userData.stage1_archive_unlocked
       });
     } catch (error: any) {
       console.error("!!! [API] Error in /api/userState:", error.message, error.stack);
@@ -1261,8 +1263,7 @@ Stage 4 unlocked. Messenger updated.`,
       } else if (target === "resonance.html") {
         hasAccess = !!userData?.stage2_phase2_complete;
       } else if (target === "stage2.html" || target === "node02.html") {
-        if ((userData.stage || 1) < 2) return res.send(LOCKED_HTML);
-        hasAccess = !!userData?.stage1_archive_unlocked;
+        hasAccess = !!userData?.stage2_unlocked || !!userData?.archive_unlocked || !!userData?.stage1_archive_unlocked;
       } else if (target === "node04.html" || target === "node04/index.html") {
         if ((userData.stage || 1) < 4) return res.send(LOCKED_HTML);
         hasAccess = !!userData?.stage4_complete;

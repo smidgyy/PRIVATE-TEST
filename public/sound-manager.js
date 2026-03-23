@@ -216,7 +216,7 @@ class SoundManager {
         stage = 4;
       } else if (window.userState && (window.userState.stage3_secret_unlocked || window.userState.stage3_ground)) {
         stage = 3;
-      } else if (window.userState && window.userState.stage1_complete) {
+      } else if (window.userState && (window.userState.stage2_unlocked || window.userState.stage1_archive_unlocked || window.userState.archive_unlocked)) {
         stage = 2;
       }
       
