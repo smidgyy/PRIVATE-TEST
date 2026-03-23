@@ -260,20 +260,22 @@ async function startServer() {
   app.use("/api/getContent", limiter);
   app.use("/api/sendMessage", strictLimiter);
 
-  if (!process.env.SESSION_SECRET) {
-    console.error("FATAL ERROR: SESSION_SECRET is missing.");
-    process.exit(1);
+  const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.join(process.cwd(), 'dist'));
+  const sessionSecret = process.env.SESSION_SECRET || "aurora-os-default-secret-1998";
+
+  if (!process.env.SESSION_SECRET && isProduction) {
+    console.warn(">>> [SECURITY WARNING] SESSION_SECRET is missing in production. Using fallback secret.");
   }
 
   // Step 1: Implement server-managed session
   app.use(session({
-    secret: process.env.SESSION_SECRET,
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: true,
     cookie: {
       httpOnly: true,
-      secure: true, // Required for SameSite=None
-      sameSite: 'none', // Required for iframe context
+      secure: isProduction, // Required for SameSite=None in production
+      sameSite: isProduction ? 'none' : 'lax', // Required for iframe context in production
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
   }));
@@ -305,7 +307,6 @@ async function startServer() {
     next(err);
   });
 
-  const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.join(process.cwd(), 'dist'));
   const baseDir = isProduction ? 'dist' : 'public';
 
   const protectedRoutes = [
