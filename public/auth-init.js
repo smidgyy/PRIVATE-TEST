@@ -36,26 +36,6 @@
   // Initialize immediately
   initializeSession();
 
-  window.resetProgress = async function() {
-    if (confirm("Are you sure you want to reset all progress? This cannot be undone.")) {
-      try {
-        const res = await fetch('/api/resetProgress', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        if (res.ok) {
-          localStorage.clear();
-          sessionStorage.clear();
-          window.location.reload();
-        } else {
-          console.error("Failed to reset progress.");
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  };
-
   // Compatibility helpers (deprecated but kept for legacy scripts)
   window.ensureUserId = () => window.userId;
   window.getUserId = () => window.userId;
