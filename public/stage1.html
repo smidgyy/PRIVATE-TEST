@@ -1530,7 +1530,8 @@ Something is hidden there.
           <div class="control-btn" onclick="closeWindow('photo-fragment')">X</div>
         </div>
       </div>
-      <div class="window-content" style="display: flex; justify-content: center; align-items: center; background: #333; position: relative; overflow: hidden;">
+      <div class="window-content" id="content-photo-fragment" style="display: flex; justify-content: center; align-items: center; background: #333; position: relative; overflow: hidden;">
+        <div id="status-photo-fragment" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #0f0; font-family: monospace; z-index: 10; text-align: center; width: 80%; pointer-events: none;"></div>
         <canvas id="corrupted-photo-canvas" width="380" height="340" style="width: 100%; height: 100%; object-fit: cover;"></canvas>
         <!-- archive -->
         <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="photo_fragment.png" style="display: none;" id="hidden-photo-data">
@@ -1914,27 +1915,39 @@ Something is hidden there.
       ];
 
       if (contentTargets.includes(id)) {
+        const contentEl = document.getElementById('content-' + id) || (id === 'vale-photo-data' ? document.getElementById('content-photo-fragment') : null);
+        const statusEl = id === 'vale-photo-data' ? document.getElementById('status-photo-fragment') : null;
+        
         try {
+          console.log("Fetching content for:", id);
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
           const res = await fetch('/api/getContent', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ target: id })
+            body: JSON.stringify({ target: id }),
+            signal: controller.signal
           });
           
+          clearTimeout(timeoutId);
+          
           if (res.status === 403) {
-            const contentEl = document.getElementById('content-' + id);
-            if (contentEl) {
+            if (statusEl) {
+              statusEl.innerHTML = '<span style="color: #f00;">[ACCESS RESTRICTED]: Insufficient permissions to view this fragment.</span>';
+            } else if (contentEl) {
               contentEl.innerHTML = '<div style="color: #f00; padding: 20px; font-family: monospace;">[ACCESS RESTRICTED]: Insufficient permissions to view this fragment.</div>';
             }
             return;
           }
           
-          if (!res.ok) throw new Error("Server error");
+          if (!res.ok) throw new Error("Server error: " + res.status);
           const contentType = res.headers.get("content-type");
-          if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
+          if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response format");
+          
           const data = await res.json();
           if (data.status === 'success') {
-            const contentEl = document.getElementById('content-' + id);
             const titleEl = document.getElementById('title-' + id);
             
             if (titleEl && data.title) {
@@ -1942,26 +1955,45 @@ Something is hidden there.
             }
 
             if (contentEl) {
-              if (data.content.includes('[ACCESS RESTRICTED]')) {
-                contentEl.innerHTML = data.content;
+              if (data.content && data.content.includes('[ACCESS RESTRICTED]')) {
+                if (statusEl) {
+                  statusEl.innerHTML = '<span style="color: #f00;">' + data.content + '</span>';
+                } else {
+                  contentEl.innerHTML = data.content;
+                }
                 return;
               }
 
               if (id.startsWith('observer-log-')) {
                 typeWriterEffect(contentEl, data.content, 30);
-              } else {
+              } else if (id !== 'vale-photo-data') {
                 contentEl.innerHTML = data.content;
               }
             }
 
             if (id === 'vale-photo-data') {
-              // This is a special case for the photo fragment hidden data
+              if (statusEl) statusEl.innerHTML = ''; // Clear loading message
               const hiddenImg = document.getElementById('hidden-photo-data');
-              if (hiddenImg) hiddenImg.title = data.content; // Store it in title instead of alt to avoid leaks
+              if (hiddenImg) hiddenImg.title = data.content;
             }
+          } else {
+            throw new Error(data.message || "Unknown error");
           }
         } catch (err) {
-          console.error("Failed to fetch content:", err);
+          console.error("Failed to fetch content for " + id + ":", err);
+          if (statusEl) {
+            if (err.name === 'AbortError') {
+              statusEl.innerHTML = '<span style="color: #f00;">[SYSTEM TIMEOUT — RETRY]: Connection to fragment lost.</span>';
+            } else {
+              statusEl.innerHTML = '<span style="color: #f00;">[ERROR LOADING CONTENT]: ' + err.message + '</span>';
+            }
+          } else if (contentEl) {
+            if (err.name === 'AbortError') {
+              contentEl.innerHTML = '<div style="color: #f00; padding: 20px; font-family: monospace;">[SYSTEM TIMEOUT — RETRY]: Connection to fragment lost.</div>';
+            } else {
+              contentEl.innerHTML = '<div style="color: #f00; padding: 20px; font-family: monospace;">[ERROR LOADING CONTENT]: ' + err.message + '</div>';
+            }
+          }
         }
       }
     }
@@ -1969,60 +2001,10 @@ Something is hidden there.
     async function openWindow(id) {
       console.log("Opening fragment:", id);
       
-      const restrictedTargets = ['observer-folder', 'vale-folder', 'resonance', 'node02', 'node04', 'forum', 'photo-fragment', 'terminal-dump', 'network-trace'];
-      
-      if (restrictedTargets.includes(id)) {
-        try {
-          if (id === 'photo-fragment') {
-             if (!window.userState || !window.userState.stage1_vale_photo_unlocked) {
-                printTerminal("Access denied: Fragment encrypted.");
-                return;
-             }
-          } else {
-            const res = await fetch('/api/validateCommand', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ type: 'check_access', target: id })
-            });
-            if (!res.ok) throw new Error("Server error");
-            const contentType = res.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
-            const data = await res.json();
-            if (data.status !== 'success') {
-              printTerminal("Access denied: Insufficient permissions.");
-              if (id === 'resonance' || id === 'node02') {
-                printTerminal("Signal alignment required.");
-              } else if (id === 'observer-folder') {
-                printTerminal("Node authentication required.");
-              } else if (id === 'vale-folder') {
-                printTerminal("Directory encrypted.");
-              }
-              return;
-            }
-          }
-        } catch (err) {
-          console.error(err);
-          return;
-        }
-      }
-
       const win = document.getElementById('win-' + id);
       if (!win) return;
-      
-      // Stage 4 tracking removed from frontend to keep whitelist strict
-      if (id.startsWith('observer-log-')) {
-        // No longer sending update_stage4_progress from client
-      }
-      if (id === 'network-trace') {
-        // No longer sending update_stage4_progress from client
-      }
-      
-      if (id === 'photo-fragment') {
-        populateStage4Content('vale-photo-data');
-      } else {
-        populateStage4Content(id);
-      }
 
+      // Ensure window is open immediately to avoid "stuck" feeling
       if (!openWindows.has(id)) {
         openWindows.add(id);
         if (window.soundManager) window.soundManager.playWindowOpen();
@@ -2048,6 +2030,7 @@ Something is hidden there.
           
           win.style.left = left + 'px';
           win.style.top = top + 'px';
+          win.style.zIndex = ++zIndexCounter;
           win.dataset.positioned = 'true';
         }
         
@@ -2058,7 +2041,7 @@ Something is hidden there.
         const item = document.createElement('div');
         item.className = 'taskbar-item';
         item.id = 'taskbar-item-' + id;
-        item.innerText = windowTitles[id];
+        item.innerText = windowTitles[id] || id;
         item.onclick = () => toggleWindow(id);
         taskbarItems.appendChild(item);
       } else {
@@ -2067,6 +2050,94 @@ Something is hidden there.
       
       focusWindow(id);
       closeStartMenu();
+
+      const contentEl = document.getElementById('content-' + id) || (id === 'photo-fragment' ? document.getElementById('content-photo-fragment') : null);
+      const statusEl = id === 'photo-fragment' ? document.getElementById('status-photo-fragment') : null;
+      
+      if (statusEl) {
+        statusEl.innerHTML = 'Opening fragment...';
+      } else if (contentEl && !contentEl.innerHTML.trim()) {
+        contentEl.innerHTML = '<div style="color: #0f0; padding: 20px; font-family: monospace;">Opening fragment...</div>';
+      }
+
+      const restrictedTargets = ['observer-folder', 'vale-folder', 'resonance', 'node02', 'node04', 'forum', 'photo-fragment', 'terminal-dump', 'network-trace'];
+      
+      if (restrictedTargets.includes(id)) {
+        try {
+          if (id === 'photo-fragment') {
+             if (!window.userState || !window.userState.stage1_vale_photo_unlocked) {
+                printTerminal("Access denied: Fragment encrypted.");
+                if (statusEl) {
+                  statusEl.innerHTML = '<span style="color: #f00;">[ACCESS RESTRICTED]: Fragment encrypted. Decryption key required.</span>';
+                } else if (contentEl) {
+                  contentEl.innerHTML = '<div style="color: #f00; padding: 20px; font-family: monospace;">[ACCESS RESTRICTED]: Fragment encrypted. Decryption key required.</div>';
+                }
+                return;
+             }
+          } else {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+            const res = await fetch('/api/validateCommand', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ type: 'check_access', target: id }),
+              signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+
+            if (!res.ok) throw new Error("Server error: " + res.status);
+            const contentType = res.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response format");
+            
+            const data = await res.json();
+            if (data.status !== 'success') {
+              printTerminal("Access denied: Insufficient permissions.");
+              let msg = "[ACCESS RESTRICTED]: Insufficient permissions.";
+              if (id === 'resonance' || id === 'node02') {
+                printTerminal("Signal alignment required.");
+                msg = "[ACCESS RESTRICTED]: Signal alignment required.";
+              } else if (id === 'observer-folder') {
+                printTerminal("Node authentication required.");
+                msg = "[ACCESS RESTRICTED]: Node authentication required.";
+              } else if (id === 'vale-folder') {
+                printTerminal("Directory encrypted.");
+                msg = "[ACCESS RESTRICTED]: Directory encrypted.";
+              }
+              
+              if (statusEl) {
+                statusEl.innerHTML = '<span style="color: #f00;">' + msg + '</span>';
+              } else if (contentEl) {
+                contentEl.innerHTML = '<div style="color: #f00; padding: 20px; font-family: monospace;">' + msg + '</div>';
+              }
+              return;
+            }
+          }
+        } catch (err) {
+          console.error("Access check failed for " + id + ":", err);
+          if (statusEl) {
+            if (err.name === 'AbortError') {
+              statusEl.innerHTML = '<span style="color: #f00;">[SYSTEM TIMEOUT]: Access validation failed.</span>';
+            } else {
+              statusEl.innerHTML = '<span style="color: #f00;">[ERROR]: ' + err.message + '</span>';
+            }
+          } else if (contentEl) {
+            if (err.name === 'AbortError') {
+              contentEl.innerHTML = '<div style="color: #f00; padding: 20px; font-family: monospace;">[SYSTEM TIMEOUT]: Access validation failed.</div>';
+            } else {
+              contentEl.innerHTML = '<div style="color: #f00; padding: 20px; font-family: monospace;">[ERROR]: ' + err.message + '</div>';
+            }
+          }
+          return;
+        }
+      }
+
+      if (id === 'photo-fragment') {
+        populateStage4Content('vale-photo-data');
+      } else {
+        populateStage4Content(id);
+      }
     }
 
     function closeWindow(id) {
