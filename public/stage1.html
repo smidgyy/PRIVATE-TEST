@@ -1920,6 +1920,15 @@ Something is hidden there.
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ target: id })
           });
+          
+          if (res.status === 403) {
+            const contentEl = document.getElementById('content-' + id);
+            if (contentEl) {
+              contentEl.innerHTML = '<div style="color: #f00; padding: 20px; font-family: monospace;">[ACCESS RESTRICTED]: Insufficient permissions to view this fragment.</div>';
+            }
+            return;
+          }
+          
           if (!res.ok) throw new Error("Server error");
           const contentType = res.headers.get("content-type");
           if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
@@ -3669,7 +3678,7 @@ Something is hidden there.
     function renderChatHistory() {
       if (!currentChatContact) return;
       const historyDiv = document.getElementById('chat-history');
-      const chat = chats[currentChatContact];
+      const chat = chats[currentChatContact] || [];
       
       historyDiv.innerHTML = '';
       chat.forEach(msg => {
@@ -3728,6 +3737,7 @@ Something is hidden there.
       const timeStr = hours + ':' + minutes + ampm;
       
       // FIX 2: Show user message immediately
+      if (!chats[currentChatContact]) chats[currentChatContact] = [];
       chats[currentChatContact].push({ sender: 'You', time: timeStr, text: text });
       inputField.value = '';
       renderChatHistory();
@@ -3852,7 +3862,7 @@ Something is hidden there.
       // Pause audio log if playing
       if (typeof pauseAudioLog === 'function') pauseAudioLog();
       
-      audioPlayer.play();
+      audioPlayer.play().catch(() => {});
       
       isMusicPlaying = true;
       document.getElementById('music-play-btn').innerText = "PAUSE";
@@ -4099,6 +4109,13 @@ Something is hidden there.
         const data = await response.json();
         
         window.userState = data;
+        window.chats = data.chats || {};
+        
+        // If messenger is open, refresh it
+        const messengerWin = document.getElementById('win-messenger');
+        if (messengerWin && messengerWin.classList.contains('open')) {
+          renderChatHistory();
+        }
         
         updateStage3Clues();
         updateTrackDisplay();

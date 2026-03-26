@@ -257,7 +257,6 @@ async function startServer() {
 
   // Apply rate limiting to sensitive API routes
   app.use("/api/validateCommand", strictLimiter);
-  app.use("/api/getContent", limiter);
   app.use("/api/sendMessage", strictLimiter);
 
   const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.join(process.cwd(), 'dist'));
@@ -519,7 +518,8 @@ async function startServer() {
           userId,
           createdAt: new Date().toISOString(),
           stage: 1,
-          stage4_progress: 0
+          stage4_progress: 0,
+          chats: {}
         };
         await db.collection("users").doc(userId).set(userData);
       }
@@ -654,6 +654,8 @@ async function startServer() {
         filteredState.stage4_progress = userData.stage4_progress || 0;
         filteredState.aurora_archive_unlocked = !!userData.aurora_archive_unlocked;
       }
+
+      filteredState.chats = userData.chats || {};
 
       res.json(filteredState);
     } catch (error: any) {
@@ -886,7 +888,7 @@ function validateUserId(userId: any): string | null {
             return res.json({ status: 'error', message: 'ACCESS DENIED: Vale archive decryption required.' });
           }
           if (userData.stage4_forum_unlocked) {
-            return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+            return res.json({ status: 'success', message: 'COMMAND ALREADY USED' });
           }
           processAttempt(req.session, stageKey, input, true, clientIp as string);
           if (db) await db.collection('users').doc(userId).update({ stage4_forum_unlocked: true });
@@ -913,7 +915,7 @@ function validateUserId(userId: any): string | null {
             return res.json({ status: 'error', message: 'COMMAND INVALID: Sequence incomplete.' });
           }
           if (userData.stage3_secret_unlocked) {
-            return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+            return res.json({ status: 'success', message: 'COMMAND ALREADY USED' });
           }
           processAttempt(req.session, stageKey, input, true, clientIp as string);
           if (db) await db.collection('users').doc(userId).update({ stage3_secret_unlocked: true });
@@ -924,7 +926,7 @@ function validateUserId(userId: any): string | null {
           });
         }
         if (baseCmd === 'ground') {
-          if (userData.stage3_ground) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+          if (userData.stage3_ground) return res.json({ status: 'success', message: 'COMMAND ALREADY USED' });
           const currentStep = userData.messenger_step || 0;
           if (currentStep < 4) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
@@ -963,7 +965,7 @@ function validateUserId(userId: any): string | null {
         }
         if (fullCmd.toUpperCase() === 'VALE') {
           if (userData.stage1_vale_unlocked) {
-            if (userData.stage4_forum_unlocked) return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
+            if (userData.stage4_forum_unlocked) return res.json({ status: 'success', message: 'COMMAND ALREADY USED' });
             processAttempt(req.session, stageKey, input, true, clientIp as string);
             await db.collection('users').doc(userId).update({ stage4_forum_unlocked: true });
             return res.json({ status: 'success', action: 'unlock_forum' });
@@ -1158,7 +1160,7 @@ function validateUserId(userId: any): string | null {
         }
 
         if (input === "greed") {
-          if (userData.stage3_greed) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
+          if (userData.stage3_greed) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 0) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: "error", reply: "COMMAND INVALID" });
@@ -1186,7 +1188,7 @@ Check the trash.`,
         }
 
         if (input === "death") {
-          if (userData.stage3_death) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
+          if (userData.stage3_death) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 1) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: "error", reply: "COMMAND INVALID" });
@@ -1214,7 +1216,7 @@ Use the terminal.`,
         }
 
         if (input === "money") {
-          if (userData.stage3_money) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
+          if (userData.stage3_money) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 2) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: "error", reply: "COMMAND INVALID" });
@@ -1240,7 +1242,7 @@ Check fragment_3.log.`,
         }
 
         if (input === "gold") {
-          if (userData.stage3_gold) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
+          if (userData.stage3_gold) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 3) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: "error", reply: "COMMAND INVALID" });
@@ -1266,7 +1268,7 @@ Listen to the system's pulse.`,
         }
 
         if (input === "ground") {
-          if (userData.stage3_ground) return res.json({ status: "error", reply: "COMMAND ALREADY USED" });
+          if (userData.stage3_ground) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 4) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: "error", reply: "COMMAND INVALID" });
@@ -1356,6 +1358,26 @@ Use the terminal to submit the entry.`,
         reply = "INVALID INPUT. AWAITING COMMAND.";
       }
 
+      // Save message to history (Task 4)
+      const history = userData.chats?.[contact] || [];
+      const now = new Date();
+      let hours = now.getHours();
+      const ampm = hours >= 12 ? ' PM' : ' AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const minutes = now.getMinutes() < 10 ? '0' + now.getMinutes() : now.getMinutes();
+      const timeStr = hours + ':' + minutes + ampm;
+      
+      history.push({ sender: 'You', time: timeStr, text: message });
+      history.push({ sender: contact === 'archive' ? 'Archive Node' : (contact === 'elias' ? 'Dr. Elias' : 'Unknown User'), time: timeStr, text: reply });
+      
+      // Limit history size
+      if (history.length > 50) history.splice(0, history.length - 50);
+      
+      await db.collection('users').doc(userId).update({
+        [`chats.${contact}`]: history
+      });
+
       return res.json({ 
         status: "success",
         contact, 
@@ -1391,18 +1413,10 @@ Use the terminal to submit the entry.`,
         return res.status(403).json({ status: "error", message: "ACCESS DENIED: No progression found" });
       }
 
-      // Brute force protection for content probing (Task 1 & 2)
-      const stageKey = `stage${userData.stage || 1}_content`;
-      const cooldownCheck = processAttempt(req.session, stageKey, target, false, clientIp as string);
-      if (!cooldownCheck.allowed) {
-        return res.status(429).json({ status: 'error', message: cooldownCheck.reason });
-      }
-
       // Progression update logic based on content access - STRICT ORDER
       if (target === 'network-trace' && userData.stage4_unlocked) {
         // Must have unlocked Vale archive (progress 2) before seeing network trace (progress 3)
         if ((userData.stage4_progress || 0) === 2) {
-          processAttempt(req.session, stageKey, target, true, clientIp as string); // Mark as success
           await db.collection('users').doc(userId).update({
             stage4_progress: 3,
             stage4_network_trace_viewed: true
@@ -1415,7 +1429,6 @@ Use the terminal to submit the entry.`,
       if (['observer-log-01', 'observer-log-02', 'observer-log-03'].includes(target) && userData.stage4_unlocked) {
         // Observer logs are available once stage 4 is unlocked
         if (!userData.stage4_observer_logs_opened) {
-          processAttempt(req.session, stageKey, target, true, clientIp as string); // Mark as success
           await db.collection('users').doc(userId).update({
             stage4_observer_logs_opened: true
           });
