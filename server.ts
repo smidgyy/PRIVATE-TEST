@@ -305,7 +305,7 @@ async function startServer() {
   // Helper for brute force protection
   const ipAttempts: Record<string, any> = {};
 
-  const processAttempt = (session: any, stage: string, input: string, isCorrect: boolean, ip?: string) => {
+  const processAttempt = (session: any, stage: string, input: string, isCorrect: boolean, ip?: string, checkOnly: boolean = false) => {
     if (!session.attempts) session.attempts = {};
     if (!session.attempts[stage]) {
       session.attempts[stage] = { count: 0, lastTime: 0, cooldownUntil: 0, lastInput: "" };
@@ -340,6 +340,8 @@ async function startServer() {
       const remaining = Math.ceil((trackerToUse.cooldownUntil - now) / 1000);
       return { allowed: false, reason: `Security lockout active. Retry in ${remaining}s.` };
     }
+
+    if (checkOnly) return { allowed: true };
 
     trackerToUse.lastTime = now;
     trackerToUse.lastInput = input;
@@ -394,7 +396,8 @@ async function startServer() {
     "/node03/secret/index.html",
     "/article.html", 
     "/node03/index.html",
-    "/archive/index.html"
+    "/archive/index.html",
+    "/archive_entry.html"
   ];
 
   const LOCKED_HTML = `
@@ -800,7 +803,7 @@ function validateUserId(userId: any): string | null {
 
       // Brute force protection check (Task 1 & 2)
       const stageKey = `stage${currentStage}_${type}`; // Use type for more granular IP limiting
-      const cooldownCheck = processAttempt(req.session, stageKey, input, false, clientIp as string); 
+      const cooldownCheck = processAttempt(req.session, stageKey, input, false, clientIp as string, true); 
       if (!cooldownCheck.allowed) {
         return res.status(429).json({ status: 'error', message: cooldownCheck.reason });
       }
@@ -1070,6 +1073,10 @@ function validateUserId(userId: any): string | null {
         hasAccess = (userData.stage4_progress || 0) >= 2;
       } else if (target === 'forum') {
         hasAccess = !!userData.stage4_forum_unlocked;
+      } else if (target === 'terminal-dump') {
+        hasAccess = (userData.stage4_progress || 0) >= 2;
+      } else if (target === 'network-trace') {
+        hasAccess = (userData.stage4_progress || 0) >= 2;
       }
       
       if (hasAccess) {
@@ -1118,7 +1125,7 @@ function validateUserId(userId: any): string | null {
 
       // Brute force protection check (Task 1 & 2)
       const stageKey = `stage${currentStage}_msg_${contact}`;
-      const cooldownCheck = processAttempt(req.session, stageKey, normalized, false, clientIp as string);
+      const cooldownCheck = processAttempt(req.session, stageKey, normalized, false, clientIp as string, true);
       if (!cooldownCheck.allowed) {
         return res.status(429).json({ status: 'error', reply: cooldownCheck.reason });
       }
@@ -1293,6 +1300,25 @@ Stage 4 unlocked. Messenger updated.`,
             action: "unlock_stage4"
           });
         }
+
+        if (input === "840291") {
+          if (currentStage < 4) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
+            return res.json({ status: "error", reply: "ACCESS DENIED: Signal alignment required." });
+          }
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
+          return res.json({
+            status: "success",
+            reply: `Relay active.
+
+Subject: K7-4419
+
+The final entry is waiting.
+
+Use the terminal to submit the entry.`,
+            action: null
+          });
+        }
       }
 
       const t = message.trim().toUpperCase();
@@ -1444,7 +1470,7 @@ Stage 4 unlocked. Messenger updated.`,
         'journal-day09': {
           access: userData.stage4_unlocked || false,
           title: 'VALE INVESTIGATION LOG',
-          content: '<div class="journal-date">Day 09</div><p>The anomalies are increasing. Fragments of deleted conversations are appearing in the terminal buffer. \'archivist404040\'... who is that?</p><p>Something inside the system noticed me. New log files appeared automatically. The Archive might be monitoring investigators.</p>'
+          content: '<div class="journal-date">Day 09</div><p>The anomalies are increasing. Fragments of deleted conversations are appearing in the terminal buffer. \'[REDACTED]\'... who is that?</p><p>Something inside the system noticed me. New log files appeared automatically. The Archive might be monitoring investigators.</p>'
         },
         'journal-day12': {
           access: userData.stage4_unlocked || false,
@@ -1457,11 +1483,11 @@ Stage 4 unlocked. Messenger updated.`,
           content: '<div class="journal-date">Day 16</div><p>The Archive isn\'t storage. It\'s an observer. Investigators who go too deep become entries.</p><p>If anyone finds this... look me up in the archive. The forum holds the final piece. Good luck, investigator.</p>'
         },
         'terminal-dump': {
-          access: userData.stage4_unlocked || false,
+          access: (userData.stage4_progress || 0) >= 2,
           content: Buffer.from('W1NZU10gQ09OTkVDVElPTiBURVJNSU5BVEVEPGJyPltTWVNdIEZPUkNFRCBESVNDT05ORUNUPGJyPltTWVNdIEFSQ0hJVkUgTE9DSyBJTklUSUFURUQ=', 'base64').toString()
         },
         'network-trace': {
-          access: userData.stage4_unlocked || false,
+          access: (userData.stage4_progress || 0) >= 2,
           content: Buffer.from('VFJBQ0UgUk9VVEU6PGJyPjxicj42MTcyNjM2ODY5NzY2NTNBMkYyRjY2NkY3MjE1NkQ=', 'base64').toString() + '<br><br>' + Buffer.from('TkVUV09SSyBUUkFDRSBMT0cgLSBOT0RFXzA0X09VVEJPVU5EPGJyPi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLTxicj5QQUNLRVRfSUQ6IDB4ODgyOTxicj5TT1VSQ0U6IElOVEVSTkFMX05PREVfMDQ8YnI+REVTVElOQVRJT046IEVYVEVSTkFMX0FSQ0hJVklTVF9SRUxBWTxicj5QQVlMT0FEIChIRVgpOjxicj40MyA0ZiA0ZSA1NCA0MSA0MyA1NCAyMCA0MSA1MiA0MyA0OCA0OSA1NiA0OSA1MyA1NCAyMCA0NiA0ZiA1MiAyMCA0MyA0ZiA0NCA0NSAzYSAyMCAzOCAzNCAzMCAzMiAzOSAzMTxicj4tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS08YnI+VFJBQ0UgQ09NUExFVEUu', 'base64').toString()
         },
         'memory-scan-log': {
@@ -1474,12 +1500,12 @@ Stage 4 unlocked. Messenger updated.`,
           content: ''
         },
         'vale-photo-data': {
-          access: userData.stage1_vale_photo_unlocked || false,
+          access: !!userData.stage1_vale_photo_unlocked,
           content: 'Coordinates: 42.3601° N, 71.0589° W | Fragment: 0x445A'
         },
         'forum': {
-          access: userData.stage4_unlocked || false,
-          content: Buffer.from('PGRpdiBzdHlsZT0iY29sb3I6IzBjMDtmb250LWZhbWlseTptb25vc3BhY2U7cGFkZGluZzozMHB4O2JhY2tncm91bmQ6IzA1MDUwNTtoZWlnaHQ6MTAwJTtvdmVyZmxvdy15OmF1dG87Ym94LXNpemluZzpib3JkZXItYm94OyI+CiAgPGRpdiBzdHlsZT0iYm9yZGVyOiAxcHggc29saWQgIzBjMDsgcGFkZGluZzogMjBweDsgbWF4LXdpZHRoOiA4MDBweDsgbWFyZ2luOiAwIGF1dG87IGJhY2tncm91bmQ6ICMwMDA7Ij4KICAgIDxoMiBzdHlsZT0ibWFyZ2luLXRvcDogMDsgbGV0dGVyLXNwYWNpbmc6IDFweDsgY29sb3I6ICMwZjA7Ij5JTlRFUk5BTCBBUkNISVZFIEZPUlVNIFtSRUFELU9OTFldPC9oMj4KICAgIDxkaXYgc3R5bGU9ImJvcmRlci1ib3R0b206IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy1ib3R0b206IDE1cHg7IG1hcmdpbi1ib3R0b206IDIwcHg7IGxpbmUtaGVpZ2h0OiAxLjY7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPlRvcGljOjwvc3Ryb25nPiBUaGUgQW5vbWFseTwvcD4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPkF1dGhvcjo8L3N0cm9uZz4gYXJjaGl2aXN0NDA0MDQwPC9wPgogICAgICA8cCBzdHlsZT0ibWFyZ2luOiA1cHggMDsiPjxzdHJvbmc+RGF0ZTo8L3N0cm9uZz4gMTk5OC0wNC0xMiAwMzoxNCBBTTwvcD4KICAgIDwvZGl2PgogICAgPGRpdiBzdHlsZT0ibGluZS1oZWlnaHQ6IDEuODsgZm9udC1zaXplOiAxNXB4OyI+CiAgICAgIDxwPkkndmUgZm91bmQgc29tZXRoaW5nIGluIHRoZSBsb2dzLiBJdCdzIG5vdCBqdXN0IGRhdGEgY29ycnVwdGlvbi4gSXQncyBsb29raW5nIGJhY2sgYXQgdXMuPC9wPgogICAgICA8cD5JJ3ZlIGhpZGRlbiB0aGUgZmluYWwga2V5IGluIHRoZSBzeXN0ZW0gbmV0d29yayB0cmFjZS4gSWYgYW55b25lIGZpbmRzIHRoaXMsIHlvdSBrbm93IHdoZXJlIHRvIHJlYWNoIG1lLiBMb29rIGF0IG5ldHdvcmtfdHJhY2Uuc3lzLjwvcD4KICAgICAgPHAgPkV4dGVybmFsIGNvbnRhY3QgcHJvdG9jb2wgaW5pdGlhdGVkLiBUaGV5IGFyZSB3YXRjaGluZyB0aGUgbmV0d29yay48L3A+CiAgICA8L2Rpdj4KICAgIDxkaXYgc3R5bGU9Im1hcmdpbi10b3A6IDMwcHg7IGJvcmRlci10b3A6IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy10b3A6IDE1cHg7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogMDsiPltFbmQgb2YgdGhyZWFkXTwvcD4KICAgIDwvZGl2PgogIDwvZGl2Pgo8L2Rpdj4=', 'base64').toString()
+          access: userData.stage4_forum_unlocked || false,
+          content: Buffer.from('PGRpdiBzdHlsZT0iY29sb3I6IzBjMDtmb250LWZhbWlseTptb25vc3BhY2U7cGFkZGluZzozMHB4O2JhY2tncm91bmQ6IzA1MDUwNTtoZWlnaHQ6MTAwJTtvdmVyZmxvdy15OmF1dG87Ym94LXNpemluZzpib3JkZXItYm94OyI+CiAgPGRpdiBzdHlsZT0iYm9yZGVyOiAxcHggc29saWQgIzBjMDsgcGFkZGluZzogMjBweDsgbWF4LXdpZHRoOiA4MDBweDsgbWFyZ2luOiAwIGF1dG87IGJhY2tncm91bmQ6ICMwMDA7Ij4KICAgIDxoMiBzdHlsZT0ibWFyZ2luLXRvcDogMDsgbGV0dGVyLXNwYWNpbmc6IDFweDsgY29sb3I6ICMwZjA7Ij5JTlRFUk5BTCBBUkNISVZFIEZPUlVNIFtSRUFELU9OTFldPC9oMj4KICAgIDxkaXYgc3R5bGU9ImJvcmRlci1ib3R0b206IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy1ib3R0b206IDE1cHg7IG1hcmdpbi1ib3R0b206IDIwcHg7IGxpbmUtaGVpZ2h0OiAxLjY7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPlRvcGljOjwvc3Ryb25nPiBUaGUgQW5vbWFseTwvcD4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPkF1dGhvcjo8L3N0cm9uZz4gW1JFREFDVEVEXTwvcD4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogNXB4IDA7Ij48c3Ryb25nPkRhdGU6PC9zdHJvbmc+IDE5OTgtMDQtMTIgMDM6MTQgQU08vcD4KICAgIDwvZGl2PgogICAgPGRpdiBzdHlsZT0ibGluZS1oZWlnaHQ6IDEuODsgZm9udC1zaXplOiAxNXB4OyI+CiAgICAgIDxwPkkndmUgZm91bmQgc29tZXRoaW5nIGluIHRoZSBsb2dzLiBJdCdzIG5vdCBqdXN0IGRhdGEgY29ycnVwdGlvbi4gSXQncyBsb29raW5nIGJhY2sgYXQgdXMuPC9wPgogICAgICA8cD5JJ3ZlIGhpZGRlbiB0aGUgZmluYWwga2V5IGluIHRoZSBzeXN0ZW0gbmV0d29yayB0cmFjZS4gSWYgYW55b25lIGZpbmRzIHRoaXMsIHlvdSBrbm93IHdoZXJlIHRvIHJlYWNoIG1lLiBMb29rIGF0IG5ldHdvcmtfdHJhY2Uuc3lzLjwvcD4KICAgICAgPHAgPkV4dGVybmFsIGNvbnRhY3QgcHJvdG9jb2wgaW5pdGlhdGVkLiBUaGV5IGFyZSB3YXRjaGluZyB0aGUgbmV0d29yay48L3A+CiAgICA8L2Rpdj4KICAgIDxkaXYgc3R5bGU9Im1hcmdpbi10b3A6IDMwcHg7IGJvcmRlci10b3A6IDFweCBkYXNoZWQgIzBjMDsgcGFkZGluZy10b3A6IDE1cHg7Ij4KICAgICAgPHAgc3R5bGU9Im1hcmdpbjogMDsiPltFbmQgb2YgdGhyZWFkXTwvcD4KICAgIDwvZGl2PgogIDwvZGl2Pgo8L2Rpdj4=', 'base64').toString()
         },
         'records': {
           access: userData.stage4_unlocked || false,
@@ -1488,10 +1514,14 @@ Stage 4 unlocked. Messenger updated.`,
       };
 
       const item = contentMap[target];
-      if (item && item.access) {
-        return res.json({ status: "success", content: item.content, title: item.title });
+      if (item) {
+        if (item.access) {
+          return res.json({ status: "success", content: item.content, title: item.title });
+        } else {
+          return res.json({ status: "success", content: '<div style="color:#f00; padding:20px; text-align:center; font-family:monospace; border:1px solid #f00; background:rgba(20,0,0,0.8);">[ACCESS RESTRICTED]<br><br>Node authentication required.</div>', title: item.title || 'LOCKED' });
+        }
       } else {
-        return res.status(403).json({ status: "error", message: "Access denied" });
+        return res.status(404).json({ status: "error", message: "Content not found" });
       }
     } catch (err: any) {
       console.error(">>> [API] getContent error:", err.message);
@@ -1565,7 +1595,7 @@ Stage 4 unlocked. Messenger updated.`,
       } else if (target === "node03/secret.html" || target === "node03/secret/index.html") {
         if ((userData.stage || 1) < 3) return res.send(LOCKED_HTML);
         hasAccess = !!userData?.stage3_secret_unlocked;
-      } else if (target === "archive/index.html") {
+      } else if (target === "archive/index.html" || target === "archive_entry.html") {
         if ((userData.stage || 1) < 4) return res.send(LOCKED_HTML);
         hasAccess = (!!userData?.stage4_progress && userData?.stage4_progress >= 3); 
       } else if (target === "node03/index.html") {

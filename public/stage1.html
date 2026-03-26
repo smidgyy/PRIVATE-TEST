@@ -1274,7 +1274,7 @@
       </div>
       <div class="window-content vale-journal-content" id="content-journal-day09">
         <div class="journal-date">Day 09</div>
-        <p>The anomalies are increasing. Fragments of deleted conversations are appearing in the terminal buffer. 'archivist404040'... who is that?</p>
+        <p>The anomalies are increasing. Fragments of deleted conversations are appearing in the terminal buffer. '[REDACTED]'... who is that?</p>
       </div>
     </div>
 
@@ -1933,6 +1933,11 @@ Something is hidden there.
             }
 
             if (contentEl) {
+              if (data.content.includes('[ACCESS RESTRICTED]')) {
+                contentEl.innerHTML = data.content;
+                return;
+              }
+
               if (id.startsWith('observer-log-')) {
                 typeWriterEffect(contentEl, data.content, 30);
               } else {
@@ -1955,29 +1960,36 @@ Something is hidden there.
     async function openWindow(id) {
       console.log("Opening fragment:", id);
       
-      const restrictedTargets = ['observer-folder', 'vale-folder', 'resonance', 'node02', 'node04', 'forum'];
+      const restrictedTargets = ['observer-folder', 'vale-folder', 'resonance', 'node02', 'node04', 'forum', 'photo-fragment', 'terminal-dump', 'network-trace'];
       
       if (restrictedTargets.includes(id)) {
         try {
-          const res = await fetch('/api/validateCommand', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'check_access', target: id })
-          });
-          if (!res.ok) throw new Error("Server error");
-          const contentType = res.headers.get("content-type");
-          if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
-          const data = await res.json();
-          if (data.status !== 'success') {
-            printTerminal("Access denied: Insufficient permissions.");
-            if (id === 'resonance' || id === 'node02') {
-              printTerminal("Signal alignment required.");
-            } else if (id === 'observer-folder') {
-              printTerminal("Node authentication required.");
-            } else if (id === 'vale-folder') {
-              printTerminal("Directory encrypted.");
+          if (id === 'photo-fragment') {
+             if (!window.userState || !window.userState.stage1_vale_photo_unlocked) {
+                printTerminal("Access denied: Fragment encrypted.");
+                return;
+             }
+          } else {
+            const res = await fetch('/api/validateCommand', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ type: 'check_access', target: id })
+            });
+            if (!res.ok) throw new Error("Server error");
+            const contentType = res.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
+            const data = await res.json();
+            if (data.status !== 'success') {
+              printTerminal("Access denied: Insufficient permissions.");
+              if (id === 'resonance' || id === 'node02') {
+                printTerminal("Signal alignment required.");
+              } else if (id === 'observer-folder') {
+                printTerminal("Node authentication required.");
+              } else if (id === 'vale-folder') {
+                printTerminal("Directory encrypted.");
+              }
+              return;
             }
-            return;
           }
         } catch (err) {
           console.error(err);
@@ -2963,7 +2975,7 @@ Something is hidden there.
       // Check if URL is restricted
       for (const [key, stage] of Object.entries(requiredStages)) {
         if (url.includes(key) && currentStage < stage) {
-          alert("ACCESS DENIED");
+          printTerminal("ACCESS DENIED: Required progression not detected.");
           return;
         }
       }
@@ -3351,6 +3363,9 @@ Something is hidden there.
               printTerminal(data.reply || "Archive entry accepted.");
               setTimeout(() => {
                 printTerminal("Final subject record finalized. Access granted to /archive_entry.html");
+                setTimeout(() => {
+                  window.location.href = "/archive_entry.html";
+                }, 1500);
               }, 2000);
             } else if (data.action === 'unlock_vale') {
               printTerminal("Decoding archive...");
@@ -4086,6 +4101,7 @@ Something is hidden there.
         window.userState = data;
         
         updateStage3Clues();
+        updateTrackDisplay();
         
         // Refresh UI
         if (data.stage2_unlocked) document.getElementById('icon-archive').classList.remove('hidden');
@@ -4128,11 +4144,6 @@ Something is hidden there.
         if (data.stage2_unlocked === true) {
           unlockStage2UI();
           currentStage = Math.max(currentStage, 2);
-        }
-        if (data.aurora_vale_unlocked === true) {
-          const icon = document.getElementById("icon-vale");
-          if (icon) icon.classList.remove("hidden");
-          currentStage = Math.max(currentStage, 4);
         }
         
         if (data.stage4_progress > 0) {
