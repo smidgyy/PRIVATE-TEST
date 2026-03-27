@@ -762,7 +762,7 @@ function validateUserId(userId: any): string | null {
         return res.status(400).json({ status: "error", message: "Invalid command type" });
       }
 
-      console.log(`>>> [API] Request: ${type} from user ${userId} [${clientIp}]. Input: "${input}"`);
+      // console.log(`>>> [API] Request: ${type} from user ${userId} [${clientIp}]. Input: "${input}"`);
       
       const isInputRequired = ['terminal', 'archive_password', 'node02_answer'].includes(type);
       if (isInputRequired && !input) {
@@ -984,7 +984,7 @@ function validateUserId(userId: any): string | null {
           return res.json({ status: 'error', message: 'ACCESS DENIED' });
         }
 
-        const hash = crypto.createHash('sha256').update(t.toLowerCase()).digest('hex');
+        const hash = crypto.createHash('sha256').update(input.toLowerCase()).digest('hex');
         
         // Allow answers to be retried even if already complete
         if (hash === '76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22') {

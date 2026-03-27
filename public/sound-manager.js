@@ -237,7 +237,7 @@ class SoundManager {
 
   setStageAmbient(stage) {
     if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
-    this.currentStage = stage;
+    if (this.currentStage === stage && this.ambientOscs && this.ambientOscs.length > 0) return;
     
     // Fade out current ambient
     if (this.ambientGain) {
@@ -245,55 +245,48 @@ class SoundManager {
       const currentOscs = this.ambientOscs;
       currentGain.gain.cancelScheduledValues(this.audioCtx.currentTime);
       currentGain.gain.setValueAtTime(currentGain.gain.value, this.audioCtx.currentTime);
-      currentGain.gain.linearRampToValueAtTime(0, this.audioCtx.currentTime + 3);
+      currentGain.gain.linearRampToValueAtTime(0, this.audioCtx.currentTime + 2);
       setTimeout(() => {
         if (currentOscs) {
           currentOscs.forEach(o => {
             try { o.stop(); } catch(e) {}
           });
         }
-      }, 3500);
+      }, 2500);
     }
 
+    this.currentStage = stage;
     this.ambientOscs = [];
     this.ambientGain = this.audioCtx.createGain();
     this.ambientGain.gain.setValueAtTime(0, this.audioCtx.currentTime);
     this.ambientGain.connect(this.masterGain);
     
     let freqs = [];
-    let targetVolume = 0.05;
-    let filterFreq = 800;
+    let targetVolume = 0.03;
+    let filterFreq = 600;
     
     if (stage === 1) {
-      // Stage 1: subtle, minimal, calm ambience, sense of curiosity and discovery
-      // A major 9th feel, very soft
       freqs = [220.00, 277.18, 329.63, 440.00]; 
       targetVolume = 0.02;
-      filterFreq = 600;
+      filterFreq = 500;
     } else if (stage === 2) {
-      // Stage 2: deeper, mysterious tone, subtle tension
-      // G minor feel
       freqs = [196.00, 233.08, 293.66, 392.00]; 
+      targetVolume = 0.025;
+      filterFreq = 600;
+    } else if (stage === 3) {
+      freqs = [130.81, 155.56, 196.00, 261.63]; 
       targetVolume = 0.03;
       filterFreq = 700;
-    } else if (stage === 3) {
-      // Stage 3: darker ambience with low-frequency elements, unease, anticipation
-      // C minor low
-      freqs = [130.81, 155.56, 196.00, 261.63]; 
-      targetVolume = 0.04;
-      filterFreq = 800;
     } else if (stage === 4) {
-      // Stage 4: atmospheric, eerie, immersive, intense but not overwhelming
-      // A minor darker, with more movement
       freqs = [110.00, 130.81, 164.81, 220.00, 329.63]; 
-      targetVolume = 0.05;
-      filterFreq = 1000;
+      targetVolume = 0.035;
+      filterFreq = 800;
     }
 
     const filter = this.audioCtx.createBiquadFilter();
     filter.type = 'lowpass';
     filter.frequency.setValueAtTime(filterFreq, this.audioCtx.currentTime);
-    filter.Q.value = stage === 4 ? 2 : 1;
+    filter.Q.value = 1;
     
     freqs.forEach((f, i) => {
       const osc = this.audioCtx.createOscillator();
@@ -303,10 +296,8 @@ class SoundManager {
       const lfo = this.audioCtx.createOscillator();
       const lfoGain = this.audioCtx.createGain();
       lfo.type = 'sine';
-      // Slower movement for earlier stages, slightly faster for later
-      const lfoSpeed = stage === 4 ? 0.1 : 0.05;
-      lfo.frequency.value = lfoSpeed + (i * 0.02); 
-      lfoGain.gain.value = stage >= 3 ? 3 : 1.5;
+      lfo.frequency.value = 0.05 + (i * 0.01); 
+      lfoGain.gain.value = 1.5;
       lfo.connect(lfoGain);
       lfoGain.connect(osc.frequency);
       lfo.start();
@@ -317,58 +308,10 @@ class SoundManager {
       this.ambientOscs.push(lfo);
     });
 
-    // Add a very low sub-bass for stages 3 and 4
-    if (stage >= 3) {
-      const subOsc = this.audioCtx.createOscillator();
-      subOsc.type = 'triangle';
-      subOsc.frequency.setValueAtTime(stage === 4 ? 55 : 65.41, this.audioCtx.currentTime); // Low A or C
-      
-      const subLfo = this.audioCtx.createOscillator();
-      const subLfoGain = this.audioCtx.createGain();
-      subLfo.type = 'sine';
-      subLfo.frequency.value = 0.02;
-      subLfoGain.gain.value = 2;
-      subLfo.connect(subLfoGain);
-      subLfoGain.connect(subOsc.frequency);
-      subLfo.start();
-      
-      subOsc.connect(this.ambientGain);
-      subOsc.start();
-      this.ambientOscs.push(subOsc);
-      this.ambientOscs.push(subLfo);
-    }
-    
-    // Add a subtle high-pitched shimmer for stage 4
-    if (stage === 4) {
-      const shimmerOsc = this.audioCtx.createOscillator();
-      shimmerOsc.type = 'sine';
-      shimmerOsc.frequency.setValueAtTime(880, this.audioCtx.currentTime);
-      
-      const shimmerGain = this.audioCtx.createGain();
-      shimmerGain.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
-      
-      const shimmerLfo = this.audioCtx.createOscillator();
-      shimmerLfo.type = 'sine';
-      shimmerLfo.frequency.value = 0.2;
-      
-      const shimmerLfoGain = this.audioCtx.createGain();
-      shimmerLfoGain.gain.value = 0.05;
-      shimmerLfo.connect(shimmerLfoGain);
-      shimmerLfoGain.connect(shimmerGain.gain);
-      shimmerLfo.start();
-      
-      shimmerOsc.connect(shimmerGain);
-      shimmerGain.connect(this.ambientGain);
-      shimmerOsc.start();
-      
-      this.ambientOscs.push(shimmerOsc);
-      this.ambientOscs.push(shimmerLfo);
-    }
-
     this.ambientGain.connect(filter);
     filter.connect(this.masterGain);
     
-    this.ambientGain.gain.linearRampToValueAtTime(targetVolume, this.audioCtx.currentTime + 5);
+    this.ambientGain.gain.linearRampToValueAtTime(targetVolume, this.audioCtx.currentTime + 4);
   }
 
   startFireCrackling() {
