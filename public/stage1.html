@@ -763,12 +763,12 @@
 
     <div class="icon hidden" id="icon-observer" ondblclick="openWindow('observer-folder')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#0f0" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#0f0"/></svg>
-      <span id="label-observer-folder">archive://dir/logs_01</span>
+      <span id="label-observer-folder">archive://dir/observer</span>
     </div>
 
     <div class="icon hidden" id="icon-vale" ondblclick="openWindow('vale-folder')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#f00"/></svg>
-      <span id="label-vale-folder">archive://dir/logs_02</span>
+      <span id="label-vale-folder">archive://dir/vale</span>
     </div>
 
     <div class="icon" id="icon-messenger" ondblclick="openWindow('messenger')">
@@ -783,15 +783,15 @@
 
     <div class="icon hidden" id="terminal_fragment" ondblclick="openWindow('terminal_fragment')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
-      <span>recovered_fragment_02.log</span>
+      <span>terminal_fragment.log</span>
     </div>
     <div class="icon hidden" id="fragment_3" ondblclick="openWindow('fragment3')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
-      <span>recovered_fragment_03.log</span>
+      <span>fragment_3.log</span>
     </div>
     <div class="icon hidden" id="fragment_4" ondblclick="openWindow('fragment4')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
-      <span>recovered_fragment_04.log</span>
+      <span>fragment_4.log</span>
     </div>
 
     <!-- Context Menu -->
@@ -896,7 +896,7 @@
         </div>
         <div class="icon hidden" id="recycle_fragment" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('recycle_fragment')">
           <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
-          <span style="color:#000; background:transparent;">recovered_fragment_01.log</span>
+          <span style="color:#000; background:transparent;">recycle_fragment.log</span>
         </div>
       </div>
     </div>
@@ -1133,7 +1133,7 @@
 
     <div class="window" id="win-recycle_fragment" style="top: 180px; left: 280px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-recycle_fragment')">
-        <div class="title-bar-text">recovered_fragment_01.log</div>
+        <div class="title-bar-text">recycle_fragment.log</div>
         <div class="title-bar-controls">
           <div class="control-btn" onclick="closeWindow('recycle_fragment')">X</div>
         </div>
@@ -1145,7 +1145,7 @@
 
     <div class="window" id="win-terminal_fragment" style="top: 190px; left: 290px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-terminal_fragment')">
-        <div class="title-bar-text">recovered_fragment_02.log</div>
+        <div class="title-bar-text">terminal_fragment.log</div>
         <div class="title-bar-controls">
           <div class="control-btn" onclick="closeWindow('terminal_fragment')">X</div>
         </div>
@@ -1157,7 +1157,7 @@
 
     <div class="window" id="win-fragment3" style="top: 200px; left: 300px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-fragment3')">
-        <div class="title-bar-text">recovered_fragment_03.log</div>
+        <div class="title-bar-text">fragment_3.log</div>
         <div class="title-bar-controls">
           <div class="control-btn" onclick="closeWindow('fragment3')">X</div>
         </div>
@@ -1169,7 +1169,7 @@
 
     <div class="window" id="win-fragment4" style="top: 210px; left: 310px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-fragment4')">
-        <div class="title-bar-text">recovered_fragment_04.log</div>
+        <div class="title-bar-text">fragment_4.log</div>
         <div class="title-bar-controls">
           <div class="control-btn" onclick="closeWindow('fragment4')">X</div>
         </div>
@@ -1849,10 +1849,10 @@ Something is hidden there.
       'audio-log': 'Audio Log',
       'system-term': 'System Terminal',
       'deleted-log': 'deleted_user.log',
-      'recycle_fragment': 'recovered_fragment_01.log',
-      'terminal_fragment': 'recovered_fragment_02.log',
-      'fragment3': 'recovered_fragment_03.log',
-      'fragment4': 'recovered_fragment_04.log',
+      'recycle_fragment': 'recycle_fragment.log',
+      'terminal_fragment': 'terminal_fragment.log',
+      'fragment3': 'fragment_3.log',
+      'fragment4': 'fragment_4.log',
       'casefile-01': 'casefile_01.txt',
       'casefile-02': 'casefile_02.txt',
       'casefile-03': 'casefile_03.txt',
@@ -1864,11 +1864,11 @@ Something is hidden there.
       'memory-game': 'Memory Blocks',
       'messenger': 'Messenger',
       'music-player': 'Music Player',
-      'observer-folder': 'archive://dir/logs_01',
+      'observer-folder': 'archive://dir/observer',
       'observer-log-01': 'observer_log_01.sys',
       'observer-log-02': 'observer_log_02.sys',
       'observer-log-03': 'observer_log_03.sys',
-      'vale-folder': 'archive://dir/logs_02',
+      'vale-folder': 'archive://dir/vale',
       'journal-day01': 'journal_day01.log',
       'journal-day03': 'journal_day03.log',
       'journal-day05': 'journal_day05.log',
@@ -3060,7 +3060,7 @@ Something is hidden there.
         }
       }
 
-      if (url === "archive://node/02" || url === "http://archive.local/stage2.html") {
+      if (url === "archive://node/02") {
         openWindow('browser');
         const page = document.getElementById("browser-page");
         let iframe = document.getElementById("browser-frame");
@@ -3077,10 +3077,6 @@ Something is hidden there.
         }
         iframe.src = "/node02.html";
         iframe.style.display = "block";
-        
-        const urlInput = document.querySelector('#win-browser input[type="text"]');
-        if (urlInput) urlInput.value = "archive://node/02";
-        
         return;
       }
       openWindow('browser');
@@ -3126,7 +3122,7 @@ Something is hidden there.
             
             if (targetUrl === 'archive://node/02') {
               unlocked = true; // Let the backend handle access check
-              fetchPath = 'node02.html';
+              fetchPath = 'stage2.html';
               finishLoad();
               return;
             } else if (targetUrl === 'archive://node/02/article') {
@@ -3408,13 +3404,19 @@ Something is hidden there.
         default:
           // Send to backend for validation
       printTerminal("Connecting to archive server...");
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
       waitForAuth().then(() => {
         fetch('/api/validateCommand', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input: cmd, type: 'terminal' })
+          body: JSON.stringify({ input: cmd, type: 'terminal' }),
+          signal: controller.signal
         })
         .then(res => {
+          clearTimeout(timeoutId);
           if (!res.ok) throw new Error("Server error");
           const contentType = res.headers.get("content-type");
           if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
@@ -3598,34 +3600,26 @@ Something is hidden there.
           frag.style.display = "flex";
           frag.classList.remove("hidden");
         }
-        if (window.userState) window.userState.stage3_greed = true;
       } else if (response.action === "unlock_terminal_fragment") {
         const frag = document.getElementById("terminal_fragment");
         if (frag) {
           frag.style.display = "flex";
           frag.classList.remove("hidden");
         }
-        if (window.userState) window.userState.stage3_death = true;
       } else if (response.action === "unlock_fragment_3") {
         const frag = document.getElementById("fragment_3");
         if (frag) {
           frag.style.display = "flex";
           frag.classList.remove("hidden");
         }
-        if (window.userState) window.userState.stage3_money = true;
       } else if (response.action === "unlock_fragment_4") {
         const frag = document.getElementById("fragment_4");
         if (frag) {
           frag.style.display = "flex";
           frag.classList.remove("hidden");
         }
-        if (window.userState) window.userState.stage3_gold = true;
       } else if (response.action === "unlock_stage4") {
         currentStage = 4;
-        if (window.userState) {
-          window.userState.stage3_ground = true;
-          window.userState.stage4_progress = 1;
-        }
         
         // Trigger Unknown User message immediately
         if (typeof updateStage3Clues === 'function') {
@@ -3984,19 +3978,14 @@ Something is hidden there.
       
       // Subtle anomaly for the second track (index 1)
       if (currentTrackIndex === 1) {
-        trackName.dataset.id = "47-52-4f-55-4e-44";
         trackName.style.textShadow = "0 0 10px #0f0, 0 0 20px #0f0";
         trackName.title = "SYSTEM_PULSE_02";
         
         if (window.userState && window.userState.stage3_gold) {
+          trackName.dataset.id = "47-52-4f-55-4e-44";
           trackName.textContent = title;
-          const span = document.createElement('span');
-          span.style.fontSize = '0.7rem';
-          span.style.opacity = '0.7';
-          span.style.marginLeft = '5px';
-          span.textContent = '[0x47 0x52 0x4f 0x55 0x4e 0x44]';
-          trackName.appendChild(span);
         } else {
+          delete trackName.dataset.id;
           trackName.innerText = title;
         }
       } else {
@@ -4239,35 +4228,49 @@ Something is hidden there.
         }
         
         // Stage 3 Persistence
-        if (data.stage3_greed === true) {
-          const frag = document.getElementById("recycle_fragment");
-          if (frag) {
-            frag.style.display = "flex";
-            frag.classList.remove("hidden");
-          }
-        }
-        if (data.stage3_death === true) {
-          const frag = document.getElementById("terminal_fragment");
-          if (frag) {
-            frag.style.display = "flex";
-            frag.classList.remove("hidden");
-          }
-        }
-        if (data.stage3_money === true) {
-          const frag = document.getElementById("fragment_3");
-          if (frag) {
-            frag.style.display = "flex";
-            frag.classList.remove("hidden");
-          }
-        }
-        if (data.stage3_gold === true) {
-          const frag = document.getElementById("fragment_4");
-          if (frag) {
-            frag.style.display = "flex";
-            frag.classList.remove("hidden");
+        const fragGreed = document.getElementById("recycle_fragment");
+        if (fragGreed) {
+          if (data.stage3_greed === true) {
+            fragGreed.style.display = "flex";
+            fragGreed.classList.remove("hidden");
+          } else {
+            fragGreed.style.display = "none";
+            fragGreed.classList.add("hidden");
           }
         }
 
+        const fragDeath = document.getElementById("terminal_fragment");
+        if (fragDeath) {
+          if (data.stage3_death === true) {
+            fragDeath.style.display = "flex";
+            fragDeath.classList.remove("hidden");
+          } else {
+            fragDeath.style.display = "none";
+            fragDeath.classList.add("hidden");
+          }
+        }
+
+        const fragMoney = document.getElementById("fragment_3");
+        if (fragMoney) {
+          if (data.stage3_money === true) {
+            fragMoney.style.display = "flex";
+            fragMoney.classList.remove("hidden");
+          } else {
+            fragMoney.style.display = "none";
+            fragMoney.classList.add("hidden");
+          }
+        }
+
+        const fragGold = document.getElementById("fragment_4");
+        if (fragGold) {
+          if (data.stage3_gold === true) {
+            fragGold.style.display = "flex";
+            fragGold.classList.remove("hidden");
+          } else {
+            fragGold.style.display = "none";
+            fragGold.classList.add("hidden");
+          }
+        }
         if (data.stage2_unlocked === true) {
           unlockStage2UI();
           window.currentStage = Math.max(window.currentStage || 1, 2);

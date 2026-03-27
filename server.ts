@@ -187,6 +187,45 @@ async function getDb() {
   }
 }
 
+// Helper to filter state for progression
+const getFilteredState = (data: any) => {
+  const stage = data.stage || 1;
+  const filtered: any = {
+    currentStage: stage,
+    node02_step: data.node02_step || 1,
+    messenger_step: data.messenger_step || 0,
+    chats: data.chats || {}
+  };
+  if (stage >= 1) {
+    filtered.stage1_vale_unlocked = !!data.stage1_vale_unlocked;
+    filtered.stage2_unlocked = !!data.stage2_unlocked;
+  }
+  if (stage >= 2) {
+    filtered.stage2_phase1_complete = !!data.stage2_phase1_complete;
+    filtered.stage2_phase2_complete = !!data.stage2_phase2_complete;
+    filtered.stage2_phase3_complete = !!data.stage2_phase3_complete;
+  }
+  if (stage >= 3) {
+    filtered.stage3_greed = !!data.stage3_greed;
+    filtered.stage3_death = !!data.stage3_death;
+    filtered.stage3_money = !!data.stage3_money;
+    filtered.stage3_gold = !!data.stage3_gold;
+    filtered.stage3_ground = !!data.stage3_ground;
+    filtered.stage3_messenger_complete = !!data.stage3_messenger_complete;
+    filtered.stage3_secret_unlocked = !!data.stage3_secret_unlocked;
+  }
+  if (stage >= 4) {
+    filtered.stage4_unlocked = !!data.stage4_unlocked;
+    filtered.stage4_forum_unlocked = !!data.stage4_forum_unlocked;
+    filtered.stage4_observer_logs_opened = !!data.stage4_observer_logs_opened;
+    filtered.stage4_network_trace_viewed = !!data.stage4_network_trace_viewed;
+    filtered.stage4_complete = !!data.stage4_complete;
+    filtered.stage4_progress = data.stage4_progress || 0;
+    filtered.aurora_archive_unlocked = !!data.aurora_archive_unlocked;
+  }
+  return filtered;
+};
+
 // Global error handling
 process.on('uncaughtException', (err) => {
   console.error('CRITICAL: Uncaught Exception:', err);
@@ -762,7 +801,7 @@ function validateUserId(userId: any): string | null {
         return res.status(400).json({ status: "error", message: "Invalid command type" });
       }
 
-      // console.log(`>>> [API] Request: ${type} from user ${userId} [${clientIp}]. Input: "${input}"`);
+      console.log(`>>> [API] Request: ${type} from user ${userId} [${clientIp}]. Input: "${input}"`);
       
       const isInputRequired = ['terminal', 'archive_password', 'node02_answer'].includes(type);
       if (isInputRequired && !input) {
@@ -826,7 +865,11 @@ function validateUserId(userId: any): string | null {
           stage4_unlocked: true,
           stage4_progress: 1
         });
-        return res.json({ status: 'success', action: 'unlock_stage4' });
+        
+        const updatedUserDoc = await db.collection('users').doc(userId).get();
+        const state = getFilteredState(updatedUserDoc.data() || {});
+
+        return res.json({ status: 'success', action: 'unlock_stage4', state });
       }
 
       if (type === 'terminal') {
@@ -846,10 +889,14 @@ function validateUserId(userId: any): string | null {
             stage4_progress: Math.max(userData.stage4_progress || 0, 2) 
           });
           
+          const updatedUserDoc = await db.collection('users').doc(userId).get();
+          const state = getFilteredState(updatedUserDoc.data() || {});
+
           return res.json({ 
             status: 'success', 
             reply: 'Vale archive decryption sequence initiated... Success. /vale/ directory unlocked.',
-            action: 'unlock_vale'
+            action: 'unlock_vale',
+            state
           });
         }
         if (baseCmd === 'decrypt' && args.length > 1 && args[1] === '840291') {
@@ -876,10 +923,15 @@ function validateUserId(userId: any): string | null {
             stage4_complete: true,
             stage4_progress: 7
           });
+
+          const updatedUserDoc = await db.collection('users').doc(userId).get();
+          const state = getFilteredState(updatedUserDoc.data() || {});
+
           return res.json({ 
             status: 'success', 
             reply: 'Archive entry K7-4419 accepted. Finalizing subject record... Access granted to /archive_entry.html',
-            action: 'open_final_archive_page'
+            action: 'open_final_archive_page',
+            state
           });
         }
         if (baseCmd === 'archive' && args.length > 1 && args[1].toLowerCase() === 'vale') {
@@ -892,7 +944,11 @@ function validateUserId(userId: any): string | null {
           }
           processAttempt(req.session, stageKey, input, true, clientIp as string);
           if (db) await db.collection('users').doc(userId).update({ stage4_forum_unlocked: true });
-          return res.json({ status: 'success', action: 'unlock_forum' });
+          
+          const updatedUserDoc = await db.collection('users').doc(userId).get();
+          const state = getFilteredState(updatedUserDoc.data() || {});
+
+          return res.json({ status: 'success', action: 'unlock_forum', state });
         }
         if (baseCmd === 'archive' && args.length === 1) {
           if (currentStage > 1) {
@@ -919,10 +975,15 @@ function validateUserId(userId: any): string | null {
           }
           processAttempt(req.session, stageKey, input, true, clientIp as string);
           if (db) await db.collection('users').doc(userId).update({ stage3_secret_unlocked: true });
+          
+          const updatedUserDoc = await db.collection('users').doc(userId).get();
+          const state = getFilteredState(updatedUserDoc.data() || {});
+
           return res.json({ 
             status: 'success', 
             reply: 'Fragment decrypted. Algorithm: Caesar. Key: THE ARCHIVE REMEMBERS',
-            action: 'show_caesar_clue' 
+            action: 'show_caesar_clue',
+            state
           });
         }
         if (baseCmd === 'ground') {
@@ -940,10 +1001,15 @@ function validateUserId(userId: any): string | null {
             stage4_unlocked: true,
             stage4_progress: 1
           });
+
+          const updatedUserDoc = await db.collection('users').doc(userId).get();
+          const state = getFilteredState(updatedUserDoc.data() || {});
+
           return res.json({ 
             status: 'success', 
             reply: 'The pattern is complete. Power returns to the ground. Stage 4 Unlocked.',
-            action: 'unlock_stage4' 
+            action: 'unlock_stage4',
+            state
           });
         }
         processAttempt(req.session, stageKey, input, false, clientIp as string);
@@ -984,7 +1050,7 @@ function validateUserId(userId: any): string | null {
           return res.json({ status: 'error', message: 'ACCESS DENIED' });
         }
 
-        const hash = crypto.createHash('sha256').update(input.toLowerCase()).digest('hex');
+        const hash = crypto.createHash('sha256').update(t.toLowerCase()).digest('hex');
         
         // Allow answers to be retried even if already complete
         if (hash === '76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22') {
@@ -1115,7 +1181,6 @@ function validateUserId(userId: any): string | null {
       }
 
       let normalized = message.trim().toLowerCase();
-      if (normalized === "depth") normalized = "death";
 
       const db = await getDb();
       if (!db) return res.status(500).json({ status: "error", message: "Database unavailable" });
@@ -1187,7 +1252,7 @@ Check the trash.`,
           });
         }
 
-        if (input === "death") {
+        if (input === "depth") {
           if (userData.stage3_death) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 1) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
@@ -1217,7 +1282,7 @@ Use the terminal.`,
 
         if (input === "money") {
           if (userData.stage3_money) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
-          if (currentStep !== 2) {
+          if (currentStep !== 2 || !userData.stage3_secret_unlocked) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: "error", reply: "COMMAND INVALID" });
           }
@@ -1378,11 +1443,15 @@ Use the terminal to submit the entry.`,
         [`chats.${contact}`]: history
       });
 
+      const updatedUserDoc = await db.collection('users').doc(userId).get();
+      const state = getFilteredState(updatedUserDoc.data() || {});
+
       return res.json({ 
         status: "success",
         contact, 
         reply, 
-        action 
+        action,
+        state
       });
     } catch (err: any) {
       console.error(">>> [API] sendMessage error:", err.message);
