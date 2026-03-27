@@ -1132,6 +1132,27 @@ function validateUserId(userId: any): string | null {
         return res.status(429).json({ status: 'error', reply: cooldownCheck.reason });
       }
 
+      // Helper to save message to history
+      const saveToHistory = async (msg: string, reply: string) => {
+        const history = userData.chats?.[contact] || [];
+        const now = new Date();
+        let hours = now.getHours();
+        const ampm = hours >= 12 ? ' PM' : ' AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        const minutes = now.getMinutes() < 10 ? '0' + now.getMinutes() : now.getMinutes();
+        const timeStr = hours + ':' + minutes + ampm;
+        
+        history.push({ sender: 'You', time: timeStr, text: msg });
+        history.push({ sender: contact === 'archive' ? 'Archive Node' : (contact === 'elias' ? 'Dr. Elias' : 'Unknown User'), time: timeStr, text: reply });
+        
+        if (history.length > 50) history.splice(0, history.length - 50);
+        
+        await db.collection('users').doc(userId).update({
+          [`chats.${contact}`]: history
+        });
+      };
+
       // FIX: Stage 3 specific overrides with immediate return
       if (contact === 'archive') {
         const input = normalized;
@@ -1142,6 +1163,8 @@ function validateUserId(userId: any): string | null {
             return res.json({ status: "success", contact, reply: "COMMAND ALREADY USED", action: null });
           }
           processAttempt(req.session, stageKey, input, true, clientIp as string);
+          const reply = "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.";
+          await saveToHistory(message, reply);
           await db.collection('users').doc(userId).set({ 
             stage2_unlocked: true,
             stage: 2
@@ -1149,32 +1172,29 @@ function validateUserId(userId: any): string | null {
           return res.json({ 
             status: "success", 
             contact, 
-            reply: "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.", 
+            reply, 
             action: "unlock_archive" 
           });
         }
 
         if (currentStage < 3) {
           processAttempt(req.session, stageKey, input, false, clientIp as string);
-          return res.json({ status: "error", reply: "ACCESS DENIED: Signal alignment required." });
+          const reply = "ACCESS DENIED: Signal alignment required.";
+          await saveToHistory(message, reply);
+          return res.json({ status: "error", reply });
         }
 
         if (input === "greed") {
           if (userData.stage3_greed) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 0) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
-            return res.json({ status: "error", reply: "COMMAND INVALID" });
+            const reply = "COMMAND INVALID";
+            await saveToHistory(message, reply);
+            return res.json({ status: "error", reply });
           }
           
           processAttempt(req.session, stageKey, input, true, clientIp as string);
-          await db.collection("users").doc(userId).set({
-            stage3_greed: true,
-            messenger_step: 1
-          }, { merge: true });
-          
-          return res.json({
-            status: "success",
-            reply: `So you solved Vale’s second lock.
+          const reply = `So you solved Vale’s second lock.
 
 Greed was only the beginning.
 
@@ -1182,7 +1202,16 @@ Greed leaves traces.
 
 Vale tried to erase one of them.
 
-Check the trash.`,
+Check the trash.`;
+          await saveToHistory(message, reply);
+          await db.collection("users").doc(userId).set({
+            stage3_greed: true,
+            messenger_step: 1
+          }, { merge: true });
+          
+          return res.json({
+            status: "success",
+            reply,
             action: "unlock_recycle_fragment"
           });
         }
@@ -1191,18 +1220,13 @@ Check the trash.`,
           if (userData.stage3_death) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 1) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
-            return res.json({ status: "error", reply: "COMMAND INVALID" });
+            const reply = "COMMAND INVALID";
+            await saveToHistory(message, reply);
+            return res.json({ status: "error", reply });
           }
 
           processAttempt(req.session, stageKey, input, true, clientIp as string);
-          await db.collection("users").doc(userId).set({
-            stage3_death: true,
-            messenger_step: 2
-          }, { merge: true });
-          
-          return res.json({
-            status: "success",
-            reply: `Correct.
+          const reply = `Correct.
 
 Vale encrypted the next fragment.
 
@@ -1210,7 +1234,16 @@ He knew someone would follow.
 
 Not out of curiosity — but obsession.
 
-Use the terminal.`,
+Use the terminal.`;
+          await saveToHistory(message, reply);
+          await db.collection("users").doc(userId).set({
+            stage3_death: true,
+            messenger_step: 2
+          }, { merge: true });
+          
+          return res.json({
+            status: "success",
+            reply,
             action: "unlock_terminal_fragment"
           });
         }
@@ -1219,10 +1252,20 @@ Use the terminal.`,
           if (userData.stage3_money) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 2) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
-            return res.json({ status: "error", reply: "COMMAND INVALID" });
+            const reply = "COMMAND INVALID";
+            await saveToHistory(message, reply);
+            return res.json({ status: "error", reply });
           }
 
           processAttempt(req.session, stageKey, input, true, clientIp as string);
+          const reply = `The mask of exchange.
+
+Vale was obsessed with the value we place on things.
+
+He left a trace in the system logs.
+
+Check fragment_3.log.`;
+          await saveToHistory(message, reply);
           await db.collection("users").doc(userId).set({
             stage3_money: true,
             messenger_step: 3
@@ -1230,13 +1273,7 @@ Use the terminal.`,
           
           return res.json({
             status: "success",
-            reply: `The mask of exchange.
-
-Vale was obsessed with the value we place on things.
-
-He left a trace in the system logs.
-
-Check fragment_3.log.`,
+            reply,
             action: "unlock_fragment_3"
           });
         }
@@ -1245,10 +1282,20 @@ Check fragment_3.log.`,
           if (userData.stage3_gold) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 3) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
-            return res.json({ status: "error", reply: "COMMAND INVALID" });
+            const reply = "COMMAND INVALID";
+            await saveToHistory(message, reply);
+            return res.json({ status: "error", reply });
           }
 
           processAttempt(req.session, stageKey, input, true, clientIp as string);
+          const reply = `The final ambition.
+
+Power is the only currency that doesn't depreciate.
+
+But power has a frequency.
+
+Listen to the system's pulse.`;
+          await saveToHistory(message, reply);
           await db.collection("users").doc(userId).set({
             stage3_gold: true,
             messenger_step: 4
@@ -1256,13 +1303,7 @@ Check fragment_3.log.`,
           
           return res.json({
             status: "success",
-            reply: `The final ambition.
-
-Power is the only currency that doesn't depreciate.
-
-But power has a frequency.
-
-Listen to the system's pulse.`,
+            reply,
             action: "unlock_fragment_4"
           });
         }
@@ -1271,20 +1312,13 @@ Listen to the system's pulse.`,
           if (userData.stage3_ground) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
           if (currentStep !== 4) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
-            return res.json({ status: "error", reply: "COMMAND INVALID" });
+            const reply = "COMMAND INVALID";
+            await saveToHistory(message, reply);
+            return res.json({ status: "error", reply });
           }
 
           processAttempt(req.session, stageKey, input, true, clientIp as string);
-          await db.collection("users").doc(userId).set({
-            stage3_ground: true,
-            stage: 4,
-            stage4_unlocked: true,
-            stage4_progress: 1
-          }, { merge: true });
-          
-          return res.json({
-            status: "success",
-            reply: `The pattern is complete.
+          const reply = `The pattern is complete.
 
 Greed becomes wealth.
 Wealth becomes power.
@@ -1298,7 +1332,32 @@ And whatever he found...
 
 it changed everything.
 
-Stage 4 unlocked. Messenger updated.`,
+Stage 4 unlocked. Messenger updated.`;
+          await saveToHistory(message, reply);
+          
+          // Add the "Unknown User" message to history as well
+          const unknownMsg = "The ground is not the end. It is the beginning of the fall. Vale knew. He saw the frequency. 840291. The code is the key. The key is the fall.";
+          const currentChats = userData.chats || {};
+          if (!currentChats['unknown']) currentChats['unknown'] = [];
+          if (!currentChats['unknown'].some((m: any) => m.text === unknownMsg)) {
+            currentChats['unknown'].push({
+              sender: 'Unknown',
+              time: '11:10 PM',
+              text: unknownMsg
+            });
+          }
+
+          await db.collection("users").doc(userId).set({
+            stage3_ground: true,
+            stage: 4,
+            stage4_unlocked: true,
+            stage4_progress: 1,
+            chats: currentChats
+          }, { merge: true });
+          
+          return res.json({
+            status: "success",
+            reply,
             action: "unlock_stage4"
           });
         }
@@ -1306,18 +1365,22 @@ Stage 4 unlocked. Messenger updated.`,
         if (input === "840291") {
           if (currentStage < 4) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
-            return res.json({ status: "error", reply: "ACCESS DENIED: Signal alignment required." });
+            const reply = "ACCESS DENIED: Signal alignment required.";
+            await saveToHistory(message, reply);
+            return res.json({ status: "error", reply });
           }
           processAttempt(req.session, stageKey, input, true, clientIp as string);
-          return res.json({
-            status: "success",
-            reply: `Relay active.
+          const reply = `Relay active.
 
 Subject: K7-4419
 
 The final entry is waiting.
 
-Use the terminal to submit the entry.`,
+Use the terminal to submit the entry.`;
+          await saveToHistory(message, reply);
+          return res.json({
+            status: "success",
+            reply,
             action: null
           });
         }
