@@ -249,7 +249,7 @@ async function startServer() {
 
   const strictLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
-    max: 10, // Limit each IP to 10 requests per windowMs
+    max: 30, // Increased from 10 to 30 to prevent random 403/429 on valid inputs
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: "Too many requests, please try again later." }

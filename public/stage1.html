@@ -3785,7 +3785,12 @@ Something is hidden there.
         textDiv.style.border = '1px solid ' + (isYou ? '#b3b3ff' : '#ffb3b3');
         textDiv.style.textAlign = 'left';
         textDiv.style.boxShadow = '1px 1px 0 rgba(0,0,0,0.1)';
-        textDiv.textContent = msg.text;
+        textDiv.style.whiteSpace = 'pre-wrap';
+        
+        // Replace <br> with \n for textContent to handle formatting correctly
+        let msgText = msg.text || "";
+        msgText = msgText.replace(/<br\s*\/?>/gi, '\n');
+        textDiv.textContent = msgText;
 
         wrapper.appendChild(senderDiv);
         wrapper.appendChild(textDiv);
@@ -3799,6 +3804,7 @@ Something is hidden there.
       const text = inputField.value.trim();
       if (!text || !currentChatContact) return;
       
+      const targetContact = currentChatContact; // Capture active chat target to prevent race conditions
       const now = new Date();
       let hours = now.getHours();
       const ampm = hours >= 12 ? ' PM' : ' AM';
@@ -3807,28 +3813,33 @@ Something is hidden there.
       const minutes = now.getMinutes() < 10 ? '0' + now.getMinutes() : now.getMinutes();
       const timeStr = hours + ':' + minutes + ampm;
       
-      // FIX 2: Show user message immediately
-      if (!chats[currentChatContact]) chats[currentChatContact] = [];
-      chats[currentChatContact].push({ sender: 'You', time: timeStr, text: text });
+      if (!chats[targetContact]) chats[targetContact] = [];
+      chats[targetContact].push({ sender: 'You', time: timeStr, text: text });
       inputField.value = '';
-      renderChatHistory();
+      
+      if (currentChatContact === targetContact) {
+        renderChatHistory();
+      }
       
       // Show typing indicator
       const historyDiv = document.getElementById('chat-history');
       const typingIndicator = document.createElement('div');
-      typingIndicator.id = 'typing-indicator';
+      typingIndicator.id = 'typing-indicator-' + targetContact; // Unique ID per contact
       typingIndicator.style.marginBottom = '12px';
       typingIndicator.style.textAlign = 'left';
       
-      const contactName = currentChatContact === 'archive' ? 'Archive Node' : (currentChatContact === 'elias' ? 'Dr. Elias' : 'Unknown User');
-      const contactColor = currentChatContact === 'archive' ? '#800080' : (currentChatContact === 'elias' ? '#000080' : '#800000');
+      const contactName = targetContact === 'archive' ? 'Archive Node' : (targetContact === 'elias' ? 'Dr. Elias' : 'Unknown User');
+      const contactColor = targetContact === 'archive' ? '#800080' : (targetContact === 'elias' ? '#000080' : '#800000');
       
       typingIndicator.innerHTML = `
         <div style="font-weight: bold; color: ${contactColor}; margin-bottom: 2px;">${contactName} <span style="font-size: 10px; color: #666; font-weight: normal;">${timeStr}</span></div>
         <div style="background: #ffe6e6; padding: 6px 8px; border-radius: 2px; display: inline-block; max-width: 80%; border: 1px solid #ffb3b3; text-align: left; box-shadow: 1px 1px 0 rgba(0,0,0,0.1); font-style: italic;">...</div>
       `;
-      historyDiv.appendChild(typingIndicator);
-      historyDiv.scrollTop = historyDiv.scrollHeight;
+      
+      if (currentChatContact === targetContact) {
+        historyDiv.appendChild(typingIndicator);
+        historyDiv.scrollTop = historyDiv.scrollHeight;
+      }
       
       try {
         const response = await fetch('/api/sendMessage', {
@@ -3836,7 +3847,7 @@ Something is hidden there.
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             message: text, 
-            contact: currentChatContact
+            contact: targetContact
           })
         });
         
@@ -3847,38 +3858,42 @@ Something is hidden there.
         const data = await response.json();
         
         // Remove indicator
-        const indicator = document.getElementById('typing-indicator');
+        const indicator = document.getElementById('typing-indicator-' + targetContact);
         if (indicator) indicator.remove();
         
         // Apply game state (updates progress, etc.)
         applyGameState(data);
         
-        // FIX 2 & 4: Show reply exactly once after backend response
-        // If it's an archive action that triggered reconstructChatHistory, the reply is already added
         const isStepAction = ['update_messenger_step'].includes(data.action);
-        const alreadyHandledByReconstruct = currentChatContact === 'archive' && isStepAction;
+        const alreadyHandledByReconstruct = targetContact === 'archive' && isStepAction;
 
         if (data.reply && !alreadyHandledByReconstruct) {
-          chats[currentChatContact].push({ 
+          chats[targetContact].push({ 
             sender: contactName, 
             time: timeStr, 
             text: data.reply 
           });
-          renderChatHistory();
+          
+          if (currentChatContact === targetContact) {
+            renderChatHistory();
+          }
         }
         if (window.soundManager) window.soundManager.playPing();
         
       } catch (err) {
         console.error('>>> [MESSENGER] API Error:', err);
-        const indicator = document.getElementById('typing-indicator');
+        const indicator = document.getElementById('typing-indicator-' + targetContact);
         if (indicator) indicator.remove();
         
-        chats[currentChatContact].push({ 
+        chats[targetContact].push({ 
           sender: contactName, 
           time: timeStr, 
           text: "SYSTEM ERROR: UNABLE TO REACH SERVER." 
         });
-        renderChatHistory();
+        
+        if (currentChatContact === targetContact) {
+          renderChatHistory();
+        }
       }
     }
 
@@ -3892,6 +3907,20 @@ Something is hidden there.
     let isMusicPlaying = false;
     const audioPlayer = document.getElementById('local-audio-player');
     let audioTimeInterval = null;
+
+    function stopAllMusic() {
+      if (audioPlayer) {
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+      }
+      isMusicPlaying = false;
+      const playBtn = document.getElementById('music-play-btn');
+      if (playBtn) playBtn.innerText = "PLAY";
+      if (audioTimeInterval) {
+        clearInterval(audioTimeInterval);
+        audioTimeInterval = null;
+      }
+    }
 
     // Initialize audio player
     audioPlayer.src = playlist[0].src;
@@ -4168,19 +4197,25 @@ Something is hidden there.
 
     // Migration removed
 
+    let lastSyncedStage = 1;
     async function syncProgression() {
       if (typeof chats === 'undefined') window.chats = {};
-      if (typeof currentStage === 'undefined') window.currentStage = 1;
       
       try {
         const response = await fetch('/api/userState');
         if (!response.ok) throw new Error("Server error");
         const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
+        if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response format");
         const data = await response.json();
         
         window.userState = data;
         window.chats = data.chats || {};
+        
+        const newStage = data.stage || 1;
+        if (newStage !== lastSyncedStage) {
+          stopAllMusic();
+          lastSyncedStage = newStage;
+        }
         
         // If messenger is open, refresh it
         const messengerWin = document.getElementById('win-messenger');
@@ -4231,11 +4266,11 @@ Something is hidden there.
 
         if (data.stage2_unlocked === true) {
           unlockStage2UI();
-          currentStage = Math.max(currentStage, 2);
+          window.currentStage = Math.max(window.currentStage || 1, 2);
         }
         
         if (data.stage4_progress > 0) {
-          currentStage = 4;
+          window.currentStage = 4;
           startStage4();
         }
         
@@ -4297,14 +4332,16 @@ Something is hidden there.
       if (step >= 1) {
         const deletedLog = document.querySelector('#win-deleted-log .window-content');
         if (deletedLog && !deletedLog.innerHTML.includes('fragment recovered')) {
-          deletedLog.innerHTML += '<br><br>[SYS] 1998-04-12 03:14:07 - fragment recovered: ZGVwdGg=';
+          // Hints are added with display: none to be visible only via inspect element
+          deletedLog.innerHTML += '<br><br><span style="display: none;">[SYS] 1998-04-12 03:14:07 - fragment recovered: ZGVwdGg=</span>';
         }
       }
       
       if (step >= 3) {
         const caseFile3 = document.querySelector('#win-casefile-03 .window-content p:last-child');
         if (caseFile3 && !caseFile3.innerHTML.includes('7 15 12 4')) {
-          caseFile3.innerHTML += '<br><br>7 15 12 4';
+          // Hints are added with display: none to be visible only via inspect element
+          caseFile3.innerHTML += '<br><br><span style="display: none;">7 15 12 4</span>';
         }
       }
       
@@ -4363,11 +4400,13 @@ Something is hidden there.
       }
       const step = getProgressStep();
       
-      // Reset to initial state to avoid duplicates
-      chats['archive'] = [
-        { sender: 'Archive Node', time: '00:00 AM', text: 'CONNECTION ESTABLISHED' },
-        { sender: 'Archive Node', time: '00:01 AM', text: 'AWAITING INPUT...' }
-      ];
+      // Initialize if missing
+      if (!chats['archive']) {
+        chats['archive'] = [
+          { sender: 'Archive Node', time: '00:00 AM', text: 'CONNECTION ESTABLISHED' },
+          { sender: 'Archive Node', time: '00:01 AM', text: 'AWAITING INPUT...' }
+        ];
+      }
       
       if (step === 0) {
         if (currentChatContact === 'archive') renderChatHistory();
@@ -4399,8 +4438,19 @@ Something is hidden there.
         } catch(e) {}
         
         if (decrypted && decrypted.n) {
-          chats['archive'].push({ sender: 'You', time: 'RECOVERED', text: t });
-          chats['archive'].push({ sender: 'Archive Node', time: 'RECOVERED', text: decrypted.r });
+          const userMsg = t;
+          const replyMsg = decrypted.r;
+          
+          // Check if already in history to avoid duplicates
+          const hasUserMsg = chats['archive'].some(m => m.sender === 'You' && m.text === userMsg);
+          if (!hasUserMsg) {
+            chats['archive'].push({ sender: 'You', time: 'RECOVERED', text: userMsg });
+          }
+          
+          const hasReplyMsg = chats['archive'].some(m => m.sender === 'Archive Node' && m.text === replyMsg);
+          if (!hasReplyMsg) {
+            chats['archive'].push({ sender: 'Archive Node', time: 'RECOVERED', text: replyMsg });
+          }
         }
       }
       
