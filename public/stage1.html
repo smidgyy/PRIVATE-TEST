@@ -1718,7 +1718,7 @@ Something is hidden there.
           <div class="control-btn" onclick="closeWindow('system-term')">X</div>
         </div>
       </div>
-      <div class="window-content terminal" id="terminal-content" onclick="document.getElementById('terminal-input').focus()">
+      <div class="window-content terminal" id="terminal-content" onclick="const input = document.getElementById('terminal-input'); if(input) input.focus()">
         <div>AURORA OS Terminal v1.3</div>
         <div>Copyright (C) 1998 Aurora Systems.</div>
         <div>Type 'help' for a list of commands.</div>
@@ -1735,7 +1735,7 @@ Something is hidden there.
 
   <script src="/sound-manager.js?v=2"></script>
   <script>
-    let chats = {};
+    window.chats = {};
     let currentStage = 1;
     let userId = 'session_managed';
     window.userState = {};
@@ -1785,12 +1785,12 @@ Something is hidden there.
     const bootSequence = [
       { text: "Recovering corrupted user environment...", delay: 1500 },
       { text: "Loading System Kernel", delay: 1000, action: () => {
-        progressContainer.style.display = 'block';
+        if (progressContainer) progressContainer.style.display = 'block';
         let progress = 0;
         const interval = setInterval(() => {
           progress += Math.random() * 15;
           if (progress > 100) progress = 100;
-          progressBar.style.width = progress + '%';
+          if (progressBar) progressBar.style.width = progress + '%';
           if (progress === 100) {
             clearInterval(interval);
             setTimeout(nextBootStep, 500);
@@ -1798,13 +1798,13 @@ Something is hidden there.
         }, 100);
       }},
       { text: "", delay: 2000, action: () => {
-        progressContainer.style.display = 'none';
-        auroraLogo.style.display = 'block';
+        if (progressContainer) progressContainer.style.display = 'none';
+        if (auroraLogo) auroraLogo.style.display = 'block';
         setTimeout(nextBootStep, 2000);
       }},
       { text: "", delay: 500, action: () => {
-        bootScreen.style.display = 'none';
-        desktop.style.display = 'block';
+        if (bootScreen) bootScreen.style.display = 'none';
+        if (desktop) desktop.style.display = 'block';
         if (typeof arrangeIcons === "function") {
           arrangeIcons();
         }
@@ -1829,13 +1829,16 @@ Something is hidden there.
       }
     }
 
-    document.getElementById('boot-start-btn').addEventListener('click', async () => {
-      document.getElementById('boot-start-btn').style.display = 'none';
-      await fetchUserState();
-      if (window.soundManager) window.soundManager.startComputerHum();
-      playBootSound();
-      setTimeout(nextBootStep, 1000);
-    });
+    const bootStartBtn = document.getElementById('boot-start-btn');
+    if (bootStartBtn) {
+      bootStartBtn.addEventListener('click', async () => {
+        bootStartBtn.style.display = 'none';
+        await fetchUserState();
+        if (window.soundManager) window.soundManager.startComputerHum();
+        playBootSound();
+        setTimeout(nextBootStep, 1000);
+      });
+    }
 
 
     // --- Window Management ---
@@ -2219,7 +2222,8 @@ Something is hidden there.
       if (taskbarItem) taskbarItem.classList.add('active');
 
       if (id === 'system-term') {
-        document.getElementById('terminal-input').focus();
+        const termInput = document.getElementById('terminal-input');
+        if (termInput) termInput.focus();
       }
     }
 
@@ -2304,31 +2308,38 @@ Something is hidden there.
       });
     });
 
-    document.getElementById('desktop').addEventListener('mousedown', (e) => {
-      if (startMenu.style.display === 'flex' && (startMenu.contains(e.target) || startBtn.contains(e.target))) {
-        return; // Don't close if clicking inside start menu
-      }
-      if (contextMenu.style.display === 'block' && contextMenu.contains(e.target)) {
-        return; // Don't close if clicking inside context menu
-      }
-      document.querySelectorAll('.icon').forEach(i => i.classList.remove('selected'));
-      closeContextMenu();
-      closeStartMenu();
-    });
+    const desktopEl = document.getElementById('desktop');
+    if (desktopEl) {
+      desktopEl.addEventListener('mousedown', (e) => {
+        if (startMenu && startMenu.style.display === 'flex' && (startMenu.contains(e.target) || (startBtn && startBtn.contains(e.target)))) {
+          return; // Don't close if clicking inside start menu
+        }
+        if (contextMenu && contextMenu.style.display === 'block' && contextMenu.contains(e.target)) {
+          return; // Don't close if clicking inside context menu
+        }
+        document.querySelectorAll('.icon').forEach(i => i.classList.remove('selected'));
+        closeContextMenu();
+        closeStartMenu();
+      });
+    }
 
     // --- Context Menu ---
     const contextMenu = document.getElementById('context-menu');
-    document.getElementById('desktop').addEventListener('contextmenu', (e) => {
-      if (e.target.id === 'desktop') {
-        e.preventDefault();
-        contextMenu.style.display = 'flex';
-        contextMenu.style.left = e.clientX + 'px';
-        contextMenu.style.top = e.clientY + 'px';
-      }
-    });
+    if (desktopEl) {
+      desktopEl.addEventListener('contextmenu', (e) => {
+        if (e.target.id === 'desktop') {
+          e.preventDefault();
+          if (contextMenu) {
+            contextMenu.style.display = 'flex';
+            contextMenu.style.left = e.clientX + 'px';
+            contextMenu.style.top = e.clientY + 'px';
+          }
+        }
+      });
+    }
 
     function closeContextMenu() {
-      contextMenu.style.display = 'none';
+      if (contextMenu) contextMenu.style.display = 'none';
     }
 
     function refreshDesktop() {
@@ -2404,11 +2415,15 @@ Something is hidden there.
       overlay.appendChild(dialog);
       document.body.appendChild(overlay);
 
-      document.getElementById('shutdown-ok-btn').onclick = () => {
-        const action = document.querySelector('input[name="shutdown-action"]:checked').value;
-        overlay.remove();
-        showShutdownConfirmDialog(action);
-      };
+      const shutdownOkBtn = document.getElementById('shutdown-ok-btn');
+      if (shutdownOkBtn) {
+        shutdownOkBtn.onclick = () => {
+          const checkedAction = document.querySelector('input[name="shutdown-action"]:checked');
+          const action = checkedAction ? checkedAction.value : 'shutdown';
+          overlay.remove();
+          showShutdownConfirmDialog(action);
+        };
+      }
     }
 
     function showShutdownConfirmDialog(action) {
@@ -2457,42 +2472,59 @@ Something is hidden there.
       overlay.appendChild(dialog);
       document.body.appendChild(overlay);
 
-      document.getElementById('shutdown-confirm-yes').onclick = () => {
-        overlay.remove();
-        if (action === 'shutdown') {
-          performShutdown();
-        } else {
-          performRestart();
-        }
-      };
+      const confirmYesBtn = document.getElementById('shutdown-confirm-yes');
+      if (confirmYesBtn) {
+        confirmYesBtn.onclick = () => {
+          overlay.remove();
+          if (action === 'shutdown') {
+            performShutdown();
+          } else {
+            performRestart();
+          }
+        };
+      }
     }
 
     function performShutdown() {
-      document.getElementById('desktop').style.display = 'none';
-      document.getElementById('boot-screen').style.display = 'flex';
-      document.getElementById('boot-start-btn').style.display = 'none';
-      document.getElementById('progress-container').style.display = 'none';
-      document.getElementById('aurora-logo').style.display = 'none';
-      document.getElementById('boot-text').innerText = 'Shutting down...';
+      const desktop = document.getElementById('desktop');
+      const bootScreen = document.getElementById('boot-screen');
+      const bootStartBtn = document.getElementById('boot-start-btn');
+      const progressContainer = document.getElementById('progress-container');
+      const auroraLogo = document.getElementById('aurora-logo');
+      const bootText = document.getElementById('boot-text');
+
+      if (desktop) desktop.style.display = 'none';
+      if (bootScreen) bootScreen.style.display = 'flex';
+      if (bootStartBtn) bootStartBtn.style.display = 'none';
+      if (progressContainer) progressContainer.style.display = 'none';
+      if (auroraLogo) auroraLogo.style.display = 'none';
+      if (bootText) bootText.innerText = 'Shutting down...';
       
       openWindows.forEach(id => closeWindow(id));
       
       setTimeout(() => {
-        document.getElementById('boot-text').innerText = 'It is now safe to turn off your computer.';
+        if (bootText) bootText.innerText = 'It is now safe to turn off your computer.';
         setTimeout(() => {
-          document.getElementById('boot-text').innerText = '';
-          document.getElementById('boot-screen').style.backgroundColor = '#000';
+          if (bootText) bootText.innerText = '';
+          if (bootScreen) bootScreen.style.backgroundColor = '#000';
         }, 3000);
       }, 2000);
     }
 
     function performRestart() {
-      document.getElementById('desktop').style.display = 'none';
-      document.getElementById('boot-screen').style.display = 'flex';
-      document.getElementById('boot-start-btn').style.display = 'none';
-      document.getElementById('progress-container').style.display = 'none';
-      document.getElementById('aurora-logo').style.display = 'none';
-      document.getElementById('boot-text').innerText = 'Restarting...';
+      const desktop = document.getElementById('desktop');
+      const bootScreen = document.getElementById('boot-screen');
+      const bootStartBtn = document.getElementById('boot-start-btn');
+      const progressContainer = document.getElementById('progress-container');
+      const auroraLogo = document.getElementById('aurora-logo');
+      const bootText = document.getElementById('boot-text');
+
+      if (desktop) desktop.style.display = 'none';
+      if (bootScreen) bootScreen.style.display = 'flex';
+      if (bootStartBtn) bootStartBtn.style.display = 'none';
+      if (progressContainer) progressContainer.style.display = 'none';
+      if (auroraLogo) auroraLogo.style.display = 'none';
+      if (bootText) bootText.innerText = 'Restarting...';
       
       openWindows.forEach(id => closeWindow(id));
       
@@ -2506,10 +2538,10 @@ Something is hidden there.
     const startBtn = document.getElementById('start-btn');
     
     document.addEventListener('mousedown', (e) => {
-      if (startMenu.style.display === 'flex' && !startMenu.contains(e.target) && !startBtn.contains(e.target)) {
+      if (startMenu && startMenu.style.display === 'flex' && !startMenu.contains(e.target) && (startBtn && !startBtn.contains(e.target))) {
         closeStartMenu();
       }
-      if (contextMenu.style.display === 'block' && !contextMenu.contains(e.target)) {
+      if (contextMenu && contextMenu.style.display === 'block' && !contextMenu.contains(e.target)) {
         closeContextMenu();
       }
       const volContainer = document.getElementById('volume-slider-container');
@@ -2521,19 +2553,19 @@ Something is hidden there.
 
     function toggleStartMenu(e) {
       e.stopPropagation();
-      if (startMenu.style.display === 'flex') {
+      if (startMenu && startMenu.style.display === 'flex') {
         closeStartMenu();
-      } else {
+      } else if (startMenu) {
         startMenu.style.display = 'flex';
-        startBtn.classList.add('active');
+        if (startBtn) startBtn.classList.add('active');
         closeContextMenu();
         closeVolumeSlider();
       }
     }
 
     function closeStartMenu() {
-      startMenu.style.display = 'none';
-      startBtn.classList.remove('active');
+      if (startMenu) startMenu.style.display = 'none';
+      if (startBtn) startBtn.classList.remove('active');
     }
 
     // --- Volume Control ---
@@ -2594,7 +2626,9 @@ Something is hidden there.
     setInterval(() => {
       // Glitch flicker effect
       if (Math.random() > 0.95) {
+        if (clockEl) {
         clockEl.style.opacity = Math.random() > 0.5 ? '0' : '1';
+      }
         clockEl.innerText = Math.random() > 0.5 ? 'ERR' : '1:38 AM';
       } else {
         clockEl.style.opacity = '1';
@@ -2678,7 +2712,8 @@ Something is hidden there.
     }
 
     setInterval(() => {
-      if (Math.random() > 0.8 && desktop.style.display !== 'none') {
+      const desktop = document.getElementById('desktop');
+      if (Math.random() > 0.8 && desktop && desktop.style.display !== 'none') {
         showNotification(notifications[Math.floor(Math.random() * notifications.length)]);
       }
     }, 15000);
@@ -2787,7 +2822,11 @@ Something is hidden there.
       playBtn.innerText = "PLAY";
       clearInterval(visualizerInterval);
       clearInterval(progressInterval);
-      bars.forEach(bar => bar.style.height = '2px');
+      if (bars) {
+        bars.forEach(bar => {
+          if (bar) bar.style.height = '2px';
+        });
+      }
       
       if (audioSource) {
         audioSource.onended = null;
@@ -2814,9 +2853,11 @@ Something is hidden there.
       if (typeof pauseMusic === 'function') pauseMusic();
       
       visualizerInterval = setInterval(() => {
-        bars.forEach(bar => {
-          bar.style.height = (2 + Math.random() * 40) + 'px';
-        });
+        if (bars) {
+          bars.forEach(bar => {
+            if (bar) bar.style.height = (2 + Math.random() * 40) + 'px';
+          });
+        }
       }, 100);
 
       audioSource = audioContext.createBufferSource();
@@ -2887,7 +2928,8 @@ Something is hidden there.
       const imgData = ctx.createImageData(w, h);
       
       setInterval(() => {
-        if (document.getElementById('win-photo-fragment').style.display !== 'none') {
+        const winPhoto = document.getElementById('win-photo-fragment');
+        if (winPhoto && winPhoto.style.display !== 'none') {
           for (let i = 0; i < imgData.data.length; i += 4) {
             const noise = Math.random() * 255;
             imgData.data[i] = noise;
@@ -2920,17 +2962,26 @@ Something is hidden there.
         if (currentStage >= 4) {
           document.body.classList.remove('glitching');
         }
-        document.getElementById('bsod-screen').style.display = 'block';
+        const bsodScreen = document.getElementById('bsod-screen');
+        if (bsodScreen) bsodScreen.style.display = 'block';
         
         setTimeout(() => {
-          document.getElementById('bsod-screen').style.display = 'none';
-          document.getElementById('desktop').style.display = 'none';
-          document.getElementById('boot-screen').style.display = 'flex';
-          document.getElementById('boot-start-btn').style.display = 'inline-block';
+          const bsodScreen = document.getElementById('bsod-screen');
+          const desktop = document.getElementById('desktop');
+          const bootScreen = document.getElementById('boot-screen');
+          const bootStartBtn = document.getElementById('boot-start-btn');
+          const progressContainer = document.getElementById('progress-container');
+          const auroraLogo = document.getElementById('aurora-logo');
+          const bootText = document.getElementById('boot-text');
+
+          if (bsodScreen) bsodScreen.style.display = 'none';
+          if (desktop) desktop.style.display = 'none';
+          if (bootScreen) bootScreen.style.display = 'flex';
+          if (bootStartBtn) bootStartBtn.style.display = 'inline-block';
           bootStep = 0;
-          document.getElementById('progress-container').style.display = 'none';
-          document.getElementById('aurora-logo').style.display = 'none';
-          document.getElementById('boot-text').innerText = '';
+          if (progressContainer) progressContainer.style.display = 'none';
+          if (auroraLogo) auroraLogo.style.display = 'none';
+          if (bootText) bootText.innerText = '';
           
           // Close all windows
           openWindows.forEach(id => closeWindow(id));
@@ -2942,12 +2993,12 @@ Something is hidden there.
       const spinner = document.getElementById('browser-spinner');
       const page = document.getElementById('browser-page');
       
-      spinner.style.display = 'block';
-      page.style.opacity = '0.5';
+      if (spinner) spinner.style.display = 'block';
+      if (page) page.style.opacity = '0.5';
       
       setTimeout(() => {
-        spinner.style.display = 'none';
-        page.style.opacity = '1';
+        if (spinner) spinner.style.display = 'none';
+        if (page) page.style.opacity = '1';
         if (action === 'back' || action === 'forward') {
           triggerCrash();
         } else if (action === 'refresh') {
@@ -3280,7 +3331,7 @@ Something is hidden there.
         window.soundManager.playSystemError();
       }
       const div = document.createElement('div');
-      termOutput.appendChild(div);
+      if (termOutput) termOutput.appendChild(div);
       
       // Typewriter effect
       let i = 0;
@@ -3288,36 +3339,40 @@ Something is hidden there.
         if (i < text.length) {
           div.textContent += text.charAt(i);
           i++;
-          document.getElementById('terminal-content').scrollTop = document.getElementById('terminal-content').scrollHeight;
+          const termContent = document.getElementById('terminal-content');
+          if (termContent) termContent.scrollTop = termContent.scrollHeight;
           setTimeout(type, 5);
         }
       }
       type();
     }
 
-    termInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        const cmd = termInput.value.trim();
-        termInput.value = '';
-        
-        if (cmd) {
-          cmdHistory.push(cmd);
-          historyIndex = cmdHistory.length;
-        }
-        
-        if (terminalState === 'normal') {
-          const div = document.createElement('div');
-          div.textContent = "C:\\> " + cmd;
-          termOutput.appendChild(div);
-          document.getElementById('terminal-content').scrollTop = document.getElementById('terminal-content').scrollHeight;
-          handleCommand(cmd.toLowerCase());
-        } else if (terminalState === 'archive_password') {
-          const div = document.createElement('div');
-          div.textContent = cmd.replace(/./g, '*');
-          termOutput.appendChild(div);
-          document.getElementById('terminal-content').scrollTop = document.getElementById('terminal-content').scrollHeight;
-          handleArchivePassword(cmd.toUpperCase());
-        }
+    if (termInput) {
+      termInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const cmd = termInput.value.trim();
+          termInput.value = '';
+          
+          if (cmd) {
+            cmdHistory.push(cmd);
+            historyIndex = cmdHistory.length;
+          }
+          
+          if (terminalState === 'normal') {
+            const div = document.createElement('div');
+            div.textContent = "C:\\> " + cmd;
+            if (termOutput) termOutput.appendChild(div);
+            const termContent = document.getElementById('terminal-content');
+            if (termContent) termContent.scrollTop = termContent.scrollHeight;
+            handleCommand(cmd.toLowerCase());
+          } else if (terminalState === 'archive_password') {
+            const div = document.createElement('div');
+            div.textContent = cmd.replace(/./g, '*');
+            if (termOutput) termOutput.appendChild(div);
+            const termContent = document.getElementById('terminal-content');
+            if (termContent) termContent.scrollTop = termContent.scrollHeight;
+            handleArchivePassword(cmd.toUpperCase());
+          }
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         if (historyIndex > 0) {
@@ -3379,7 +3434,8 @@ Something is hidden there.
               'stage2_note.txt': 'stage2-note'
             };
             if (fileMap[filename]) {
-              if (filename === 'stage2_note.txt' && document.getElementById('icon-archive').classList.contains('hidden')) {
+              const archiveIcon = document.getElementById('icon-archive');
+              if (filename === 'stage2_note.txt' && archiveIcon && archiveIcon.classList.contains('hidden')) {
                 printTerminal("Error: File not found or access denied.");
               } else {
                 openWindow(fileMap[filename]);
@@ -3458,7 +3514,8 @@ Something is hidden there.
               setTimeout(() => {
                 printTerminal("Archive decoded successfully.");
                 printTerminal("Unlocking /vale/ directory...");
-                document.getElementById('icon-vale').classList.remove('hidden');
+                const valeIcon = document.getElementById('icon-vale');
+                if (valeIcon) valeIcon.classList.remove('hidden');
                 if (typeof arrangeIcons === "function") {
                   arrangeIcons();
                 }
@@ -3469,7 +3526,8 @@ Something is hidden there.
               setTimeout(() => {
                 printTerminal("Archive match detected.");
                 printTerminal("Access granted.");
-                if (window.userState) window.userState.stage4_forum_unlocked = true;
+                // Task 6: Remove frontend state mutation
+                // if (window.userState) window.userState.stage4_forum_unlocked = true;
                 if (window.soundManager) window.soundManager.playSuccess();
               }, 1000);
             } else if (data.action === 'require_password') {
@@ -3485,7 +3543,8 @@ Something is hidden there.
               printTerminal("kwws://dufklyh.orfdo/qrgh03/vhfuhw");
               printTerminal("");
               printTerminal("ARCHIVE ROUTE ACCESSIBLE.");
-              if (window.userState) window.userState.stage3_secret_unlocked = true;
+              // Task 6: Remove frontend state mutation
+              // if (window.userState) window.userState.stage3_secret_unlocked = true;
             }
           } else {
             if (baseCmd === 'decrypt') {
@@ -3560,7 +3619,8 @@ Something is hidden there.
               setTimeout(() => {
                 printTerminal("Archive match detected.");
                 printTerminal("Access granted.");
-                if (window.userState) window.userState.stage4_forum_unlocked = true;
+                // Task 6: Remove frontend state mutation
+                // if (window.userState) window.userState.stage4_forum_unlocked = true;
                 if (window.soundManager) window.soundManager.playSuccess();
                 syncProgression();
               }, 1000);
@@ -3707,8 +3767,8 @@ Something is hidden there.
       const inputField = document.getElementById('chat-input');
       const sendBtn = document.getElementById('chat-send-btn');
       
-      if (!chats[contactId]) {
-        chats[contactId] = [];
+      if (!window.chats[contactId]) {
+        window.chats[contactId] = [];
       }
       
       // Update UI
@@ -3747,7 +3807,7 @@ Something is hidden there.
     function renderChatHistory() {
       if (!currentChatContact) return;
       const historyDiv = document.getElementById('chat-history');
-      const chat = chats[currentChatContact] || [];
+      const chat = window.chats[currentChatContact] || [];
       
       historyDiv.innerHTML = '';
       chat.forEach(msg => {
@@ -3811,8 +3871,8 @@ Something is hidden there.
       const minutes = now.getMinutes() < 10 ? '0' + now.getMinutes() : now.getMinutes();
       const timeStr = hours + ':' + minutes + ampm;
       
-      if (!chats[targetContact]) chats[targetContact] = [];
-      chats[targetContact].push({ sender: 'You', time: timeStr, text: text });
+      if (!window.chats[targetContact]) window.chats[targetContact] = [];
+      window.chats[targetContact].push({ sender: 'You', time: timeStr, text: text });
       inputField.value = '';
       
       if (currentChatContact === targetContact) {
@@ -3866,7 +3926,7 @@ Something is hidden there.
         const alreadyHandledByReconstruct = targetContact === 'archive' && isStepAction;
 
         if (data.reply && !alreadyHandledByReconstruct) {
-          chats[targetContact].push({ 
+          window.chats[targetContact].push({ 
             sender: contactName, 
             time: timeStr, 
             text: data.reply 
@@ -3883,7 +3943,7 @@ Something is hidden there.
         const indicator = document.getElementById('typing-indicator-' + targetContact);
         if (indicator) indicator.remove();
         
-        chats[targetContact].push({ 
+        window.chats[targetContact].push({ 
           sender: contactName, 
           time: timeStr, 
           text: "SYSTEM ERROR: UNABLE TO REACH SERVER." 
@@ -3921,15 +3981,17 @@ Something is hidden there.
     }
 
     // Initialize audio player
-    audioPlayer.src = playlist[0].src;
-    audioPlayer.dataset.originalVolume = 0.3;
-    audioPlayer.volume = 0.3 * ((window.soundManager && typeof window.soundManager.getVolume === 'function') ? window.soundManager.getVolume() : 1);
-
-    audioPlayer.addEventListener('ended', nextTrack);
+    if (audioPlayer) {
+      audioPlayer.src = playlist[0].src;
+      audioPlayer.dataset.originalVolume = 0.3;
+      audioPlayer.volume = 0.3 * ((window.soundManager && typeof window.soundManager.getVolume === 'function') ? window.soundManager.getVolume() : 1);
+      audioPlayer.addEventListener('ended', nextTrack);
+    }
 
     function updateAudioTime() {
       if (audioPlayer) {
-        document.getElementById('music-time').innerText = formatMusicTime(audioPlayer.currentTime);
+        const musicTime = document.getElementById('music-time');
+        if (musicTime) musicTime.innerText = formatMusicTime(audioPlayer.currentTime);
       }
     }
 
@@ -3949,9 +4011,10 @@ Something is hidden there.
     }
 
     function pauseMusic() {
-      audioPlayer.pause();
+      if (audioPlayer) audioPlayer.pause();
       isMusicPlaying = false;
-      document.getElementById('music-play-btn').innerText = "PLAY";
+      const playBtn = document.getElementById('music-play-btn');
+      if (playBtn) playBtn.innerText = "PLAY";
       clearInterval(audioTimeInterval);
       audioTimeInterval = null;
     }
@@ -3960,10 +4023,11 @@ Something is hidden there.
       // Pause audio log if playing
       if (typeof pauseAudioLog === 'function') pauseAudioLog();
       
-      audioPlayer.play().catch(() => {});
+      if (audioPlayer) audioPlayer.play().catch(() => {});
       
       isMusicPlaying = true;
-      document.getElementById('music-play-btn').innerText = "PAUSE";
+      const playBtn = document.getElementById('music-play-btn');
+      if (playBtn) playBtn.innerText = "PAUSE";
       if (!audioTimeInterval) {
         audioTimeInterval = setInterval(updateAudioTime, 1000);
       }
@@ -3974,6 +4038,7 @@ Something is hidden there.
 
     function updateTrackDisplay() {
       const trackName = document.getElementById('music-track-name');
+      if (!trackName) return;
       let title = playlist[currentTrackIndex].title;
       
       // Subtle anomaly for the second track (index 1)
@@ -4029,13 +4094,16 @@ Something is hidden there.
     }
 
     function updateMusicVolume() {
-      const vol = document.getElementById('music-volume').value;
+      const volInput = document.getElementById('music-volume');
+      if (!volInput || !audioPlayer) return;
+      const vol = volInput.value;
       const masterVol = (window.soundManager && typeof window.soundManager.getVolume === 'function') ? window.soundManager.getVolume() : 1;
       audioPlayer.dataset.originalVolume = vol / 100;
       audioPlayer.volume = (vol / 100) * masterVol;
     }
     
-    document.getElementById('music-volume').addEventListener('input', updateMusicVolume);
+    const musicVolInput = document.getElementById('music-volume');
+    if (musicVolInput) musicVolInput.addEventListener('input', updateMusicVolume);
 
     // --- Memory Game ---
     let memoryCards = [];
@@ -4046,8 +4114,8 @@ Something is hidden there.
     function initMemoryGame() {
       const grid = document.getElementById('memory-grid');
       const status = document.getElementById('memory-status');
-      grid.innerHTML = '';
-      status.innerText = '';
+      if (grid) grid.innerHTML = '';
+      if (status) status.innerText = '';
       flippedCards = [];
       matchedPairs = 0;
       
@@ -4104,23 +4172,26 @@ Something is hidden there.
         matchedPairs++;
         
         if (matchedPairs === totalPairs) {
-          document.getElementById('memory-status').innerText = "System memory scan complete.";
+          const memStatus = document.getElementById('memory-status');
+          if (memStatus) memStatus.innerText = "System memory scan complete.";
           showNotification("Memory block recovery successful.");
           // Reveal system logs
           const sysLogs = document.getElementById('icon-system-logs');
           if (!sysLogs) {
             const desk = document.getElementById('desktop');
-            const icon = document.createElement('div');
-            icon.className = 'icon';
-            icon.id = 'icon-system-logs';
-            icon.ondblclick = () => openWindow('system-logs');
-            icon.addEventListener('mousedown', (e) => {
-              dragElement(e, icon);
-            });
-            icon.innerHTML = `<svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#ffcc00" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#ffcc00"/></svg><span>System Logs</span>`;
-            desk.appendChild(icon);
-            if (typeof arrangeIcons === "function") {
-              arrangeIcons();
+            if (desk) {
+              const icon = document.createElement('div');
+              icon.className = 'icon';
+              icon.id = 'icon-system-logs';
+              icon.ondblclick = () => openWindow('system-logs');
+              icon.addEventListener('mousedown', (e) => {
+                dragElement(e, icon);
+              });
+              icon.innerHTML = `<svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#ffcc00" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#ffcc00"/></svg><span>System Logs</span>`;
+              desk.appendChild(icon);
+              if (typeof arrangeIcons === "function") {
+                arrangeIcons();
+              }
             }
           }
         }
@@ -4166,7 +4237,7 @@ Something is hidden there.
       return window.userState ? (window.userState.messenger_step || 0) : 0;
     }
     async function setProgressStep(step) {
-      if (window.userState) window.userState.messenger_step = step;
+      // if (window.userState) window.userState.messenger_step = step;
       
       fetch('/api/validateCommand', {
         method: 'POST',
@@ -4183,7 +4254,8 @@ Something is hidden there.
 
     async function setStage4Progress(step) {
       if (typeof currentStage === 'undefined') window.currentStage = 1;
-      if (window.userState) window.userState.stage4_progress = step;
+      // Task 6: Remove frontend state mutation
+      // if (window.userState) window.userState.stage4_progress = step;
       currentStage = 4;
       startStage4();
     }
@@ -4192,7 +4264,7 @@ Something is hidden there.
 
     let lastSyncedStage = 1;
     async function syncProgression() {
-      if (typeof chats === 'undefined') window.chats = {};
+      if (typeof window.chats === 'undefined') window.chats = {};
       
       try {
         const response = await fetch('/api/userState');
@@ -4202,7 +4274,14 @@ Something is hidden there.
         const data = await response.json();
         
         window.userState = data;
-        window.chats = data.chats || {};
+        
+        // Task 4: Only initialize if empty to prevent overwriting
+        if (Object.keys(window.chats).length === 0) {
+          window.chats = data.chats || {};
+        } else if (data.chats) {
+          // Merge chats if needed, or just trust backend
+          window.chats = data.chats;
+        }
         
         const newStage = data.stage || 1;
         if (newStage !== lastSyncedStage) {
@@ -4220,11 +4299,27 @@ Something is hidden there.
         updateTrackDisplay();
         
         // Refresh UI
-        if (data.stage2_unlocked) document.getElementById('icon-archive').classList.remove('hidden');
-        if (data.stage1_vale_unlocked || data.stage4_progress >= 2) document.getElementById('icon-vale').classList.remove('hidden');
-        if (data.stage4_progress >= 1) {
-           document.getElementById('icon-observer').classList.remove('hidden');
-           startSystemAliveEffects();
+        const archiveIcon = document.getElementById('icon-archive');
+        if (archiveIcon) {
+          if (data.stage2_unlocked) archiveIcon.classList.remove('hidden');
+          else archiveIcon.classList.add('hidden');
+        }
+
+        const valeIcon = document.getElementById('icon-vale');
+        if (valeIcon) {
+          // Task 3: Tie strictly to stage3_vale_unlocked
+          if (data.stage3_vale_unlocked) valeIcon.classList.remove('hidden');
+          else valeIcon.classList.add('hidden');
+        }
+
+        const observerIcon = document.getElementById('icon-observer');
+        if (observerIcon) {
+          if (data.stage4_progress >= 1) {
+            observerIcon.classList.remove('hidden');
+            startSystemAliveEffects();
+          } else {
+            observerIcon.classList.add('hidden');
+          }
         }
         
         // Stage 3 Persistence
@@ -4370,13 +4465,13 @@ Something is hidden there.
           }
           const uMsg = decodeURIComponent(escape(uStr));
           
-          if (!chats['unknown']) {
-            chats['unknown'] = [];
+          if (!window.chats['unknown']) {
+            window.chats['unknown'] = [];
           }
           
-          const hasMsg = chats['unknown'].some(m => m.text === uMsg);
+          const hasMsg = window.chats['unknown'].some(m => m.text === uMsg);
           if (!hasMsg) {
-            chats['unknown'].push({ sender: 'Unknown', time: '11:10 PM', text: uMsg });
+            window.chats['unknown'].push({ sender: 'Unknown', time: '11:10 PM', text: uMsg });
             saveChats();
             if (typeof currentChatContact !== 'undefined' && currentChatContact !== 'unknown') {
               const contactItems = document.querySelectorAll('.contact-item');
@@ -4402,14 +4497,18 @@ Something is hidden there.
 
     // Reconstruct chat history
     function reconstructChatHistory() {
-      if (typeof chats === 'undefined') {
+      if (typeof window.chats === 'undefined') {
         window.chats = {};
+      }
+      // Task 4: If we already have chats from backend, don't reconstruct from step
+      if (Object.keys(window.chats).length > 0 && window.chats['archive'] && window.chats['archive'].length > 2) {
+        return;
       }
       const step = getProgressStep();
       
       // Initialize if missing
-      if (!chats['archive']) {
-        chats['archive'] = [
+      if (!window.chats['archive']) {
+        window.chats['archive'] = [
           { sender: 'Archive Node', time: '00:00 AM', text: 'CONNECTION ESTABLISHED' },
           { sender: 'Archive Node', time: '00:01 AM', text: 'AWAITING INPUT...' }
         ];
@@ -4449,14 +4548,14 @@ Something is hidden there.
           const replyMsg = decrypted.r;
           
           // Check if already in history to avoid duplicates
-          const hasUserMsg = chats['archive'].some(m => m.sender === 'You' && m.text === userMsg);
+          const hasUserMsg = window.chats['archive'].some(m => m.sender === 'You' && m.text === userMsg);
           if (!hasUserMsg) {
-            chats['archive'].push({ sender: 'You', time: 'RECOVERED', text: userMsg });
+            window.chats['archive'].push({ sender: 'You', time: 'RECOVERED', text: userMsg });
           }
           
-          const hasReplyMsg = chats['archive'].some(m => m.sender === 'Archive Node' && m.text === replyMsg);
+          const hasReplyMsg = window.chats['archive'].some(m => m.sender === 'Archive Node' && m.text === replyMsg);
           if (!hasReplyMsg) {
-            chats['archive'].push({ sender: 'Archive Node', time: 'RECOVERED', text: replyMsg });
+            window.chats['archive'].push({ sender: 'Archive Node', time: 'RECOVERED', text: replyMsg });
           }
         }
       }

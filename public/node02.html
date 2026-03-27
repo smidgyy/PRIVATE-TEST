@@ -209,7 +209,8 @@ body.light-mode .hidden-clue { display: block; opacity: 1; }
   s += '</g><g id="flames" class="pixel-flames">';
   for(let y=0;y<24;y++)for(let x=0;x<32;x++)if(f[y][x]!==' ')s+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${P[f[y][x]]}"/>`;
   s += '</g></svg>';
-  document.getElementById('bonfire-container').innerHTML = s;
+  const bonfireContainer = document.getElementById('bonfire-container');
+  if (bonfireContainer) bonfireContainer.innerHTML = s;
 })();
 </script>
 

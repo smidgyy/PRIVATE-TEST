@@ -213,6 +213,7 @@ const getFilteredState = (data: any) => {
     filtered.stage3_ground = !!data.stage3_ground;
     filtered.stage3_messenger_complete = !!data.stage3_messenger_complete;
     filtered.stage3_secret_unlocked = !!data.stage3_secret_unlocked;
+    filtered.stage3_vale_unlocked = !!data.stage3_vale_unlocked;
   }
   if (stage >= 4) {
     filtered.stage4_unlocked = !!data.stage4_unlocked;
@@ -879,13 +880,13 @@ function validateUserId(userId: any): string | null {
             return res.json({ status: 'error', message: 'ACCESS DENIED: Required progression not detected.' });
           }
           
-          if (userData.stage1_vale_unlocked) {
+          if (userData.stage3_vale_unlocked) {
             return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
           }
           
           processAttempt(req.session, stageKey, input, true, clientIp as string);
           await db.collection('users').doc(userId).update({ 
-            stage1_vale_unlocked: true, 
+            stage3_vale_unlocked: true, 
             stage4_progress: Math.max(userData.stage4_progress || 0, 2) 
           });
           
@@ -935,7 +936,7 @@ function validateUserId(userId: any): string | null {
           });
         }
         if (baseCmd === 'archive' && args.length > 1 && args[1].toLowerCase() === 'vale') {
-          if (!userData.stage1_vale_unlocked) {
+          if (!userData.stage3_vale_unlocked) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: 'error', message: 'ACCESS DENIED: Vale archive decryption required.' });
           }
@@ -1280,31 +1281,35 @@ Use the terminal.`,
           });
         }
 
-        if (input === "money") {
-          if (userData.stage3_money) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
-          if (currentStep !== 2 || !userData.stage3_secret_unlocked) {
-            processAttempt(req.session, stageKey, input, false, clientIp as string);
-            return res.json({ status: "error", reply: "COMMAND INVALID" });
-          }
+          if (input === "money") {
+            if (userData.stage3_money) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
+            if (currentStep !== 2 || !userData.stage3_secret_unlocked) {
+              processAttempt(req.session, stageKey, input, false, clientIp as string);
+              return res.json({ status: "error", reply: "COMMAND INVALID" });
+            }
 
-          processAttempt(req.session, stageKey, input, true, clientIp as string);
-          await db.collection("users").doc(userId).set({
-            stage3_money: true,
-            messenger_step: 3
-          }, { merge: true });
-          
-          return res.json({
-            status: "success",
-            reply: `The mask of exchange.
+            processAttempt(req.session, stageKey, input, true, clientIp as string);
+            await db.collection("users").doc(userId).set({
+              stage3_money: true,
+              messenger_step: 3
+            }, { merge: true });
+            
+            const updatedUserDoc = await db.collection('users').doc(userId).get();
+            const state = getFilteredState(updatedUserDoc.data() || {});
+
+            return res.json({
+              status: "success",
+              reply: `The mask of exchange.
 
 Vale was obsessed with the value we place on things.
 
 He left a trace in the system logs.
 
 Check fragment_3.log.`,
-            action: "unlock_fragment_3"
-          });
-        }
+              action: "unlock_fragment_3",
+              state
+            });
+          }
 
         if (input === "gold") {
           if (userData.stage3_gold) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
