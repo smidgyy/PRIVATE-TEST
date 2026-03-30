@@ -122,7 +122,10 @@
     </div>
 
     <script>
-        document.getElementById('timestamp').innerText = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        const tsEl = document.getElementById('timestamp');
+        if (tsEl) {
+            tsEl.innerText = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        }
     </script>
 </body>
 </html>

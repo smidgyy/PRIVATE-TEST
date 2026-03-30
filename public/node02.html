@@ -210,14 +210,15 @@ body.light-mode .hidden-clue { display: block; opacity: 1; }
   for(let y=0;y<24;y++)for(let x=0;x<32;x++)if(f[y][x]!==' ')s+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${P[f[y][x]]}"/>`;
   s += '</g></svg>';
   const bonfireContainer = document.getElementById('bonfire-container');
-  if (bonfireContainer) bonfireContainer.innerHTML = s;
+  if (bonfireContainer) {
+    bonfireContainer.innerHTML = s;
+  }
 })();
 </script>
 
 <script>
-const input = document.getElementById('puzzle-input');
-const response = document.getElementById('response');
-const container = document.querySelector('.textarea-container');
+let input = document.getElementById('puzzle-input');
+let response = document.getElementById('response');
 const title = document.getElementById('main-title');
 const subtitle = document.getElementById('subtitle');
 let busy = false;
@@ -266,9 +267,9 @@ function initPhase() {
   
   if (!titleEl || !subtitleEl) {
       console.log("Missing UI elements, but continuing");
-      const container = document.getElementById('content');
-      if (container) {
-          container.innerHTML = `
+      const contentContainer = document.getElementById('content');
+      if (contentContainer) {
+          contentContainer.innerHTML = `
             <div class="title" id="main-title">The First Trial.</div>
             <div class="subtitle" id="subtitle">Many have tried. The door remains sealed.</div>
             <div class="field-wrap">
@@ -280,6 +281,8 @@ function initPhase() {
           `;
           titleEl = document.getElementById('main-title');
           subtitleEl = document.getElementById('subtitle');
+          input = document.getElementById('puzzle-input');
+          response = document.getElementById('response');
       }
   }
 
@@ -307,15 +310,17 @@ async function hashInput(str) {
 
 function startBlackFire() {
   const canvas = document.createElement('canvas');
-  canvas.style.position = 'fixed';
-  canvas.style.bottom = '0';
-  canvas.style.left = '0';
-  canvas.style.width = '100vw';
-  canvas.style.height = '100vh';
-  canvas.style.zIndex = '900';
-  canvas.style.pointerEvents = 'none';
-  canvas.style.imageRendering = 'pixelated';
-  document.body.appendChild(canvas);
+  if (canvas && canvas.style) {
+    canvas.style.position = 'fixed';
+    canvas.style.bottom = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100vw';
+    canvas.style.height = '100vh';
+    canvas.style.zIndex = '900';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.imageRendering = 'pixelated';
+  }
+  if (canvas) document.body.appendChild(canvas);
 
   const ctx = canvas.getContext('2d');
   const fireWidth = Math.floor(window.innerWidth / 6);
@@ -357,7 +362,7 @@ function startBlackFire() {
     
     const flamesGroup = bonfire.querySelector('#flames');
     if (flamesGroup) flamesGroup.style.display = 'block';
-    bonfire.style.zIndex = '899';
+    if (bonfire) bonfire.style.zIndex = '899';
     
     // Ignite the floor under the bonfire immediately
     for (let x = 0; x < fireWidth; x++) {
@@ -460,8 +465,8 @@ function startBlackFire() {
         if (!contentType || !contentType.includes("application/json")) throw new Error("Invalid response");
         return res.json();
       }).then(data => {
-        if (data.message) {
-          response.textContent = data.message;
+        if (data.message && response) {
+          if (response) response.textContent = data.message;
         }
       });
     }
@@ -469,13 +474,15 @@ function startBlackFire() {
 }
 
 async function dissolveAndRespond() {
-  const text = input.value.trim().toLowerCase();
+  const inputEl = document.getElementById('puzzle-input');
+  if (!inputEl) return;
+  const text = inputEl.value.trim().toLowerCase();
   if (busy || !text) return;
   busy = true;
 
   if (window.soundManager) window.soundManager.playDissolve();
 
-  input.classList.add('hidden');
+  inputEl.classList.add('hidden');
 
   let charLayer = document.createElement('div');
   charLayer.className = 'char-layer';
@@ -485,7 +492,8 @@ async function dissolveAndRespond() {
     span.textContent = c === ' ' ? '\u00a0' : c;
     charLayer.appendChild(span);
   });
-  container.appendChild(charLayer);
+  const containerEl = document.querySelector('.textarea-container');
+  if (containerEl) containerEl.appendChild(charLayer);
 
   const allChars = charLayer.querySelectorAll('.char');
   const indices = Array.from({length: allChars.length}, (_, i) => i);
@@ -500,7 +508,7 @@ async function dissolveAndRespond() {
   const totalDissolveTime = indices.length * 50 + 600;
 
   await new Promise(r => setTimeout(r, totalDissolveTime));
-  charLayer.style.opacity = '0';
+  if (charLayer) charLayer.style.opacity = '0';
 
   try {
     const res = await fetch('/api/validateCommand', {
@@ -511,14 +519,14 @@ async function dissolveAndRespond() {
     if (!res.ok) {
       console.error("Server error:", res.status);
       busy = false;
-      input.classList.remove('hidden');
+      if (inputEl) inputEl.classList.remove('hidden');
       return;
     }
     const contentType = res.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
       console.error("Unexpected response format:", contentType);
       busy = false;
-      input.classList.remove('hidden');
+      if (inputEl) inputEl.classList.remove('hidden');
       return;
     }
     const data = await res.json();
@@ -572,16 +580,20 @@ async function dissolveAndRespond() {
 
     if (!success && window.soundManager) window.soundManager.playError();
 
-    if (response) response.textContent = msg;
-    if (response) response.style.opacity = '1';
+    if (response) {
+      response.textContent = msg;
+      if (response) response.style.opacity = '1';
+    }
 
     setTimeout(() => {
-      charLayer.remove();
+      if (charLayer) charLayer.remove();
       if (!success) {
         if (response) response.style.opacity = '0';
-        input.value = '';
-        input.classList.remove('hidden');
-        input.focus();
+        if (inputEl) {
+          inputEl.value = '';
+          inputEl.classList.remove('hidden');
+          inputEl.focus();
+        }
       }
       busy = false;
     }, 3000);
@@ -591,53 +603,67 @@ async function dissolveAndRespond() {
   }
 }
 
-input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); dissolveAndRespond(); }
-});
+if (input) {
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); dissolveAndRespond(); }
+  });
+}
 
 function startPhase3(isTransition = false) {
   currentStep = 3;
-  document.body.classList.add('phase-3');
-  input.value = '';
-  input.classList.add('hidden');
+  if (document.body) {
+    document.body.classList.add('phase-3');
+  }
+  if (input) {
+    input.value = '';
+    input.classList.add('hidden');
+  }
   
   setTimeout(() => {
-    document.getElementById('flashlight-overlay').classList.add('active');
+    const flashlightOverlay = document.getElementById('flashlight-overlay');
+    if (flashlightOverlay) {
+      flashlightOverlay.classList.add('active');
+    }
   }, isTransition ? 0 : 0);
 
   const canvas = document.getElementById('void-canvas');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  const ctx = canvas.getContext('2d');
-  
-  let dotX = canvas.width * (15 + Math.random() * 70) / 100;
-  let dotY = canvas.height * (15 + Math.random() * 70) / 100;
-  let dotActive = false;
+  if (canvas) {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+    
+    let dotX = canvas.width * (15 + Math.random() * 70) / 100;
+    let dotY = canvas.height * (15 + Math.random() * 70) / 100;
+    let dotActive = false;
 
   console.log("%c[SYSTEM WARNING]", "color: red; font-size: 20px; font-weight: bold;");
   console.log("%cThe Void cannot be parsed. The spark exists outside the DOM.", "color: #8b7355; font-size: 14px;");
   console.log("%cPut away your tools. Rely on your eyes.", "color: #666; font-style: italic;");
 
   setTimeout(() => {
-    ctx.fillStyle = '#1a1a1a';
-    ctx.beginPath();
-    ctx.arc(dotX, dotY, 2, 0, Math.PI * 2);
-    ctx.fill();
+    if (ctx) {
+      ctx.fillStyle = '#1a1a1a';
+      ctx.beginPath();
+      ctx.arc(dotX, dotY, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
     dotActive = true;
   }, isTransition ? 2000 : 500);
   
   let btn = null;
   document.addEventListener('mousemove', (e) => {
-    const flashlight = document.getElementById('flashlight-overlay');
-    if (flashlight) {
-      flashlight.style.setProperty('--x', e.clientX + 'px');
-      flashlight.style.setProperty('--y', e.clientY + 'px');
+    const el = document.getElementById('flashlight-overlay');
+    if (el) {
+      if (el) {
+        el.style.setProperty('--x', e.clientX + 'px');
+        el.style.setProperty('--y', e.clientY + 'px');
+      }
     }
 
     if (!dotActive || currentStep !== 3) return;
     
-    const dx = e.clientX - dotX;
-    const dy = e.clientY - dotY;
+    const dx = e.clientX - (dotX || 0);
+    const dy = e.clientY - (dotY || 0);
     const dist = Math.sqrt(dx*dx + dy*dy);
 
     if (dist < 6) {
@@ -645,12 +671,16 @@ function startPhase3(isTransition = false) {
         btn = document.createElement('button');
         btn.className = 'n-act';
         btn.textContent = '[ IGNITE ]';
-        btn.style.left = (dotX + 4) + 'px';
-        btn.style.top = (dotY - 10) + 'px';
+        if (btn) {
+          if (btn && btn.style) {
+            btn.style.left = (dotX + 4) + 'px';
+            btn.style.top = (dotY - 10) + 'px';
+          }
+        }
         
         btn.addEventListener('contextmenu', (ev) => {
           ev.preventDefault();
-          btn.classList.remove('visible');
+          if (btn) btn.classList.remove('visible');
           setTimeout(() => { if (btn && btn.parentNode) btn.remove(); btn = null; }, 300);
         });
         
@@ -661,20 +691,26 @@ function startPhase3(isTransition = false) {
           igniteClicks++;
           
           if (igniteClicks < 3) {
-            btn.style.transform = 'scale(0.9) translateY(0)';
-            setTimeout(() => btn.style.transform = '', 150);
+            if (btn && btn.style) {
+              btn.style.transform = 'scale(0.9) translateY(0)';
+              setTimeout(() => { if (btn && btn.style) btn.style.transform = ''; }, 150);
+            }
             return;
           }
 
           document.body.classList.add('light-mode');
-          btn.remove();
-          canvas.remove();
-          title.innerHTML = 'The <a href="https://en.wikipedia.org/wiki/Light" target="_blank" style="color: inherit; text-decoration: none; cursor: pointer;">Light</a>.';
-          subtitle.textContent = "What was hidden is revealed.";
-          input.value = '';
-          response.textContent = '';
-          input.classList.remove('hidden');
-          input.focus();
+          if (btn) btn.remove();
+          if (canvas) canvas.remove();
+          if (title) title.innerHTML = 'The <a href="https://en.wikipedia.org/wiki/Light" target="_blank" style="color: inherit; text-decoration: none; cursor: pointer;">Light</a>.';
+          if (subtitle) subtitle.textContent = "What was hidden is revealed.";
+          if (input) {
+            if (input) {
+              input.value = '';
+              input.classList.remove('hidden');
+              input.focus();
+            }
+          }
+          if (response) response.textContent = '';
         });
         
         document.body.appendChild(btn);
@@ -687,10 +723,10 @@ function startPhase3(isTransition = false) {
       const isOverBtn = e.clientX >= rect.left - 5 && e.clientX <= rect.right + 5 &&
                         e.clientY >= rect.top - 5 && e.clientY <= rect.bottom + 5;
       if (!isOverBtn && dist > 15) {
-        btn.classList.remove('visible');
+        if (btn) btn.classList.remove('visible');
         const oldBtn = btn;
         btn = null;
-        setTimeout(() => { if (oldBtn.parentNode) oldBtn.remove(); }, 300);
+        setTimeout(() => { if (oldBtn && oldBtn.parentNode) oldBtn.remove(); }, 300);
       }
     }
   });
@@ -728,10 +764,10 @@ setTimeout(() => {
 document.addEventListener("DOMContentLoaded", async () => {
   currentStep = await fetchUserState();
   initPhase();
-  if (!input.classList.contains('hidden')) input.focus();
+  if (input && !input.classList.contains('hidden')) input.focus();
 });
 document.addEventListener('click', () => {
-  if (!input.classList.contains('hidden')) input.focus();
+  if (input && !input.classList.contains('hidden')) input.focus();
 });
 </script>
 <script src="/sound-manager.js?v=2"></script>

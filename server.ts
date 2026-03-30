@@ -196,34 +196,29 @@ const getFilteredState = (data: any) => {
     messenger_step: data.messenger_step || 0,
     chats: data.chats || {}
   };
-  if (stage >= 1) {
-    filtered.stage1_vale_unlocked = !!data.stage1_vale_unlocked;
-    filtered.stage2_unlocked = !!data.stage2_unlocked;
-  }
-  if (stage >= 2) {
-    filtered.stage2_phase1_complete = !!data.stage2_phase1_complete;
-    filtered.stage2_phase2_complete = !!data.stage2_phase2_complete;
-    filtered.stage2_phase3_complete = !!data.stage2_phase3_complete;
-  }
-  if (stage >= 3) {
-    filtered.stage3_greed = !!data.stage3_greed;
-    filtered.stage3_death = !!data.stage3_death;
-    filtered.stage3_money = !!data.stage3_money;
-    filtered.stage3_gold = !!data.stage3_gold;
-    filtered.stage3_ground = !!data.stage3_ground;
-    filtered.stage3_messenger_complete = !!data.stage3_messenger_complete;
-    filtered.stage3_secret_unlocked = !!data.stage3_secret_unlocked;
-    filtered.stage3_vale_unlocked = !!data.stage3_vale_unlocked;
-  }
-  if (stage >= 4) {
-    filtered.stage4_unlocked = !!data.stage4_unlocked;
-    filtered.stage4_forum_unlocked = !!data.stage4_forum_unlocked;
-    filtered.stage4_observer_logs_opened = !!data.stage4_observer_logs_opened;
-    filtered.stage4_network_trace_viewed = !!data.stage4_network_trace_viewed;
-    filtered.stage4_complete = !!data.stage4_complete;
-    filtered.stage4_progress = data.stage4_progress || 0;
-    filtered.aurora_archive_unlocked = !!data.aurora_archive_unlocked;
-  }
+  
+  // Only include flags that are TRUE
+  filtered.stage1_vale_unlocked = !!data.stage1_vale_unlocked;
+  filtered.stage2_unlocked = !!data.stage2_unlocked;
+  filtered.stage2_phase1_complete = !!data.stage2_phase1_complete;
+  filtered.stage2_phase2_complete = !!data.stage2_phase2_complete;
+  filtered.stage2_phase3_complete = !!data.stage2_phase3_complete;
+  filtered.stage3_greed = !!data.stage3_greed;
+  filtered.stage3_death = !!data.stage3_death;
+  filtered.stage3_money = !!data.stage3_money;
+  filtered.stage3_gold = !!data.stage3_gold;
+  filtered.stage3_ground = !!data.stage3_ground;
+  filtered.stage3_messenger_complete = !!data.stage3_messenger_complete;
+  filtered.stage3_secret_unlocked = !!data.stage3_secret_unlocked;
+  filtered.stage3_vale_unlocked = !!data.stage3_vale_unlocked;
+  filtered.stage4_unlocked = !!data.stage4_unlocked;
+  filtered.stage4_forum_unlocked = !!data.stage4_forum_unlocked;
+  filtered.stage4_observer_logs_opened = !!data.stage4_observer_logs_opened;
+  filtered.stage4_network_trace_viewed = !!data.stage4_network_trace_viewed;
+  filtered.stage4_complete = !!data.stage4_complete;
+  filtered.stage4_progress = data.stage4_progress || 0;
+  filtered.aurora_archive_unlocked = !!data.aurora_archive_unlocked;
+
   return filtered;
 };
 
@@ -554,15 +549,23 @@ async function startServer() {
       
       if (!userData) {
         console.log(`>>> [DB] Initializing new user session: ${userId}`);
-        userData = {
-          userId,
-          createdAt: new Date().toISOString(),
-          stage: 1,
-          stage4_progress: 0,
-          chats: {}
-        };
+      userData = {
+        userId,
+        createdAt: new Date().toISOString(),
+        stage: 1,
+        stage4_progress: 0,
+        chats: {},
+        stage3_greed: false,
+        stage3_death: false,
+        stage3_money: false,
+        stage3_gold: false,
+        stage3_ground: false,
+        stage3_secret_unlocked: false,
+        stage3_vale_unlocked: false
+      };
         await db.collection("users").doc(userId).set(userData);
       }
+      console.log("USER STATE:", userData);
       return userData;
     } catch (error) {
       console.error(`>>> [DB] Error in getOrCreateUserData for ${userId}:`, error);
@@ -600,7 +603,8 @@ async function startServer() {
       }
       
       console.log(">>> [API] /api/init: SUCCESS");
-      res.json({ status: "success", state: userData });
+      const filteredState = getFilteredState(userData);
+      res.json({ status: "success", state: filteredState });
     } catch (error: any) {
       console.error("!!! [API] Error in /api/init:", error.message, error.stack);
       res.status(500).json({ status: "error", message: "Internal Server Error: " + error.message });
@@ -613,14 +617,24 @@ async function startServer() {
       if (!userId) return res.status(401).json({ status: "error", message: "Unauthorized" });
 
       const db = await getDb();
-      await db.collection("users").doc(userId).set({
+      const userData = {
         userId,
         stage: 1,
         node02_step: 1,
         messenger_step: 0,
         stage4_progress: 0,
+        chats: {},
+        stage3_greed: false,
+        stage3_death: false,
+        stage3_money: false,
+        stage3_gold: false,
+        stage3_ground: false,
+        stage3_secret_unlocked: false,
+        stage3_vale_unlocked: false,
         createdAt: new Date().toISOString()
-      });
+      };
+      await db.collection("users").doc(userId).set(userData);
+      console.log("USER STATE:", userData);
 
       res.json({ success: true });
     } catch (error) {
@@ -656,46 +670,14 @@ async function startServer() {
       const userDoc: any = await Promise.race([userDocPromise, timeoutPromise]);
       const userData = userDoc.data() || { stage: 1, node02_step: 1 };
 
+      // TASK 4 — DEBUG LOGGING (TEMP)
+      console.log("GREED FLAG:", userData.stage3_greed);
+      console.log("VALE FLAG:", userData.stage3_vale_unlocked);
+
       console.log(`>>> [API] /api/userState: SUCCESS`);
       
       // Task 5: Filter state to prevent leaking future progression flags
-      const filteredState: any = {
-        currentStage: userData.stage || 1,
-        node02_step: userData.node02_step || 1,
-        messenger_step: userData.messenger_step || 0,
-      };
-
-      const stage = userData.stage || 1;
-
-      // Only reveal flags relevant to current or past stages
-      if (stage >= 1) {
-        filteredState.stage1_vale_unlocked = !!userData.stage1_vale_unlocked;
-        filteredState.stage2_unlocked = !!userData.stage2_unlocked;
-      }
-      if (stage >= 2) {
-        filteredState.stage2_phase1_complete = !!userData.stage2_phase1_complete;
-        filteredState.stage2_phase2_complete = !!userData.stage2_phase2_complete;
-        filteredState.stage2_phase3_complete = !!userData.stage2_phase3_complete;
-      }
-      if (stage >= 3) {
-        filteredState.stage3_greed = !!userData.stage3_greed;
-        filteredState.stage3_death = !!userData.stage3_death;
-        filteredState.stage3_money = !!userData.stage3_money;
-        filteredState.stage3_gold = !!userData.stage3_gold;
-        filteredState.stage3_ground = !!userData.stage3_ground;
-        filteredState.stage3_messenger_complete = !!userData.stage3_messenger_complete;
-      }
-      if (stage >= 4) {
-        filteredState.stage4_unlocked = !!userData.stage4_unlocked;
-        filteredState.stage4_forum_unlocked = !!userData.stage4_forum_unlocked;
-        filteredState.stage4_observer_logs_opened = !!userData.stage4_observer_logs_opened;
-        filteredState.stage4_network_trace_viewed = !!userData.stage4_network_trace_viewed;
-        filteredState.stage4_complete = !!userData.stage4_complete;
-        filteredState.stage4_progress = userData.stage4_progress || 0;
-        filteredState.aurora_archive_unlocked = !!userData.aurora_archive_unlocked;
-      }
-
-      filteredState.chats = userData.chats || {};
+      const filteredState = getFilteredState(userData);
 
       res.json(filteredState);
     } catch (error: any) {
@@ -874,20 +856,19 @@ function validateUserId(userId: any): string | null {
       }
 
       if (type === 'terminal') {
-        if (fullCmd.toLowerCase() === 'decode_vale_archive') {
-          if (currentStage < 4 || !userData.stage3_ground) {
+        if (input === 'decode_vale_archive') {
+          if (!userData.stage3_ground) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
-            return res.json({ status: 'error', message: 'ACCESS DENIED: Required progression not detected.' });
+            return res.json({ status: 'error', message: 'Access denied' });
           }
-          
+
           if (userData.stage3_vale_unlocked) {
             return res.json({ status: 'error', message: 'COMMAND ALREADY USED' });
           }
           
           processAttempt(req.session, stageKey, input, true, clientIp as string);
           await db.collection('users').doc(userId).update({ 
-            stage3_vale_unlocked: true, 
-            stage4_progress: Math.max(userData.stage4_progress || 0, 2) 
+            stage3_vale_unlocked: true
           });
           
           const updatedUserDoc = await db.collection('users').doc(userId).get();
@@ -1046,22 +1027,31 @@ function validateUserId(userId: any): string | null {
       }
 
       if (type === 'node02_answer') {
+        console.log(`>>> [TRACE] validateCommand: Handling "node02_answer" for user ${userId}. Input: "${input}"`);
         if (currentStage !== 2) {
           processAttempt(req.session, stageKey, input, false, clientIp as string);
           return res.json({ status: 'error', message: 'ACCESS DENIED' });
         }
 
-        const hash = crypto.createHash('sha256').update(t.toLowerCase()).digest('hex');
+        const t_input = input.trim();
+        const hash = crypto.createHash('sha256').update(t_input.toLowerCase()).digest('hex');
+        console.log(`>>> [TRACE] node02_answer: Hash for "${t_input.toLowerCase()}" is ${hash}`);
         
-        // Allow answers to be retried even if already complete
+        // Phase 1: AURORA (76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22)
         if (hash === '76576de1cea42a163eb4c35c9af35ad3c3a9b6a1d67ed93f6f99e81ba96d5e22') {
           processAttempt(req.session, stageKey, input, true, clientIp as string);
           if (!userData.stage2_phase1_complete) {
             await db.collection('users').doc(userId).update({ stage2_phase1_complete: true });
           }
-          return res.json({ status: 'success', success: true, action: 'open_article', msg: "The earth opens. Seek the marginalia." });
+          return res.json({ 
+            status: 'success', 
+            success: true, 
+            action: 'open_article', 
+            msg: "Correct. The first lock is broken. Seek the marginalia." 
+          });
         }
         
+        // Phase 2: FLAME (ba6f8ed6d0d150b2a2ab2bebe99540f8c00cafb0ebdbf71a6f0b768c45425ca7)
         if (hash === 'ba6f8ed6d0d150b2a2ab2bebe99540f8c00cafb0ebdbf71a6f0b768c45425ca7') {
           if (!userData.stage2_phase1_complete) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
@@ -1071,9 +1061,15 @@ function validateUserId(userId: any): string | null {
           if (!userData.stage2_phase2_complete) {
             await db.collection('users').doc(userId).update({ stage2_phase2_complete: true });
           }
-          return res.json({ status: 'success', success: true, action: 'phase2_success', msg: "The flame is extinguished." });
+          return res.json({ 
+            status: 'success', 
+            success: true, 
+            action: 'phase2_success', 
+            msg: "The fire responds. The second lock is broken." 
+          });
         }
         
+        // Phase 3: GREED (90b7b8654171c04a5e5de1eae884cfd86952739d50d09d9bb7680763e31faee8)
         if (hash === '90b7b8654171c04a5e5de1eae884cfd86952739d50d09d9bb7680763e31faee8') {
           if (!userData.stage2_phase2_complete) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
@@ -1083,12 +1079,18 @@ function validateUserId(userId: any): string | null {
           if (!userData.stage2_phase3_complete) {
             await db.collection('users').doc(userId).update({ 
               stage2_phase3_complete: true,
-              stage: 3 
+              stage: 3,
+              stage3_unlocked: true
             });
           }
-          return res.json({ status: 'success', success: true, action: 'phase3_success', msg: String.fromCharCode(71, 82, 69, 69, 68) });
+          return res.json({ 
+            status: 'success', 
+            success: true, 
+            action: 'phase3_success', 
+            msg: "The final lock is broken. The archive is yours." 
+          });
         }
-        
+
         processAttempt(req.session, stageKey, input, false, clientIp as string);
         return res.json({ status: 'error', message: 'Incorrect. The truth eludes you.' });
       }
@@ -1100,7 +1102,6 @@ function validateUserId(userId: any): string | null {
         }
         processAttempt(req.session, stageKey, input, true, clientIp as string);
         await db.collection('users').doc(userId).update({ 
-          stage3_secret_unlocked: true,
           stage: Math.max(userData.stage || 1, 3)
         });
         return res.json({ status: 'success', message: 'The spark has ignited. Node 03 access granted.' });
@@ -1139,7 +1140,7 @@ function validateUserId(userId: any): string | null {
       } else if (target === 'observer-folder') {
         hasAccess = (userData.stage4_progress || 0) >= 1;
       } else if (target === 'vale-folder') {
-        hasAccess = (userData.stage4_progress || 0) >= 2;
+        hasAccess = !!userData.stage3_vale_unlocked;
       } else if (target === 'forum') {
         hasAccess = !!userData.stage4_forum_unlocked;
       } else if (target === 'terminal-dump') {
@@ -1182,6 +1183,7 @@ function validateUserId(userId: any): string | null {
       }
 
       let normalized = message.trim().toLowerCase();
+      console.log(`>>> [TRACE] sendMessage: user=${userId}, contact=${contact}, input="${normalized}"`);
 
       const db = await getDb();
       if (!db) return res.status(500).json({ status: "error", message: "Database unavailable" });
@@ -1191,6 +1193,10 @@ function validateUserId(userId: any): string | null {
       const currentStep = userData.messenger_step || 0;
       const currentStage = userData.stage || 1;
 
+      let reply = "";
+      let action = null;
+      let updates: any = {};
+
       // Brute force protection check (Task 1 & 2)
       const stageKey = `stage${currentStage}_msg_${contact}`;
       const cooldownCheck = processAttempt(req.session, stageKey, normalized, false, clientIp as string, true);
@@ -1198,7 +1204,7 @@ function validateUserId(userId: any): string | null {
         return res.status(429).json({ status: 'error', reply: cooldownCheck.reason });
       }
 
-      // FIX: Stage 3 specific overrides with immediate return
+      // FIX: Stage 3 specific overrides
       if (contact === 'archive') {
         const input = normalized;
 
@@ -1208,39 +1214,24 @@ function validateUserId(userId: any): string | null {
             return res.json({ status: "success", contact, reply: "COMMAND ALREADY USED", action: null });
           }
           processAttempt(req.session, stageKey, input, true, clientIp as string);
-          await db.collection('users').doc(userId).set({ 
+          updates = { 
             stage2_unlocked: true,
             stage: 2
-          }, { merge: true });
-          return res.json({ 
-            status: "success", 
-            contact, 
-            reply: "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.", 
-            action: "unlock_archive" 
-          });
-        }
-
-        if (currentStage < 3) {
+          };
+          
+          reply = "ACCESS GRANTED. THE ARCHIVE IS NOW OPEN.";
+          action = "unlock_archive";
+        } else if (currentStage < 3) {
           processAttempt(req.session, stageKey, input, false, clientIp as string);
           return res.json({ status: "error", reply: "ACCESS DENIED: Signal alignment required." });
-        }
-
-        if (input === "greed") {
-          if (userData.stage3_greed) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
-          if (currentStep !== 0) {
-            processAttempt(req.session, stageKey, input, false, clientIp as string);
-            return res.json({ status: "error", reply: "COMMAND INVALID" });
-          }
-          
+        } else if (input === "greed") {
+          console.log("GREED TRIGGERED:", input);
           processAttempt(req.session, stageKey, input, true, clientIp as string);
-          await db.collection("users").doc(userId).set({
-            stage3_greed: true,
-            messenger_step: 1
-          }, { merge: true });
+          updates = {
+            stage3_greed: true
+          };
           
-          return res.json({
-            status: "success",
-            reply: `So you solved Vale’s second lock.
+          reply = `So you solved Vale’s second lock.
 
 Greed was only the beginning.
 
@@ -1248,27 +1239,23 @@ Greed leaves traces.
 
 Vale tried to erase one of them.
 
-Check the trash.`,
-            action: "unlock_recycle_fragment"
-          });
-        }
-
-        if (input === "depth") {
-          if (userData.stage3_death) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
-          if (currentStep !== 1) {
+Check the trash.`;
+          action = "unlock_recycle_fragment";
+        } else if (input === "death") {
+          processAttempt(req.session, stageKey, input, false, clientIp as string);
+          return res.json({ status: "error", reply: "COMMAND INVALID" });
+        } else if (input === "depth") {
+          if (currentStage < 3 || !userData.stage3_greed) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: "error", reply: "COMMAND INVALID" });
           }
 
           processAttempt(req.session, stageKey, input, true, clientIp as string);
-          await db.collection("users").doc(userId).set({
-            stage3_death: true,
-            messenger_step: 2
-          }, { merge: true });
+          updates = {
+            stage3_death: true
+          };
           
-          return res.json({
-            status: "success",
-            reply: `Correct.
+          reply = `Correct.
 
 Vale encrypted the next fragment.
 
@@ -1276,85 +1263,61 @@ He knew someone would follow.
 
 Not out of curiosity — but obsession.
 
-Use the terminal.`,
-            action: "unlock_terminal_fragment"
-          });
-        }
+Use the terminal.`;
+          action = "unlock_terminal_fragment";
+        } else if (input === "money") {
+          if (!userData.stage3_secret_unlocked) {
+            processAttempt(req.session, stageKey, input, false, clientIp as string);
+            return res.json({ status: "error", reply: "LOCKED" });
+          }
+          
+          processAttempt(req.session, stageKey, input, true, clientIp as string);
+          updates = {
+            stage3_money: true
+          };
 
-          if (input === "money") {
-            if (userData.stage3_money) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
-            if (currentStep !== 2 || !userData.stage3_secret_unlocked) {
-              processAttempt(req.session, stageKey, input, false, clientIp as string);
-              return res.json({ status: "error", reply: "COMMAND INVALID" });
-            }
-
-            processAttempt(req.session, stageKey, input, true, clientIp as string);
-            await db.collection("users").doc(userId).set({
-              stage3_money: true,
-              messenger_step: 3
-            }, { merge: true });
-            
-            const updatedUserDoc = await db.collection('users').doc(userId).get();
-            const state = getFilteredState(updatedUserDoc.data() || {});
-
-            return res.json({
-              status: "success",
-              reply: `The mask of exchange.
+          reply = `The mask of exchange.
 
 Vale was obsessed with the value we place on things.
 
 He left a trace in the system logs.
 
-Check fragment_3.log.`,
-              action: "unlock_fragment_3",
-              state
-            });
-          }
-
-        if (input === "gold") {
-          if (userData.stage3_gold) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
-          if (currentStep !== 3) {
+Check fragment_3.log.`;
+          action = "unlock_fragment_3";
+        } else if (input === "gold") {
+          if (currentStage < 3 || !userData.stage3_money) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: "error", reply: "COMMAND INVALID" });
           }
 
           processAttempt(req.session, stageKey, input, true, clientIp as string);
-          await db.collection("users").doc(userId).set({
-            stage3_gold: true,
-            messenger_step: 4
-          }, { merge: true });
+          updates = {
+            stage3_gold: true
+          };
           
-          return res.json({
-            status: "success",
-            reply: `The final ambition.
+          reply = `The final ambition.
 
 Power is the only currency that doesn't depreciate.
 
 But power has a frequency.
 
-Listen to the system's pulse.`,
-            action: "unlock_fragment_4"
-          });
-        }
-
-        if (input === "ground") {
-          if (userData.stage3_ground) return res.json({ status: "success", reply: "COMMAND ALREADY USED" });
-          if (currentStep !== 4) {
+Listen to the system's pulse.`;
+          action = "unlock_fragment_4";
+        } else if (input === "ground") {
+          if (currentStage < 3 || !userData.stage3_gold) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: "error", reply: "COMMAND INVALID" });
           }
 
           processAttempt(req.session, stageKey, input, true, clientIp as string);
-          await db.collection("users").doc(userId).set({
+          updates = {
             stage3_ground: true,
             stage: 4,
             stage4_unlocked: true,
             stage4_progress: 1
-          }, { merge: true });
+          };
           
-          return res.json({
-            status: "success",
-            reply: `The pattern is complete.
+          reply = `The pattern is complete.
 
 Greed becomes wealth.
 Wealth becomes power.
@@ -1368,64 +1331,57 @@ And whatever he found...
 
 it changed everything.
 
-Stage 4 unlocked. Messenger updated.`,
-            action: "unlock_stage4"
-          });
-        }
-
-        if (input === "840291") {
+Stage 4 unlocked. Messenger updated.`;
+          action = "unlock_stage4";
+        } else if (input === "840291") {
           if (currentStage < 4) {
             processAttempt(req.session, stageKey, input, false, clientIp as string);
             return res.json({ status: "error", reply: "ACCESS DENIED: Signal alignment required." });
           }
           processAttempt(req.session, stageKey, input, true, clientIp as string);
-          return res.json({
-            status: "success",
-            reply: `Relay active.
+          reply = `Relay active.
 
 Subject: K7-4419
 
 The final entry is waiting.
 
-Use the terminal to submit the entry.`,
-            action: null
-          });
+Use the terminal to submit the entry.`;
+          action = null;
+        } else {
+          processAttempt(req.session, stageKey, normalized, false, clientIp as string);
+          reply = "INVALID INPUT. AWAITING COMMAND.";
         }
-      }
-
-      const t = message.trim().toUpperCase();
-      let reply = "I'm sorry, I can't help with that right now.";
-      let action = null;
-
-      if (contact === 'unknown') {
-        const unknownReplies = [
-          "You weren't supposed to find this.",
-          "It sees you now.",
-          "Why are you still here?",
-          "You should leave.",
-          "You don't understand what you've done.",
-          "Aurora is waking up.",
-          "The Architect left for a reason.",
-          "You're just another ghost in the machine.",
-          "The silence was better."
-        ];
-        reply = unknownReplies[Math.floor(Math.random() * unknownReplies.length)];
-      } else if (contact === 'elias') {
-        const eliasReplies = [
-          "Check the logs again.",
-          "Something is missing.",
-          "The system isn't behaving normally.",
-          "This shouldn't be happening.",
-          "Look deeper.",
-          "The resonance is getting stronger.",
-          "Node 02 is the key.",
-          "Don't trust the archive.",
-          "They're watching us."
-        ];
-        reply = eliasReplies[Math.floor(Math.random() * eliasReplies.length)];
-      } else if (contact === 'archive') {
-        processAttempt(req.session, stageKey, normalized, false, clientIp as string);
-        reply = "INVALID INPUT. AWAITING COMMAND.";
+      } else {
+        // Default handlers for other contacts
+        if (contact === 'unknown') {
+          const unknownReplies = [
+            "You weren't supposed to find this.",
+            "It sees you now.",
+            "Why are you still here?",
+            "You should leave.",
+            "You don't understand what you've done.",
+            "Aurora is waking up.",
+            "The Architect left for a reason.",
+            "You're just another ghost in the machine.",
+            "The silence was better."
+          ];
+          reply = unknownReplies[Math.floor(Math.random() * unknownReplies.length)];
+        } else if (contact === 'elias') {
+          const eliasReplies = [
+            "Check the logs again.",
+            "Something is missing.",
+            "The system isn't behaving normally.",
+            "This shouldn't be happening.",
+            "Look deeper.",
+            "The resonance is getting stronger.",
+            "Node 02 is the key.",
+            "Don't trust the archive.",
+            "They're watching us."
+          ];
+          reply = eliasReplies[Math.floor(Math.random() * eliasReplies.length)];
+        } else {
+          reply = "I'm sorry, I can't help with that right now.";
+        }
       }
 
       // Save message to history (Task 4)
@@ -1444,9 +1400,15 @@ Use the terminal to submit the entry.`,
       // Limit history size
       if (history.length > 50) history.splice(0, history.length - 50);
       
-      await db.collection('users').doc(userId).update({
-        [`chats.${contact}`]: history
-      });
+      const chats = userData.chats || {};
+      chats[contact] = history;
+      
+      const updateData: any = {
+        ...updates,
+        chats: chats
+      };
+      
+      await db.collection('users').doc(userId).update(updateData);
 
       const updatedUserDoc = await db.collection('users').doc(userId).get();
       const state = getFilteredState(updatedUserDoc.data() || {});

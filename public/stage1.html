@@ -756,17 +756,17 @@
       <span>System</span>
     </div>
     
-    <div class="icon hidden" id="icon-archive" ondblclick="openWindow('archive-folder')">
+    <div class="icon hidden fragment" id="icon-archive" style="display: none;" ondblclick="openWindow('archive-folder')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#800080" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#800080"/></svg>
       <span>Archive</span>
     </div>
 
-    <div class="icon hidden" id="icon-observer" ondblclick="openWindow('observer-folder')">
+    <div class="icon hidden fragment" id="icon-observer" style="display: none;" ondblclick="openWindow('observer-folder')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#0f0" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#0f0"/></svg>
       <span id="label-observer-folder">archive://dir/observer</span>
     </div>
 
-    <div class="icon hidden" id="icon-vale" ondblclick="openWindow('vale-folder')">
+    <div class="icon hidden fragment" id="icon-vale" style="display: none;" ondblclick="openWindow('vale-folder')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2"><path d="M4 6h8l4 4h12v16H4z" fill="#f00"/></svg>
       <span id="label-vale-folder">archive://dir/vale</span>
     </div>
@@ -781,17 +781,21 @@
       <span>Music</span>
     </div>
 
-    <div class="icon hidden" id="terminal_fragment" ondblclick="openWindow('terminal_fragment')">
+    <div class="icon hidden fragment" id="terminal_fragment" style="display: none;" ondblclick="openWindow('terminal_fragment')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
       <span>terminal_fragment.log</span>
     </div>
-    <div class="icon hidden" id="fragment_3" ondblclick="openWindow('fragment3')">
+    <div class="icon hidden fragment" id="fragment_3" style="display: none;" ondblclick="openWindow('fragment3')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
       <span>fragment_3.log</span>
     </div>
-    <div class="icon hidden" id="fragment_4" ondblclick="openWindow('fragment4')">
+    <div class="icon hidden fragment" id="fragment_4" style="display: none;" ondblclick="openWindow('fragment4')">
       <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
       <span>fragment_4.log</span>
+    </div>
+    <div class="icon hidden fragment" id="fragment_5" style="display: none;" ondblclick="openWindow('fragment5')">
+      <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
+      <span>fragment_5.log</span>
     </div>
 
     <!-- Context Menu -->
@@ -894,7 +898,7 @@
           <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
           <span style="color:#000; background:transparent;">deleted_user.log</span>
         </div>
-        <div class="icon hidden" id="recycle_fragment" style="position: relative; top: 0; left: 0;" ondblclick="openWindow('recycle_fragment')">
+        <div class="icon hidden fragment" id="recycle_fragment" style="position: relative; top: 0; left: 0; display: none;" ondblclick="openWindow('recycle_fragment')">
           <svg class="icon-img" viewBox="0 0 32 32" fill="white" stroke="#ccc" stroke-width="1"><rect x="6" y="4" width="20" height="24"/><path d="M10 10h12M10 16h12M10 22h8" stroke="#333" stroke-width="2"/></svg>
           <span style="color:#000; background:transparent;">recycle_fragment.log</span>
         </div>
@@ -1179,6 +1183,18 @@
       </div>
     </div>
 
+    <div class="window" id="win-fragment5" style="top: 240px; left: 340px; width: 400px; height: 300px;">
+      <div class="title-bar" onmousedown="dragWindow(event, 'win-fragment5')">
+        <div class="title-bar-text">fragment_5.log</div>
+        <div class="title-bar-controls">
+          <div class="control-btn" onclick="closeWindow('fragment5')">X</div>
+        </div>
+      </div>
+      <div class="window-content" id="content-fragment5" style="padding: 10px; font-family: 'VT323', monospace; background: #000; color: #0f0; overflow-y: auto;">
+        <p>Loading fragment data...</p>
+      </div>
+    </div>
+
     <div class="window" id="win-journal-day01" style="top: 150px; left: 250px; width: 400px; height: 300px;">
       <div class="title-bar" onmousedown="dragWindow(event, 'win-journal-day01')">
         <div class="title-bar-text" id="title-journal-day01">VALE INVESTIGATION LOG</div>
@@ -1425,12 +1441,10 @@ Something is hidden there.
           <div class="control-btn" onclick="closeWindow('deleted-log')">X</div>
         </div>
       </div>
-      <div class="window-content" style="font-family: 'VT323', monospace; font-size: 1.2rem; padding: 10px; background: #000; color: #0f0; overflow-y: auto;">
-        <p>[FRAGMENT RECOVERED]</p>
-        <p>Subject: GREED</p>
-        <p>The hunger never ends. It consumes the host until nothing but the void remains. We saw it in the early tests. They wanted more. More processing power. More memory. More control.</p>
-        <p>But the system... it doesn't just give. It takes.</p>
-        <p>-- END OF LOG --</p>
+      <div class="window-content" id="content-deleted-log" style="font-family: 'VT323', monospace; font-size: 1.2rem; padding: 10px; background: #000; color: #0f0; overflow-y: auto;">
+        <p>[FRAGMENT ENCRYPTED]</p>
+        <p>Subject: ???</p>
+        <p>Access denied. Decryption key required.</p>
       </div>
     </div>
 
@@ -1740,6 +1754,14 @@ Something is hidden there.
     let userId = 'session_managed';
     window.userState = {};
 
+    // Initial hide for all fragments
+    document.querySelectorAll(".fragment").forEach(el => {
+      if (el) {
+        el.style.display = "none";
+        el.classList.add("hidden");
+      }
+    });
+
     async function fetchUserState() {
       try {
         const res = await fetch('/api/userState');
@@ -1785,7 +1807,9 @@ Something is hidden there.
     const bootSequence = [
       { text: "Recovering corrupted user environment...", delay: 1500 },
       { text: "Loading System Kernel", delay: 1000, action: () => {
-        if (progressContainer) progressContainer.style.display = 'block';
+        if (progressContainer) {
+      progressContainer.style.display = 'block';
+    }
         let progress = 0;
         const interval = setInterval(() => {
           progress += Math.random() * 15;
@@ -1814,7 +1838,8 @@ Something is hidden there.
     function nextBootStep() {
       if (bootStep >= bootSequence.length) return;
       const step = bootSequence[bootStep];
-      if (step.text !== undefined) bootText.innerText = step.text;
+      const bootText = document.getElementById('boot-text');
+      if (step.text !== undefined && bootText) bootText.innerText = step.text;
       if (step.action) {
         step.action();
       } else {
@@ -1832,7 +1857,9 @@ Something is hidden there.
     const bootStartBtn = document.getElementById('boot-start-btn');
     if (bootStartBtn) {
       bootStartBtn.addEventListener('click', async () => {
-        bootStartBtn.style.display = 'none';
+        if (bootStartBtn) {
+          bootStartBtn.style.display = 'none';
+        }
         await fetchUserState();
         if (window.soundManager) window.soundManager.startComputerHum();
         playBootSound();
@@ -1856,6 +1883,7 @@ Something is hidden there.
       'terminal_fragment': 'terminal_fragment.log',
       'fragment3': 'fragment_3.log',
       'fragment4': 'fragment_4.log',
+      'fragment5': 'fragment_5.log',
       'casefile-01': 'casefile_01.txt',
       'casefile-02': 'casefile_02.txt',
       'casefile-03': 'casefile_03.txt',
@@ -1914,7 +1942,7 @@ Something is hidden there.
         'observer-log-01', 'observer-log-02', 'observer-log-03',
         'journal-day01', 'journal-day03', 'journal-day05', 'journal-day09', 'journal-day12', 'journal-day16',
         'terminal-dump', 'network-trace', 'memory-scan-log', 'resonance',
-        'recycle_fragment', 'terminal_fragment', 'fragment3', 'fragment4', 'vale-photo-data'
+        'recycle_fragment', 'terminal_fragment', 'fragment_3', 'fragment_4', 'fragment_5', 'vale-photo-data'
       ];
 
       if (contentTargets.includes(id)) {
@@ -2041,12 +2069,14 @@ Something is hidden there.
         
         // Add to taskbar
         const taskbarItems = document.getElementById('taskbar-items');
-        const item = document.createElement('div');
-        item.className = 'taskbar-item';
-        item.id = 'taskbar-item-' + id;
-        item.innerText = windowTitles[id] || id;
-        item.onclick = () => toggleWindow(id);
-        taskbarItems.appendChild(item);
+        if (taskbarItems) {
+          const item = document.createElement('div');
+          item.className = 'taskbar-item';
+          item.id = 'taskbar-item-' + id;
+          item.innerText = windowTitles[id] || id;
+          item.onclick = () => toggleWindow(id);
+          taskbarItems.appendChild(item);
+        }
       } else {
         win.classList.add('open'); // Unminimize
       }
@@ -2068,7 +2098,7 @@ Something is hidden there.
       if (restrictedTargets.includes(id)) {
         try {
           if (id === 'photo-fragment') {
-             if (!window.userState || !window.userState.stage1_vale_photo_unlocked) {
+             if (!window.userState || window.userState.stage1_vale_photo_unlocked !== true) {
                 printTerminal("Access denied: Fragment encrypted.");
                 if (statusEl) {
                   statusEl.innerHTML = '<span style="color: #f00;">[ACCESS RESTRICTED]: Fragment encrypted. Decryption key required.</span>';
@@ -2120,16 +2150,16 @@ Something is hidden there.
         } catch (err) {
           console.error("Access check failed for " + id + ":", err);
           if (statusEl) {
-            if (err.name === 'AbortError') {
+            if (err && err.name === 'AbortError') {
               statusEl.innerHTML = '<span style="color: #f00;">[SYSTEM TIMEOUT]: Access validation failed.</span>';
             } else {
-              statusEl.innerHTML = '<span style="color: #f00;">[ERROR]: ' + err.message + '</span>';
+              statusEl.innerHTML = '<span style="color: #f00;">[ERROR]: ' + (err ? err.message : "Unknown error") + '</span>';
             }
           } else if (contentEl) {
-            if (err.name === 'AbortError') {
+            if (err && err.name === 'AbortError') {
               contentEl.innerHTML = '<div style="color: #f00; padding: 20px; font-family: monospace;">[SYSTEM TIMEOUT]: Access validation failed.</div>';
             } else {
-              contentEl.innerHTML = '<div style="color: #f00; padding: 20px; font-family: monospace;">[ERROR]: ' + err.message + '</div>';
+              contentEl.innerHTML = '<div style="color: #f00; padding: 20px; font-family: monospace;">[ERROR]: ' + (err ? err.message : "Unknown error") + '</div>';
             }
           }
           return;
@@ -2223,7 +2253,10 @@ Something is hidden there.
 
       if (id === 'system-term') {
         const termInput = document.getElementById('terminal-input');
-        if (termInput) termInput.focus();
+        if (termInput) {
+          termInput.focus();
+          if (termInput) termInput.style.opacity = "1";
+        }
       }
     }
 
@@ -2263,8 +2296,11 @@ Something is hidden there.
       if (x > window.innerWidth - 50) x = window.innerWidth - 50;
       if (x + currentDragElement.offsetWidth < 50) x = 50 - currentDragElement.offsetWidth;
       
-      currentDragElement.style.left = x + 'px';
-      currentDragElement.style.top = y + 'px';
+      if (!currentDragElement) return;
+      if (currentDragElement) {
+        currentDragElement.style.left = x + 'px';
+        currentDragElement.style.top = y + 'px';
+      }
     });
 
     document.addEventListener('mouseup', () => {
@@ -2273,7 +2309,8 @@ Something is hidden there.
     });
 
     function dragWindow(e, winId) {
-      dragElement(e, document.getElementById(winId));
+      const winEl = document.getElementById(winId);
+      if (winEl) dragElement(e, winEl);
     }
     document.querySelectorAll('.title-bar').forEach(bar => {
       bar.addEventListener('mousedown', (e) => {
@@ -2339,14 +2376,17 @@ Something is hidden there.
     }
 
     function closeContextMenu() {
+      const contextMenu = document.getElementById('context-menu');
       if (contextMenu) contextMenu.style.display = 'none';
     }
 
     function refreshDesktop() {
       closeContextMenu();
       document.querySelectorAll('.icon').forEach(icon => {
-        icon.style.display = 'none';
-        setTimeout(() => icon.style.display = 'flex', 100);
+        if (icon) {
+          icon.style.display = 'none';
+          setTimeout(() => { if (icon) icon.style.display = 'flex'; }, 100);
+        }
       });
     }
 
@@ -2365,28 +2405,33 @@ Something is hidden there.
 
     function showShutdownDialog() {
       const overlay = document.createElement('div');
-      overlay.style.position = 'fixed';
-      overlay.style.top = '0';
-      overlay.style.left = '0';
-      overlay.style.width = '100%';
-      overlay.style.height = '100%';
-      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-      overlay.style.zIndex = '10000';
-      overlay.style.display = 'flex';
-      overlay.style.alignItems = 'center';
-      overlay.style.justifyContent = 'center';
+      if (overlay) {
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        overlay.style.zIndex = '10000';
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+      }
       
       const dialog = document.createElement('div');
-      dialog.className = 'window open';
-      dialog.style.width = '300px';
-      dialog.style.position = 'relative';
-      dialog.style.boxShadow = '5px 5px 15px rgba(0,0,0,0.8)';
-      dialog.style.opacity = '1';
-      dialog.style.transform = 'scale(1)';
-      dialog.style.pointerEvents = 'auto';
-      dialog.style.fontFamily = "'Pixelify Sans', sans-serif";
+      if (dialog) {
+        dialog.className = 'window open';
+        dialog.style.width = '300px';
+        dialog.style.position = 'relative';
+        dialog.style.boxShadow = '5px 5px 15px rgba(0,0,0,0.8)';
+        dialog.style.opacity = '1';
+        dialog.style.transform = 'scale(1)';
+        dialog.style.pointerEvents = 'auto';
+        dialog.style.fontFamily = "'Pixelify Sans', sans-serif";
+      }
       
-      dialog.innerHTML = `
+      if (dialog) {
+        dialog.innerHTML = `
         <div class="title-bar">
           <div class="title-bar-text" style="font-family: 'Pixelify Sans', sans-serif;">Shut Down Aurora OS</div>
           <div class="title-bar-controls">
@@ -2428,26 +2473,30 @@ Something is hidden there.
 
     function showShutdownConfirmDialog(action) {
       const overlay = document.createElement('div');
-      overlay.style.position = 'fixed';
-      overlay.style.top = '0';
-      overlay.style.left = '0';
-      overlay.style.width = '100%';
-      overlay.style.height = '100%';
-      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-      overlay.style.zIndex = '10000';
-      overlay.style.display = 'flex';
-      overlay.style.alignItems = 'center';
-      overlay.style.justifyContent = 'center';
+      if (overlay) {
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        overlay.style.zIndex = '10000';
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+      }
       
       const dialog = document.createElement('div');
-      dialog.className = 'window open';
-      dialog.style.width = '280px';
-      dialog.style.position = 'relative';
-      dialog.style.boxShadow = '5px 5px 15px rgba(0,0,0,0.8)';
-      dialog.style.opacity = '1';
-      dialog.style.transform = 'scale(1)';
-      dialog.style.pointerEvents = 'auto';
-      dialog.style.fontFamily = "'Pixelify Sans', sans-serif";
+      if (dialog) {
+        dialog.className = 'window open';
+        dialog.style.width = '280px';
+        dialog.style.position = 'relative';
+        dialog.style.boxShadow = '5px 5px 15px rgba(0,0,0,0.8)';
+        dialog.style.opacity = '1';
+        dialog.style.transform = 'scale(1)';
+        dialog.style.pointerEvents = 'auto';
+        dialog.style.fontFamily = "'Pixelify Sans', sans-serif";
+      }
       
       dialog.innerHTML = `
         <div class="title-bar">
@@ -2575,9 +2624,9 @@ Something is hidden there.
 
     function toggleVolumeSlider(e) {
       e.stopPropagation();
-      if (volumeSliderContainer.style.display === 'block') {
+      if (volumeSliderContainer && volumeSliderContainer.style.display === 'block') {
         closeVolumeSlider();
-      } else {
+      } else if (volumeSliderContainer) {
         volumeSliderContainer.style.display = 'block';
         closeStartMenu();
         closeContextMenu();
@@ -2627,12 +2676,14 @@ Something is hidden there.
       // Glitch flicker effect
       if (Math.random() > 0.95) {
         if (clockEl) {
-        clockEl.style.opacity = Math.random() > 0.5 ? '0' : '1';
-      }
-        clockEl.innerText = Math.random() > 0.5 ? 'ERR' : '1:38 AM';
+          clockEl.style.opacity = Math.random() > 0.5 ? '0' : '1';
+          clockEl.innerText = Math.random() > 0.5 ? 'ERR' : '1:38 AM';
+        }
       } else {
-        clockEl.style.opacity = '1';
-        clockEl.innerText = '1:38 AM';
+        if (clockEl) {
+          clockEl.style.opacity = '1';
+          clockEl.innerText = '1:38 AM';
+        }
       }
     }, 200);
 
@@ -2641,28 +2692,33 @@ Something is hidden there.
       if (window.soundManager) window.soundManager.playError();
       
       const overlay = document.createElement('div');
-      overlay.style.position = 'fixed';
-      overlay.style.top = '0';
-      overlay.style.left = '0';
-      overlay.style.width = '100%';
-      overlay.style.height = '100%';
-      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-      overlay.style.zIndex = '10000';
-      overlay.style.display = 'flex';
-      overlay.style.alignItems = 'center';
-      overlay.style.justifyContent = 'center';
+      if (overlay) {
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        overlay.style.zIndex = '10000';
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+      }
       
       const dialog = document.createElement('div');
-      dialog.className = 'window open';
-      dialog.style.width = '300px';
-      dialog.style.position = 'relative';
-      dialog.style.boxShadow = '5px 5px 15px rgba(0,0,0,0.8)';
-      dialog.style.opacity = '1';
-      dialog.style.transform = 'scale(1)';
-      dialog.style.pointerEvents = 'auto';
-      dialog.style.fontFamily = "'Pixelify Sans', sans-serif";
+      if (dialog) {
+        dialog.className = 'window open';
+        dialog.style.width = '300px';
+        dialog.style.position = 'relative';
+        dialog.style.boxShadow = '5px 5px 15px rgba(0,0,0,0.8)';
+        dialog.style.opacity = '1';
+        dialog.style.transform = 'scale(1)';
+        dialog.style.pointerEvents = 'auto';
+        dialog.style.fontFamily = "'Pixelify Sans', sans-serif";
+      }
       
-      dialog.innerHTML = `
+      if (dialog) {
+        dialog.innerHTML = `
         <div class="title-bar" style="background: #800000;">
           <div class="title-bar-text" style="font-family: 'Pixelify Sans', sans-serif;">${title}</div>
           <div class="title-bar-controls">
@@ -2695,6 +2751,7 @@ Something is hidden there.
     
     function showNotification(msg) {
       const container = document.getElementById('notifications');
+      if (!container) return;
       const notif = document.createElement('div');
       notif.className = 'notification';
       notif.innerHTML = `<svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="#f00" stroke-width="2"><path d="M16 4l12 24H4L16 4z"/><path d="M16 12v8M16 24v2"/></svg> <span></span>`;
@@ -2740,10 +2797,12 @@ Something is hidden there.
 
     function updateAudioLogVolume() {
       const currentMasterVol = (window.soundManager && typeof window.soundManager.getVolume === 'function') ? window.soundManager.getVolume() : 1;
-      if (masterGain) masterGain.gain.value = (audioVolume.value / 100) * currentMasterVol;
+      if (masterGain && audioVolume) {
+        masterGain.gain.value = (audioVolume.value / 100) * currentMasterVol;
+      }
     }
     
-    audioVolume.addEventListener('input', updateAudioLogVolume);
+    if (audioVolume) audioVolume.addEventListener('input', updateAudioLogVolume);
     window.addEventListener('masterVolumeChanged', updateAudioLogVolume);
 
     async function initAudioBuffer() {
@@ -2819,7 +2878,7 @@ Something is hidden there.
     function pauseAudioLog() {
       if (!isPlaying) return;
       isPlaying = false;
-      playBtn.innerText = "PLAY";
+      if (playBtn) playBtn.innerText = "PLAY";
       clearInterval(visualizerInterval);
       clearInterval(progressInterval);
       if (bars) {
@@ -2848,7 +2907,7 @@ Something is hidden there.
       }
       
       isPlaying = true;
-      playBtn.innerText = "PAUSE";
+      if (playBtn) playBtn.innerText = "PAUSE";
       
       if (typeof pauseMusic === 'function') pauseMusic();
       
@@ -2910,13 +2969,14 @@ Something is hidden there.
       }
     };
 
-    audioProgressSlider.addEventListener('mouseup', handleSliderRelease);
-    audioProgressSlider.addEventListener('touchend', handleSliderRelease);
-
-    audioProgressSlider.addEventListener('input', (e) => {
-      audioCurrentTime = parseFloat(e.target.value);
-      audioTimeCurrent.innerText = formatTime(audioCurrentTime);
-    });
+    if (audioProgressSlider) {
+      audioProgressSlider.addEventListener('mouseup', handleSliderRelease);
+      audioProgressSlider.addEventListener('touchend', handleSliderRelease);
+      audioProgressSlider.addEventListener('input', (e) => {
+        audioCurrentTime = parseFloat(e.target.value);
+        if (audioTimeCurrent) audioTimeCurrent.innerText = formatTime(audioCurrentTime);
+      });
+    }
 
 
     // --- Corrupted Photo Canvas ---
@@ -3021,23 +3081,23 @@ Something is hidden there.
         
         if (effectType === 0) {
           // Desktop flickering
-          if (currentStage >= 4) {
+          if (currentStage >= 4 && document.body) {
             document.body.style.animation = 'glitch 0.1s 2';
-            setTimeout(() => { document.body.style.animation = ''; }, 200);
+            setTimeout(() => { if (document.body) document.body.style.animation = ''; }, 200);
           }
         } else if (effectType === 1) {
           // Cursor flickering
-          const termInput = document.getElementById('term-input');
+          const termInput = document.getElementById('terminal-input');
           if (termInput) {
             termInput.style.opacity = '0.5';
-            setTimeout(() => { termInput.style.opacity = '1'; }, 150);
+            setTimeout(() => { if (termInput) termInput.style.opacity = '1'; }, 150);
           }
         } else if (effectType === 2) {
           // Brief archive window glitches
           const archiveWin = document.getElementById('win-browser');
           if (archiveWin && archiveWin.style.display !== 'none') {
             archiveWin.style.filter = 'invert(1) hue-rotate(180deg)';
-            setTimeout(() => { archiveWin.style.filter = ''; }, 100);
+            setTimeout(() => { if (archiveWin) archiveWin.style.filter = ''; }, 100);
           }
         } else if (effectType === 3) {
           // Auto-printed diagnostic terminal messages
@@ -3053,7 +3113,11 @@ Something is hidden there.
       }, Math.random() * 15000 + 10000); // Random interval between 10s and 25s
     }
 
+    let stage4Started = false;
     function startStage4() {
+      if (stage4Started) return;
+      stage4Started = true;
+      
       // System awareness effects
       if (currentStage >= 4) {
         document.body.style.animation = 'glitch 0.2s 3';
@@ -3062,30 +3126,16 @@ Something is hidden there.
         const termInput = document.getElementById('term-input');
         if (termInput) {
           termInput.classList.add('glitching');
-          setTimeout(() => { termInput.classList.remove('glitching'); }, 1000);
+          setTimeout(() => { if (termInput) termInput.classList.remove('glitching'); }, 1000);
         }
       }
       
       showNotification("<b>SYSTEM LOGGING ENABLED</b><br>Investigator activity detected.");
       
-      // Unlock observer folder
-      const observerIcon = document.getElementById('icon-observer');
-      if (observerIcon) {
-        observerIcon.classList.remove('hidden');
-        observerIcon.style.display = 'flex';
-      }
-      if (typeof arrangeIcons === "function") {
-        arrangeIcons();
-      }
-      
       // Start ambient audio
       const stage4Audio = document.getElementById('stage4-ambient');
       if (stage4Audio) {
         stage4Audio.play().catch(e => console.error("Audio play failed:", e));
-      }
-
-      if (getStage4Progress() === 0) {
-        setStage4Progress(1);
       }
     }
 
@@ -3117,17 +3167,21 @@ Something is hidden there.
         let iframe = document.getElementById("browser-frame");
         if (!iframe) {
           iframe = document.createElement('iframe');
-          iframe.id = "browser-frame";
-          iframe.style.width = "100%";
-          iframe.style.height = "100%";
-          iframe.style.border = "none";
-          if (page) {
+          if (iframe) {
+            iframe.id = "browser-frame";
+            iframe.style.width = "100%";
+            iframe.style.height = "100%";
+            iframe.style.border = "none";
+          }
+          if (page && iframe) {
             page.innerHTML = '';
             page.appendChild(iframe);
           }
         }
-        iframe.src = "/node02.html";
-        iframe.style.display = "block";
+        if (iframe) {
+          iframe.src = "/node02.html";
+          iframe.style.display = "block";
+        }
         return;
       }
       openWindow('browser');
@@ -3190,7 +3244,7 @@ Something is hidden there.
                   return res.json();
                 })
                 .then(data => {
-                  if (data.stage2_unlocked) {
+                  if (data.stage2_unlocked === true) {
                     unlocked = true;
                   }
                   fetchPath = 'resonance.html';
@@ -3280,23 +3334,30 @@ Something is hidden there.
                 if (window.soundManager) window.soundManager.playError();
               } else {
                 const iframe = document.createElement('iframe');
-                iframe.allow = "autoplay";
-                iframe.style.border = 'none';
-                iframe.style.position = 'absolute';
-                iframe.style.top = '0';
-                iframe.style.left = '0';
-                iframe.style.width = '100%';
-                iframe.style.height = '100%';
-                iframe.style.display = 'block';
-                iframe.style.visibility = 'visible';
-                page.appendChild(iframe);
+                if (iframe) {
+                  iframe.allow = "autoplay";
+                  iframe.style.border = 'none';
+                  iframe.style.position = 'absolute';
+                  iframe.style.top = '0';
+                  iframe.style.left = '0';
+                  iframe.style.width = '100%';
+                  iframe.style.height = '100%';
+                  iframe.style.display = 'block';
+                  iframe.style.visibility = 'visible';
+                }
                 
-                if (dynamicHtml) {
-                  iframe.srcdoc = dynamicHtml;
-                } else {
-                  // Use src instead of fetch + srcdoc to ensure window.location.search is available
-                  // and relative links work correctly.
-                  iframe.src = fetchPath;
+                if (page && iframe) {
+                  page.appendChild(iframe);
+                }
+                
+                if (iframe) {
+                  if (dynamicHtml) {
+                    iframe.srcdoc = dynamicHtml;
+                  } else {
+                    // Use src instead of fetch + srcdoc to ensure window.location.search is available
+                    // and relative links work correctly.
+                    iframe.src = fetchPath;
+                  }
                 }
                 
                 if (window.soundManager && targetUrl === 'archive://node/04') {
@@ -3514,20 +3575,18 @@ Something is hidden there.
               setTimeout(() => {
                 printTerminal("Archive decoded successfully.");
                 printTerminal("Unlocking /vale/ directory...");
-                const valeIcon = document.getElementById('icon-vale');
-                if (valeIcon) valeIcon.classList.remove('hidden');
+                // syncProgression will handle visibility
                 if (typeof arrangeIcons === "function") {
                   arrangeIcons();
                 }
                 if (window.soundManager) window.soundManager.playSuccess();
+                syncProgression();
               }, 1000);
             } else if (data.action === 'unlock_forum') {
               printTerminal("Verifying key...");
               setTimeout(() => {
                 printTerminal("Archive match detected.");
                 printTerminal("Access granted.");
-                // Task 6: Remove frontend state mutation
-                // if (window.userState) window.userState.stage4_forum_unlocked = true;
                 if (window.soundManager) window.soundManager.playSuccess();
               }, 1000);
             } else if (data.action === 'require_password') {
@@ -3543,8 +3602,6 @@ Something is hidden there.
               printTerminal("kwws://dufklyh.orfdo/qrgh03/vhfuhw");
               printTerminal("");
               printTerminal("ARCHIVE ROUTE ACCESSIBLE.");
-              // Task 6: Remove frontend state mutation
-              // if (window.userState) window.userState.stage3_secret_unlocked = true;
             }
           } else {
             if (baseCmd === 'decrypt') {
@@ -3620,7 +3677,7 @@ Something is hidden there.
                 printTerminal("Archive match detected.");
                 printTerminal("Access granted.");
                 // Task 6: Remove frontend state mutation
-                // if (window.userState) window.userState.stage4_forum_unlocked = true;
+                // Removed frontend state mutation
                 if (window.soundManager) window.soundManager.playSuccess();
                 syncProgression();
               }, 1000);
@@ -3651,76 +3708,24 @@ Something is hidden there.
     // --- Messenger Logic ---
     function applyGameState(response) {
       if (!response) return;
-      console.log('>>> [GAME STATE] Applying response:', response);
-      console.log("Stage 3:", response);
-
-      if (response.action === "unlock_recycle_fragment") {
-        const frag = document.getElementById("recycle_fragment");
-        if (frag) {
-          frag.style.display = "flex";
-          frag.classList.remove("hidden");
-        }
-      } else if (response.action === "unlock_terminal_fragment") {
-        const frag = document.getElementById("terminal_fragment");
-        if (frag) {
-          frag.style.display = "flex";
-          frag.classList.remove("hidden");
-        }
-      } else if (response.action === "unlock_fragment_3") {
-        const frag = document.getElementById("fragment_3");
-        if (frag) {
-          frag.style.display = "flex";
-          frag.classList.remove("hidden");
-        }
-      } else if (response.action === "unlock_fragment_4") {
-        const frag = document.getElementById("fragment_4");
-        if (frag) {
-          frag.style.display = "flex";
-          frag.classList.remove("hidden");
-        }
-      } else if (response.action === "unlock_stage4") {
+      
+      // Handle specific actions that need immediate feedback
+      if (response.action === "unlock_stage4") {
         currentStage = 4;
-        
-        // Trigger Unknown User message immediately
-        if (typeof updateStage3Clues === 'function') {
-          updateStage3Clues();
-        }
-        
         printTerminal("Stage 4 unlocked. Messenger updated.");
         if (typeof startStage4 === 'function') startStage4();
       } else if (response.action === "update_messenger_step") {
         if (typeof setProgressStep === 'function') {
           setProgressStep(response.step);
-          if (typeof reconstructChatHistory === 'function') {
-            reconstructChatHistory();
-          }
         }
       } else if (response.action === "unlock_archive") {
-        const icon = document.getElementById("icon-archive");
-        if (icon) {
-          console.log('>>> [GAME STATE] Unlocking Archive Folder.');
-          icon.classList.remove("hidden");
-          icon.style.display = "flex";
-          icon.style.visibility = "visible";
-          icon.style.opacity = "1";
-          icon.style.pointerEvents = "auto";
-          currentStage = Math.max(currentStage, 2);
-          unlockStage2UI();
-        }
+        currentStage = Math.max(currentStage, 2);
       } else if (response.action === "unlock_vale") {
-        const icon = document.getElementById("icon-vale");
-        if (icon) {
-          console.log('>>> [GAME STATE] Unlocking Vale Directory.');
-          icon.classList.remove("hidden");
-          icon.style.display = "flex";
-          icon.style.visibility = "visible";
-          icon.style.opacity = "1";
-          icon.style.pointerEvents = "auto";
-          currentStage = Math.max(currentStage, 4);
-        }
-      } else if (response.action === "unlock_forum") {
         currentStage = Math.max(currentStage, 4);
       }
+      
+      // Always sync progression to ensure UI matches backend state
+      syncProgression();
       
       // Ensure icons are arranged after any potential unlock
       if (typeof arrangeIcons === 'function') {
@@ -3728,21 +3733,7 @@ Something is hidden there.
       }
     }
 
-    // Call sync on load
-    window.addEventListener('load', () => {
-      setTimeout(syncProgression, 500);
-    });
-
-    function unlockStage2UI() {
-      const icon = document.getElementById("icon-archive");
-      if (icon) {
-        icon.classList.remove("hidden");
-        icon.style.display = "flex";
-        icon.style.visibility = "visible";
-        icon.style.opacity = "1";
-        icon.style.pointerEvents = "auto";
-      }
-    }
+    // Call sync on load - REMOVED redundant listener
 
     async function waitForAuth() {
       return window.ensureUserId();
@@ -3761,7 +3752,6 @@ Something is hidden there.
     let currentChatContact = null;
 
     function loadChat(contactId, element) {
-      console.log('>>> [MESSENGER] Loading chat for:', contactId);
       currentChatContact = contactId;
       const historyDiv = document.getElementById('chat-history');
       const inputField = document.getElementById('chat-input');
@@ -3783,23 +3773,23 @@ Something is hidden there.
         element.style.animation = 'none';
       }
       
-      inputField.disabled = false;
-      sendBtn.disabled = false;
-      inputField.placeholder = "Type a message to " + (contactId === 'archive' ? 'Archive Node' : (contactId === 'elias' ? 'Dr. Elias' : 'Unknown User')) + "...";
-      setTimeout(() => inputField.focus(), 50);
-      
-      // Add enter key listener if not already added
-      if (!inputField.dataset.listenerAdded) {
-        console.log('>>> [MESSENGER] Adding Enter key listener to input field.');
-        inputField.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            console.log('>>> [MESSENGER] Enter key pressed for contact:', currentChatContact);
-            sendChatMessage();
-          }
-        });
-        inputField.dataset.listenerAdded = 'true';
+      if (inputField) {
+        inputField.disabled = false;
+        inputField.placeholder = "Type a message to " + (contactId === 'archive' ? 'Archive Node' : (contactId === 'elias' ? 'Dr. Elias' : 'Unknown User')) + "...";
+        setTimeout(() => { if (inputField) inputField.focus(); }, 50);
+        
+        // Add enter key listener if not already added
+        if (!inputField.dataset.listenerAdded) {
+          inputField.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              sendChatMessage();
+            }
+          });
+          inputField.dataset.listenerAdded = 'true';
+        }
       }
+      if (sendBtn) sendBtn.disabled = false;
       
       renderChatHistory();
     }
@@ -3807,6 +3797,7 @@ Something is hidden there.
     function renderChatHistory() {
       if (!currentChatContact) return;
       const historyDiv = document.getElementById('chat-history');
+      if (!historyDiv) return;
       const chat = window.chats[currentChatContact] || [];
       
       historyDiv.innerHTML = '';
@@ -3854,11 +3845,14 @@ Something is hidden there.
         wrapper.appendChild(textDiv);
         historyDiv.appendChild(wrapper);
       });
-      historyDiv.scrollTop = historyDiv.scrollHeight;
+      if (historyDiv) {
+        historyDiv.scrollTop = historyDiv.scrollHeight;
+      }
     }
 
     async function sendChatMessage() {
       const inputField = document.getElementById('chat-input');
+      if (!inputField) return;
       const text = inputField.value.trim();
       if (!text || !currentChatContact) return;
       
@@ -3881,6 +3875,7 @@ Something is hidden there.
       
       // Show typing indicator
       const historyDiv = document.getElementById('chat-history');
+      if (!historyDiv) return;
       const typingIndicator = document.createElement('div');
       typingIndicator.id = 'typing-indicator-' + targetContact; // Unique ID per contact
       typingIndicator.style.marginBottom = '12px';
@@ -4046,7 +4041,7 @@ Something is hidden there.
         trackName.style.textShadow = "0 0 10px #0f0, 0 0 20px #0f0";
         trackName.title = "SYSTEM_PULSE_02";
         
-        if (window.userState && window.userState.stage3_gold) {
+        if (window.userState && window.userState.stage3_gold === true) {
           trackName.dataset.id = "47-52-4f-55-4e-44";
           trackName.textContent = title;
         } else {
@@ -4141,7 +4136,7 @@ Something is hidden there.
         card.dataset.index = index;
         
         card.onclick = () => flipCard(card);
-        grid.appendChild(card);
+        if (grid) grid.appendChild(card);
       });
     }
 
@@ -4237,8 +4232,7 @@ Something is hidden there.
       return window.userState ? (window.userState.messenger_step || 0) : 0;
     }
     async function setProgressStep(step) {
-      // if (window.userState) window.userState.messenger_step = step;
-      
+      // No local mutation. Wait for syncProgression.
       fetch('/api/validateCommand', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -4254,8 +4248,7 @@ Something is hidden there.
 
     async function setStage4Progress(step) {
       if (typeof currentStage === 'undefined') window.currentStage = 1;
-      // Task 6: Remove frontend state mutation
-      // if (window.userState) window.userState.stage4_progress = step;
+      // No local mutation. Wait for syncProgression.
       currentStage = 4;
       startStage4();
     }
@@ -4263,8 +4256,15 @@ Something is hidden there.
     // Migration removed
 
     let lastSyncedStage = 1;
+    let isFirstSync = true;
     async function syncProgression() {
-      if (typeof window.chats === 'undefined') window.chats = {};
+      // ISSUE 5 — FORCE FULL UI RESET EACH SYNC
+      document.querySelectorAll(".fragment").forEach(el => {
+        if (el) {
+          el.style.display = "none";
+          el.classList.add("hidden");
+        }
+      });
       
       try {
         const response = await fetch('/api/userState');
@@ -4275,12 +4275,13 @@ Something is hidden there.
         
         window.userState = data;
         
-        // Task 4: Only initialize if empty to prevent overwriting
-        if (Object.keys(window.chats).length === 0) {
+        // Task 4: Chat Persistence - Strictly initialize on first load, then merge
+        if (!window.chatsInitialized) {
           window.chats = data.chats || {};
+          window.chatsInitialized = true;
         } else if (data.chats) {
-          // Merge chats if needed, or just trust backend
-          window.chats = data.chats;
+          // Merge backend chats into local state to preserve unsynced local messages
+          window.chats = { ...data.chats, ...window.chats };
         }
         
         const newStage = data.stage || 1;
@@ -4301,73 +4302,97 @@ Something is hidden there.
         // Refresh UI
         const archiveIcon = document.getElementById('icon-archive');
         if (archiveIcon) {
-          if (data.stage2_unlocked) archiveIcon.classList.remove('hidden');
-          else archiveIcon.classList.add('hidden');
+          if (data.stage2_unlocked === true) {
+            archiveIcon.classList.remove('hidden');
+            archiveIcon.style.display = "flex";
+          }
+          else {
+            archiveIcon.classList.add('hidden');
+            archiveIcon.style.display = "none";
+          }
         }
 
         const valeIcon = document.getElementById('icon-vale');
         if (valeIcon) {
-          // Task 3: Tie strictly to stage3_vale_unlocked
-          if (data.stage3_vale_unlocked) valeIcon.classList.remove('hidden');
-          else valeIcon.classList.add('hidden');
+          if (data.stage3_vale_unlocked === true) {
+            valeIcon.style.display = "flex";
+            valeIcon.classList.remove('hidden');
+          } else {
+            valeIcon.style.display = "none";
+            valeIcon.classList.add('hidden');
+          }
         }
 
         const observerIcon = document.getElementById('icon-observer');
         if (observerIcon) {
           if (data.stage4_progress >= 1) {
             observerIcon.classList.remove('hidden');
+            observerIcon.style.display = "flex";
             startSystemAliveEffects();
           } else {
             observerIcon.classList.add('hidden');
+            observerIcon.style.display = "none";
           }
         }
         
-        // Stage 3 Persistence
-        const fragGreed = document.getElementById("recycle_fragment");
-        if (fragGreed) {
+        // Stage 3 Persistence - STRICT logic (Backend Flags ONLY)
+        const elRecycle = document.getElementById("recycle_fragment");
+        if (elRecycle) {
           if (data.stage3_greed === true) {
-            fragGreed.style.display = "flex";
-            fragGreed.classList.remove("hidden");
+            elRecycle.style.display = "flex";
+            elRecycle.classList.remove("hidden");
           } else {
-            fragGreed.style.display = "none";
-            fragGreed.classList.add("hidden");
+            elRecycle.style.display = "none";
+            elRecycle.classList.add("hidden");
           }
         }
 
-        const fragDeath = document.getElementById("terminal_fragment");
-        if (fragDeath) {
+        const elTerminal = document.getElementById("terminal_fragment");
+        if (elTerminal) {
           if (data.stage3_death === true) {
-            fragDeath.style.display = "flex";
-            fragDeath.classList.remove("hidden");
+            elTerminal.style.display = "flex";
+            elTerminal.classList.remove("hidden");
           } else {
-            fragDeath.style.display = "none";
-            fragDeath.classList.add("hidden");
+            elTerminal.style.display = "none";
+            elTerminal.classList.add("hidden");
           }
         }
 
-        const fragMoney = document.getElementById("fragment_3");
-        if (fragMoney) {
+        const elFrag3 = document.getElementById("fragment_3");
+        if (elFrag3) {
           if (data.stage3_money === true) {
-            fragMoney.style.display = "flex";
-            fragMoney.classList.remove("hidden");
+            elFrag3.style.display = "flex";
+            elFrag3.classList.remove("hidden");
           } else {
-            fragMoney.style.display = "none";
-            fragMoney.classList.add("hidden");
+            elFrag3.style.display = "none";
+            elFrag3.classList.add("hidden");
           }
         }
 
-        const fragGold = document.getElementById("fragment_4");
-        if (fragGold) {
+        const elFrag4 = document.getElementById("fragment_4");
+        if (elFrag4) {
           if (data.stage3_gold === true) {
-            fragGold.style.display = "flex";
-            fragGold.classList.remove("hidden");
+            elFrag4.style.display = "flex";
+            elFrag4.classList.remove("hidden");
           } else {
-            fragGold.style.display = "none";
-            fragGold.classList.add("hidden");
+            elFrag4.style.display = "none";
+            elFrag4.classList.add("hidden");
           }
         }
+        
+        // Ground Fragment (Stage 4)
+        const fragGround = document.getElementById("fragment_5");
+        if (fragGround) {
+          if (data.stage3_ground === true) {
+            fragGround.style.display = "flex";
+            fragGround.classList.remove("hidden");
+          } else {
+            fragGround.style.display = "none";
+            fragGround.classList.add("hidden");
+          }
+        }
+
         if (data.stage2_unlocked === true) {
-          unlockStage2UI();
           window.currentStage = Math.max(window.currentStage || 1, 2);
         }
         
@@ -4379,6 +4404,11 @@ Something is hidden there.
         if (typeof arrangeIcons === "function") {
           arrangeIcons();
         }
+        
+        // Task 4: Ensure chat history is reconstructed after sync
+        if (typeof reconstructChatHistory === "function") {
+          reconstructChatHistory();
+        }
       } catch (e) {
         console.error("Progression sync failed", e);
       }
@@ -4388,7 +4418,7 @@ Something is hidden there.
     if (window.onAuthReady) {
       window.onAuthReady((user) => {
         if (user) {
-          syncProgression();
+          // main.js handles the initial sync
         }
       });
     }
@@ -4397,34 +4427,12 @@ Something is hidden there.
     if (window.userIdReady) {
       window.userIdReady.then((id) => {
         if (id) {
-          console.log('Syncing progression...');
-          syncProgression();
+          // main.js handles the initial sync
         }
       });
     }
 
-    // Restore icons from userState on load
-    (function() {
-      const s4p = getStage4Progress();
-      if (s4p >= 1 || (window.userState && window.userState.stage4_progress >= 1)) {
-        const obsIcon = document.getElementById('icon-observer');
-        if (obsIcon) obsIcon.classList.remove('hidden');
-      }
-      if (s4p >= 2 || (window.userState && window.userState.stage1_vale_unlocked)) {
-        const valeIcon = document.getElementById('icon-vale');
-        if (valeIcon) valeIcon.classList.remove('hidden');
-      }
-      if (window.userState && window.userState.stage2_unlocked) {
-        const archiveIcon = document.getElementById('icon-archive');
-        if (archiveIcon) archiveIcon.classList.remove('hidden');
-      }
-      if (s4p >= 1 || (window.userState && window.userState.stage2_unlocked)) {
-        if (typeof arrangeIcons === "function") {
-          arrangeIcons();
-        }
-        startSystemAliveEffects();
-      }
-    })();
+    // Restore icons from userState on load - REMOVED redundant IIFE
 
     // Helper to update clues dynamically based on stage3_step
     function updateStage3Clues() {
@@ -4456,7 +4464,7 @@ Something is hidden there.
       
       // Failsafe for Node04 unlock
       try {
-        if (window.userState && window.userState.stage3_ground) {
+        if (window.userState && window.userState.stage3_ground === true) {
           let uStr = "";
           let uHex = "076f3324431439202a21554627212365475c2b21643c5f416e382b305c506e3d2124535c6e3b2c2c43143e202d2b441a722d367b0c563c7112245c516e3d2124535c2b2b640b5f502b7f706551476e3821295c1a722d367b0c563c710c2010473a20343555506e3d2136405b202b2d2b57143d272b374458376f252344513c617827420a722d367b72516e2c253755523b23643258553a6f3d2a45143b21272a46513c61";
           let uKey = "NODE04";
@@ -4565,8 +4573,6 @@ Something is hidden there.
       }
     }
     
-    reconstructChatHistory();
-
     // Update existing links to use virtual routes and sanitize DOM
     document.querySelectorAll('a').forEach(a => {
       if (a.innerText === 'http://archive.local/' + 'stage' + '2.html') {

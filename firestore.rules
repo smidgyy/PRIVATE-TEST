@@ -18,8 +18,8 @@ service cloud.firestore {
 
     // User data validation
     function isValidUser(data) {
-      return data.keys().hasAny(['stage', 'unlockedNodes', 'completedSteps']) || 
-             data.keys().hasAny(['stage1_archive_unlocked', 'stage1_vale_unlocked', 'stage4_progress', 'stage4_forum_unlocked', 'stage3_secret_unlocked', 'messenger_step']);
+      return data.keys().hasAny(['stage', 'unlockedNodes', 'completedSteps', 'node02_step', 'messenger_step', 'stage4_progress', 'chats']) || 
+             data.keys().hasAny(['stage1_archive_unlocked', 'stage1_vale_unlocked', 'stage4_forum_unlocked', 'stage3_secret_unlocked', 'stage3_greed', 'stage3_death', 'stage3_money', 'stage3_gold', 'stage3_ground', 'stage3_vale_unlocked', 'stage3_messenger_complete']);
     }
 
     match /users/{userId} {

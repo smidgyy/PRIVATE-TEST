@@ -13,7 +13,15 @@
         "stage4_progress": { "type": "integer" },
         "stage4_forum_unlocked": { "type": "boolean" },
         "stage3_secret_unlocked": { "type": "boolean" },
-        "messenger_step": { "type": "integer" }
+        "stage3_greed": { "type": "boolean" },
+        "stage3_death": { "type": "boolean" },
+        "stage3_money": { "type": "boolean" },
+        "stage3_gold": { "type": "boolean" },
+        "stage3_ground": { "type": "boolean" },
+        "stage3_vale_unlocked": { "type": "boolean" },
+        "stage3_messenger_complete": { "type": "boolean" },
+        "messenger_step": { "type": "integer" },
+        "chats": { "type": "object" }
       }
     }
   },

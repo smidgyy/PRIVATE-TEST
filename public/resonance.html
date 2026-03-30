@@ -180,20 +180,26 @@
     const visualizer = document.getElementById('visualizer');
     const bars = [];
     
-    for (let i = 0; i < NUM_BARS; i++) {
-      const bar = document.createElement('div');
-      bar.className = 'bar';
-      visualizer.appendChild(bar);
-      bars.push(bar);
+    if (visualizer) {
+      for (let i = 0; i < NUM_BARS; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        visualizer.appendChild(bar);
+        bars.push(bar);
+      }
     }
 
     function animateVisualizer() {
       const time = Date.now() / 1000;
-      bars.forEach((bar, i) => {
-        const height = 5 + Math.abs(Math.sin(time * 1.5 + i * 0.1)) * 60 + Math.random() * 5;
-        bar.style.height = height + '%';
-        bar.style.opacity = (height / 70) * 0.5;
-      });
+      if (bars) {
+        bars.forEach((bar, i) => {
+          const height = 5 + Math.abs(Math.sin(time * 1.5 + i * 0.1)) * 60 + Math.random() * 5;
+          if (bar) {
+            bar.style.height = height + '%';
+            bar.style.opacity = (height / 70) * 0.5;
+          }
+        });
+      }
       
       requestAnimationFrame(animateVisualizer);
     }
